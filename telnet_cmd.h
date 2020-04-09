@@ -5,6 +5,8 @@
 #include <serialcmd.h>
 #include <motor.h>
 
+bool DEBUG_telnet_cmd = true;
+
 int telnetport = 23;
 
 // ansi stuff, could always use printf instead of concat
@@ -83,15 +85,15 @@ void handleTelnet(){
     if (!Telnet || !Telnet.connected()){
       if(Telnet){
         Telnet.stop();          // client disconnected
-        Serial.println("Telnet Client has disconnected");
+        if(DEBUG_telnet_cmd)Serial.println("Telnet Client has disconnected");
       } else {
-            Serial.println("Telnet Client disappeared");
+        if(DEBUG_telnet_cmd)Serial.println("Telnet Client disappeared");
       }
       Telnet = TelnetServer.available(); // ready for new client
     } else {
       TelnetServer.available().stop();  // have client, block new conections
     }
-    Serial.println("Telnet Client Connected");
+    if(DEBUG_telnet_cmd)Serial.println("Telnet Client Connected");
     Telnet.flush();  // clear input buffer, else you get strange characters         
     handleClientConnect();
   }

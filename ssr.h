@@ -2,6 +2,12 @@
 #define ssr_h
 #define RELAYPIN  16   // relay control SSR PWM
 
+bool DEBUG_ssr = false;
+
+#ifdef DEBUG
+DEBUG_ssr = true;
+#endif
+
 float currentDuty = 0;
 
 int round_f(float x){
@@ -37,12 +43,10 @@ void SetSSRFrequency( int duty,int power =1)
   
   // #ifdef DEBUG
   if(duty!=currentDuty){
-    Serial.println("\n[SetSSRFrequency] " + (String)currentDuty);
+    if(DEBUG_ssr) Serial.println("\n[SetSSRFrequency] " + (String)currentDuty);
     if(duty<1) Serial.println("[SSR]: OFF");
-    // #ifdef DEBUG
-    Serial.print("[SSR] Duty Cycle: ");
-    Serial.println( "aw: " + (String)currentDuty + " " + String( ( currentDuty / 256.0 ) * 100) + "%" +" P: " + String( round_f( power * 100 )) + "%" );
-    // #endif
+    if(DEBUG_ssr) Serial.print("[SSR] Duty Cycle: ");
+    if(DEBUG_ssr) Serial.println( "aw: " + (String)currentDuty + " " + String( ( currentDuty / 256.0 ) * 100) + "%" +" P: " + String( round_f( power * 100 )) + "%" );
     }
 }
 

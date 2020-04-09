@@ -1,6 +1,8 @@
 #ifndef motor_h
 #define motor_h
 
+bool DEBUG_motor = true;
+
 bool motorChange = false;
 int motorDir     = 0; // 0=off, 1=Forward, 2=reverse
 int motorpinA    = 3;
@@ -11,14 +13,14 @@ int stallcnt = 0;
 int motor_lastmicros = 0; 
 
 void motor(int dir,int dur){
-  Serial.print("[MOTOR]: ");
+  if(DEBUG_motor)Serial.print("[MOTOR]: ");
   if(dir==0){
-    Serial.println("OFF");
+    if(DEBUG_motor)Serial.println("OFF");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinB, HIGH);
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinA, HIGH);
   }
   else if(dir==1){
-    Serial.println("F");
+    if(DEBUG_motor)Serial.println("F");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinB, LOW);
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinA, HIGH);
     if(dur!=0){
@@ -27,7 +29,7 @@ void motor(int dir,int dur){
     } 
   }
   else if(dir==2){
-    Serial.println("R");
+    if(DEBUG_motor)Serial.println("R");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinB, HIGH);
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinA, LOW);
     if(dur){
@@ -50,8 +52,8 @@ void onFeedback(uint8_t pin, bool heldDown) {
     stallcnt = 1; // reset stall check, timeout
   }
 
-  Serial.println("[MOTOR]: OVERCURRENT DETECTED: " + (String)stallcnt + " " + (String)((micros()-motor_lastmicros)/10000) + "ms" );
-  // Serial.println(heldDown ? "STALLED" : " ignoring");
+  if(DEBUG_motor)Serial.println("[MOTOR]: OVERCURRENT DETECTED: " + (String)stallcnt + " " + (String)((micros()-motor_lastmicros)/10000) + "ms" );
+  // if(DEBUG_motor)Serial.println(heldDown ? "STALLED" : " ignoring");
 
 bool stalldetect    = true;
 int stalllimit      = 5;
@@ -60,7 +62,7 @@ int autoreversepause = 200;
 int autoreversetime = 1000;
 
   if(stalldetect && (stallcnt >= stalllimit) && motorDir>0){
-    Serial.println("[MOTOR]: STALLED");    
+    if(DEBUG_motor)Serial.println("[MOTOR]: STALLED");    
     stallcnt = 0;
     motor(0,0); // motor off
     if(autoreverse){

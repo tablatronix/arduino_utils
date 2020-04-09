@@ -7,7 +7,15 @@
 // HardwareSerial DebugOut = Serial;
 // HardwareSerial DebugOut(0);
 // Print Debug = &Serial;
-Stream &DebugOut = Serial;
+Stream &DebugOut = Serial1;
+
+bool debug_serialcmd = true;
+
+#ifdef DEBUG
+debug_serialcmd = true;
+#endif
+
+bool DEBUG_SERIALCMD = debug_serialcmd;
 
   // SERIAL CONSOLE
 #define MAX_NUM_CHARS 32 // maximum number of characters read from the Serial Monitor
@@ -63,96 +71,103 @@ void doMotor(int dir,int duration){
 void process_command(){
   if (strncmp(cmd,"f ",2) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Set value to: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set value to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     fanAV((int)arg);
     fanBV((int)arg);
   }
 
   if (strncmp(cmd,"f1 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Set voltage to: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set voltage to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     fanAVolts((int)arg);
   }
 
   if (strncmp(cmd,"f2 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Set B voltage to: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set B voltage to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     fanBVolts((int)arg);
+  }
+
+  if (strncmp(cmd,"f3 ",3) == 0) {
+    uint32_t arg = (uint32_t)atoi(cmd + 2);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set C veanble to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    fanCEnable((int)arg == 1);
   }
 
   if (strncmp(cmd,"mo ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Motor OFF: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Motor OFF: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     doMotor(0,(int)arg);
   }
 
   if (strncmp(cmd,"mf ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Motor ON F: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Motor ON F: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     doMotor(1,(int)arg);
   }
 
   if (strncmp(cmd,"mr ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Motor ON R: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Motor ON R: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     doMotor(2,(int)arg);
   }
 
   if (strncmp(cmd,"b ",2) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    Serial.print(F("Set freq to: ") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set freq to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     // analogWriteFreq(arg); // confirm ?
   }
 
   if (strncmp(cmd,"A",2) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    Serial.print(F("Abort") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Abort") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
   }
 
   if (strncmp(cmd,"R",2) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    Serial.print(F("REFLOW") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("REFLOW") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
   }
 
   if (strncmp(cmd,"B ",2) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    Serial.print(F("BUTTON") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("BUTTON") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
   }
 
   if (strncmp(cmd,"X ",2) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    Serial.print(F("REBOOT") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("REBOOT") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     ESP.restart();
   }
 
   if (strncmp(cmd,"ssr ",4) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 4);
-    Serial.print(F("[SSR] duty:") );
-    Serial.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[SSR] duty:") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
     SetSSRFrequency((int)arg);
   }
 
   if (strncmp(cmd,"a0 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 3);
-    Serial.print(F("[ANALOG] duty:") );
-    Serial.println((int)arg);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[ANALOG] duty:") );
+    if(DEBUG_SERIALCMD) DebugOut.println((int)arg);
     analogWrite(16,(int)(arg));
   }
 
   if (strncmp(cmd,"debug",5) == 0) {
-    DEBUG = !DEBUG;
-    Serial.print(F("[DEBUG]:" (DEBUG?"ON":"OFF")) );
+    debug_serialcmd = !debug_serialcmd;
+    if(DEBUG_SERIALCMD) DebugOut.print("[DEBUG]:" + (String)(debug_serialcmd?"ON":"OFF"));
   }
 
   cmd[0] = '\0';         // reset the commandstring
