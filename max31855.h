@@ -127,9 +127,9 @@ float getTCDev(){
 void printTC(){
 	updateTemps();
   	int tempf = tc.readFahrenheit();
-	Serial.println("[TC]: " + String( round_f( currentTemp ) )+"ºC " + tempf + "ºF");
+	Serial.println("[TC] Thermocouple:  " + String( round_f( currentTemp ) )+"ºC " + tempf + "ºF");
   	tempf = (((internalTemp)*1.8)+32);
-	Serial.println("[CJ]: " + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
+	Serial.println("[TC] Cold Junction:" + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
 }
 
 // color code temperature
@@ -149,10 +149,12 @@ void initTC(){
   tc.begin();
   tc.readError();
   #ifdef DEBUG
-    Serial.println("Thermocouple Begin...");
-    Serial.println((String)round(tc.readInternal()));
-    Serial.println((String)round(tc.readCelsius()));
-    Serial.println((String)round(tc.readFahrenheit()));
+    Serial.println("[TC] MAX31855 Thermocouple Begin...");
+    if((uint8_t)tc.readError() != STATUS_OK) Serial.println("[ERROR] Status: "+ getTcStatus());
+    printTC();
+    // Serial.println("[TC] "+(String)round(tc.readInternal()));
+    // Serial.println("[TC] "+(String)round(tc.readCelsius()));
+    // Serial.println("[TC] "+(String)round(tc.readFahrenheit()));
   #endif
   updateTemps();
   resetDev();

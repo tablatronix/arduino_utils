@@ -42,7 +42,7 @@ void println(String msg){
 void init_telnet(){
   TelnetServer.begin(); 
   TelnetServer.setNoDelay(true);
-  Serial.print("[TELNET] Starting telnet server on port " + (String)telnetport);   	
+  Serial.println("[TELNET] Starting telnet server on port " + (String)telnetport);   	
 }
 
 void telnet_status(){
@@ -85,15 +85,15 @@ void handleTelnet(){
     if (!Telnet || !Telnet.connected()){
       if(Telnet){
         Telnet.stop();          // client disconnected
-        if(DEBUG_telnet_cmd)Serial.println("Telnet Client has disconnected");
+        if(DEBUG_telnet_cmd)Serial.println("[TELNET] Client has disconnected");
       } else {
-        if(DEBUG_telnet_cmd)Serial.println("Telnet Client disappeared");
+        if(DEBUG_telnet_cmd)Serial.println("[TELNET] Client disappeared");
       }
       Telnet = TelnetServer.available(); // ready for new client
     } else {
       TelnetServer.available().stop();  // have client, block new conections
     }
-    if(DEBUG_telnet_cmd)Serial.println("Telnet Client Connected");
+    if(DEBUG_telnet_cmd)Serial.println("[TELNET] Client Connected");
     Telnet.flush();  // clear input buffer, else you get strange characters         
     handleClientConnect();
   }
@@ -112,7 +112,7 @@ void handleTelnet(){
   }
 }
 
-// void handleTelnet(){
+// void doTelnet(){
 //   if (TelnetServer.hasClient()){
 //   	// client is connected
 //     if (!Telnet || !Telnet.connected()){
@@ -123,12 +123,14 @@ void handleTelnet(){
 //     }
 //   }
 
+//   // BUG Telnet.available() crashes wifi on 2.0.4 ????
+
 //   if (Telnet && Telnet.connected() && Telnet.available()){
 //     // client input processing
 //     while(Telnet.available())
 //       Serial.write(Telnet.read()); // pass through
 //       // do other stuff with client input here
-//   } 
+//   }
 // }
 
 void process_telnet() {

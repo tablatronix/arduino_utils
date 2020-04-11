@@ -14,20 +14,60 @@ void init_WiFi(int timeout){
     WiFi.hostname(hostname);
     unsigned long start = millis();
     WiFi.begin(SSID,PASS);
-    Serial.println("Connecting to wifi... [" + (String)timeout + " ms]");
+    Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
     while(WiFi.status() != WL_CONNECTED && (millis()-start < timeout)){
       Serial.print(".");
       delay(100);
     }
 
+    Serial.println("");
+
     if(WiFi.status() == WL_CONNECTED){
-      Serial.print("IP: ");
+      Serial.print("[WIFI] CONNECTED");
+      Serial.print("[WIFI] IP: ");
       Serial.println(WiFi.localIP());
-      Serial.print("HOST: ");
+      Serial.print("[WIFI] HOST: ");
       Serial.println(WiFi.hostname());
     }
     else{
-      Serial.println("NOT CONNECTED");
+      Serial.println("[ERROR] WIFI CONNECT FAILED");
     }
     delay(500);
+}
+
+int getRSSIasQuality() {
+  int RSSI = WiFi.RSSI();
+  int quality = 0;
+
+  if (RSSI <= -100) {
+    quality = 0;
+  } else if (RSSI >= -50) {
+    quality = 100;
+  } else {
+    quality = 2 * (RSSI + 100);
+  }
+  return quality;
+}
+
+void checkWifi(){
+  if(WiFi.status() != WL_CONNECTED  ){
+    Serial.println("[WIFI] WiFi Disconnected");
+    WiFi.reconnect();
+  } else Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
+}
+
+String getResetReason(){
+    int reason;
+    #ifdef ESP8266
+      return ESP.getResetReason();
+    #elif defined(ESP32) && defined(_ROM_RTC_H_)
+      // requires #include <rom/rtc.h>
+      p = FPSTR(HTTP_INFO_lastreset);
+      for(int i=0;i<2;i++){
+        int reason = rtc_get_reset_reason(i);
+        return (String)reason;
+        // switch (reason)
+        // {
+        // }
+    #endif
 }

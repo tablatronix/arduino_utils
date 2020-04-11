@@ -23,21 +23,21 @@ void startOTA(){
   // ArduinoOTA.setHostname(otahost);
   ArduinoOTA.onStart([]() {
        otastarted = true;
-        Serial.println("\nOTA onStart");
+        Serial.println("\n[OTA] onStart");
   });
 
   ArduinoOTA.onEnd([]() {
         otastarted = false;
-        Serial.println("\nOTA onEnd");
+        Serial.println("\n[OTA] onEnd");
  		// PAUSED = false;       
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("OTA Progress: %u%%\n", (progress / (total / 100)));
+    Serial.printf("[OTA] Progress: %u%%\n", (progress / (total / 100)));
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("OTA Error[%u]: ", error);
+    Serial.printf("[OTA] Error[%u]: ", error);
     otastarted = false;
     if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
     else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");

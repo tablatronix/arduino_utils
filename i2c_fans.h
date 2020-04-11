@@ -1,10 +1,10 @@
 #ifndef i2c_fans_h
 #define i2c_fans_h
 
-bool DEBUG_i2c_fans = false;
-
 #ifdef DEBUG
-DEBUG_i2c_fans = true;
+bool DEBUG_i2c_fans = true;
+#else
+bool DEBUG_i2c_fans = true;
 #endif
 
 #include <Adafruit_MCP4725.h>
@@ -24,7 +24,8 @@ int dacscale = 4095/5;
 int fanAVCC_out = 12; // 5.2;
 int fanBVCC_out = 5; // 5.2;
 
-const int fanCpin = 6;
+const int fanCpin = 5;
+const int fanDpin = 6;
 
 
 // should I calculate hfe /beta  here or is that even necessary?
@@ -38,13 +39,6 @@ const int fanCpin = 6;
 
 int fanDacVoltage(int vcc){
 	return vcc*dacscale;
-}
-
-void fan_init(){
-  dac.begin(0x60);
-  dacb.begin(0x61);
-  dac.setVoltage(0, true);   
-  dacb.setVoltage(0, true);   
 }
 
 void fanA(int perc){
@@ -87,18 +81,37 @@ void fanBVolts(int value){
 
 void fanCEnable(bool enable){
   if(enable){
-    Serial.println("[FAN] fan C enabled");
+    if(DEBUG_i2c_fans) Serial.println("[FAN] fan C Enabled");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), fanCpin, true);
+    // ioDeviceDigitalWriteS(switches.getIoAbstraction(), 6, true);
   }
   else {
-    Serial.println("[FAN] fan C enabled");
+    if(DEBUG_i2c_fans) Serial.println("[FAN] fan C Disabled");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), fanCpin, false);
+    // ioDeviceDigitalWriteS(switches.getIoAbstraction(), 6, false);
   }
+}
+
+void fanDEnable(bool enable){
+  if(enable){
+    if(DEBUG_i2c_fans) Serial.println("[FAN] fan D enabled");
+    ioDeviceDigitalWriteS(switches.getIoAbstraction(), fanDpin, true);
+  }
+  else {
+    if(DEBUG_i2c_fans) Serial.println("[FAN] fan D Disabled");
+    ioDeviceDigitalWriteS(switches.getIoAbstraction(), fanDpin, false);
+  }
+}
+
+void SSRFan(bool enable,bool power = true){
+  fanCEnable(enable);
+  fanDEnable(enable && power);
 }
 
 void fanTest(){
   int duration = 1000;
 
+  if(DEBUG_i2c_fans) Serial.println("[FAN] Testing FAN 2");
   // fan 2
   fanBVolts(500); //5v
   delay(duration);
@@ -107,8 +120,10 @@ void fanTest(){
   fanBVolts(230); //5v
   delay(duration);
   fanBVolts(0); //5v
+
   delay(duration);
 
+  if(DEBUG_i2c_fans) Serial.println("[FAN] Testing FAN 1");
   // fan 1
   fanAVolts(500); // 12v 
   delay(duration);
@@ -118,11 +133,35 @@ void fanTest(){
   delay(duration);
   fanAVolts(0); // 12v 
 
-  // fan 3
-  fanCEnable(true);
   delay(duration);
-  fanCEnable(false);
 
+  if(DEBUG_i2c_fans) Serial.println("[FAN] Testing FAN 3 50%");
+  // fan 3
+  // fanCEnable(true);
+  // delay(duration*2);
+  // fanCEnable(false);
+  SSRFan(true,false);
+  delay(duration*3);
+  SSRFan(false);
+  delay(duration*2);
+  if(DEBUG_i2c_fans) Serial.println("[FAN] Testing FAN 3 100%");
+  // fan 4
+  // fanDEnable(true);
+  // delay(duration*2);
+  // fanDEnable(false);
+  SSRFan(true,true);
+  delay(duration*3);
+  SSRFan(false);
+}
+
+void fan_init(){
+  dac.begin(0x60);
+  dacb.begin(0x61);
+
+  dac.setVoltage(0, true);  // fan 1
+  dacb.setVoltage(0, true); // fan 2
+  // fanCEnable(false);  // fan 3 (NOT LOADED YET)
+  // fanDEnable(false);  // fan 4 (NOT LOADED YET)
 }
 
 #endif

@@ -504,7 +504,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   }
 
   // init defaults
-  Serial.println("init w:" + (String)width + " h: " + (String)height);
+  Serial.println("[GRAPH] init w:" + (String)width + " h: " + (String)height);
   // int xPos = 0;
   // int yPos = 0;
   
@@ -514,7 +514,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   width  -= xPos+1; // reduce width kludge
   height -= yPos+1;
 
-  Serial.println("init x:" + (String)width + " y: " + (String)height);
+  Serial.println("[GRAPH] init x:" + (String)width + " y: " + (String)height);
 
   // axis padding
   bool xaxis = false; // show xaxis padding

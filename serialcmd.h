@@ -9,10 +9,10 @@
 // Print Debug = &Serial;
 Stream &DebugOut = Serial1;
 
-bool debug_serialcmd = true;
-
 #ifdef DEBUG
-debug_serialcmd = true;
+bool debug_serialcmd = true;
+#else
+bool debug_serialcmd = true;
 #endif
 
 bool DEBUG_SERIALCMD = debug_serialcmd;
@@ -81,6 +81,7 @@ void process_command(){
     uint32_t arg = (uint32_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Set voltage to: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    if((int)arg == 1) arg = 500;
     fanAVolts((int)arg);
   }
 
@@ -88,14 +89,22 @@ void process_command(){
     uint32_t arg = (uint32_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Set B voltage to: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    if((int)arg == 1) arg = 500;    
     fanBVolts((int)arg);
   }
 
   if (strncmp(cmd,"f3 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("Set C veanble to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set C eanble to: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     fanCEnable((int)arg == 1);
+  }
+
+  if (strncmp(cmd,"f4 ",3) == 0) {
+    uint32_t arg = (uint32_t)atoi(cmd + 2);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("Set D eanble to: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    fanDEnable((int)arg == 1);
   }
 
   if (strncmp(cmd,"mo ",3) == 0) {

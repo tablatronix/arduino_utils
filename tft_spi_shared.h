@@ -271,7 +271,7 @@ void setAlertMode(int mode = 0){
 }
 
 void tft_init(){
-  Serial.println("Starting tft"); 
+  Serial.println("[TFT] Starting tft"); 
   tft.init();
   tft.setRotation(3);
   tft.fillScreen(GRAPHBG);
