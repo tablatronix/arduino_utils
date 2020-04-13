@@ -105,6 +105,7 @@ void handleTelnet(){
         readSerial(Telnet);
          // inputString = Serial.readStringUntil('\n');
          // parseSerial();
+         delay(0);
       }
       // if(echo)
       // Serial.write(Telnet.read()); // pass through

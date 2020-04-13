@@ -1,3 +1,12 @@
+#ifndef neoindicator_h
+#define neoindicator_h
+
+#ifdef DEBUG
+bool DEBUG_neoind = true;
+#else
+bool DEBUG_neoind = false;
+#endif
+
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel ind = Adafruit_NeoPixel();
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, PIN, NEO_GRB + NEO_KHZ800);
@@ -12,6 +21,7 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
 #define INDBRIGHTNESS 255
 
 bool INDPINRESET = false;
+
 
 void init_indicator(uint16_t pin){
   ind.setPin(pin);
@@ -28,12 +38,14 @@ void init_indicator(uint16_t pin){
 }
 
 void indSetColor(uint32_t c){
+  if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);  
   ind.setPixelColor( 0, c );
   ind.show();
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset 
 }
 
 void indSetColor(uint8_t r,uint8_t g,uint8_t b){
+  if(DEBUG_neoind)Serial.println("[IND] set ind color:");    
   ind.setPixelColor(0,r,g,b);
 	ind.show();
   delay(1);
@@ -41,6 +53,7 @@ void indSetColor(uint8_t r,uint8_t g,uint8_t b){
 }
 
 void stop_indicator(){
+  if(DEBUG_neoind)Serial.println("[IND] stop");    
   for(size_t i=0; i<ind.numPixels(); i++) {
     ind.setPixelColor(i,0,0,0);
   }  
@@ -85,6 +98,7 @@ void rainbowInd(uint8_t wait) {
 }
 
 void indClear(){
+   if(DEBUG_neoind)Serial.println("[IND] clear ind");   
     for(size_t i=0;i<100;i++){
         indSetColor(0,0,0);
         delay(100);
@@ -106,8 +120,11 @@ void indTest(){
 }
 
 void accentSetColor(uint32_t c){
+  if(DEBUG_neoind)Serial.println("[IND] set accent color");   
     for(size_t i=1; i<ind.numPixels(); i++) {
       ind.setPixelColor(i, c);
     }
     ind.show();
 }
+
+#endif

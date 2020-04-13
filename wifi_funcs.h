@@ -1,3 +1,6 @@
+#ifndef wifi_funcs_h
+#define wifi_funcs_h
+
 #include <creds.h>
 
 const char* hostname   = "esp8266REFLOW";
@@ -23,7 +26,7 @@ void init_WiFi(int timeout){
     Serial.println("");
 
     if(WiFi.status() == WL_CONNECTED){
-      Serial.print("[WIFI] CONNECTED");
+      Serial.println("[WIFI] CONNECTED");
       Serial.print("[WIFI] IP: ");
       Serial.println(WiFi.localIP());
       Serial.print("[WIFI] HOST: ");
@@ -51,9 +54,17 @@ int getRSSIasQuality() {
 
 void checkWifi(){
   if(WiFi.status() != WL_CONNECTED  ){
+    #ifdef USENEOIND
+      indSetColor(255,0,0);
+    #endif
     Serial.println("[WIFI] WiFi Disconnected");
     WiFi.reconnect();
-  } else Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
+  } else {
+    Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
+    #ifdef USENEOIND
+      indSetColor(0,255,0);
+    #endif
+  }
 }
 
 String getResetReason(){
@@ -66,8 +77,11 @@ String getResetReason(){
       for(int i=0;i<2;i++){
         int reason = rtc_get_reset_reason(i);
         return (String)reason;
-        // switch (reason)
+        // switch (reason)`
         // {
         // }
+      }
     #endif
 }
+
+#endif

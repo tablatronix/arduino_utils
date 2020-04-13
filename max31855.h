@@ -38,6 +38,8 @@ bool tcWarn = false; // stop and show error if a tc issue is detected
 float maxT;
 float minT;
 
+uint8_t lastTCStatus = 0;
+
 #define STATUS_OK               0x00
 #define STATUS_OPEN_CIRCUIT     0x01
 #define STATUS_SHORT_TO_GND     0x02
@@ -70,7 +72,7 @@ void ReadCurrentTempAvg()
 // Read the temp probe
 void ReadCurrentTemp()
 {
-  int status = tc.readError();
+  lastTCStatus = tc.readError();
   #ifdef DEBUG
   // Serial.print("tc status: ");
   // Serial.println( status );
@@ -79,7 +81,14 @@ void ReadCurrentTemp()
   	internalTemp = tc.readInternal();
   	currentTemp = internalTemp + tempOffset;
   }	
-  else currentTemp = tc.readCelsius() + tempOffset;
+  else {
+    double readC = tc.readCelsius();
+    if(isnan(readC) || readC < 0 || readC > 600){
+      Serial.println("[ERROR] TC OUT OF RANGE, skipping");
+      return;
+    }
+    currentTemp = readC + tempOffset;
+  }
 }
 
 String getTcStatus(){
@@ -124,12 +133,24 @@ float getTCDev(){
   return (maxT-minT);
 }
 
+void TCSanityCheck(){
+  if((int)currentTemp > 300 || (int)currentTemp < 0) Serial.println("[ERROR] TC OUT OF RANGE");
+}
+
+float readFahrenheit(){
+  return (currentTemp*1.8)+32;
+}
+
 void printTC(){
 	updateTemps();
-  	int tempf = tc.readFahrenheit();
-	Serial.println("[TC] Thermocouple:  " + String( round_f( currentTemp ) )+"ºC " + tempf + "ºF");
+  	int tempf = readFahrenheit();
+	Serial.print("[TC] TC1: " + String( round_f( currentTemp ) )+"ºC " + tempf + "ºF");
   	tempf = (((internalTemp)*1.8)+32);
-	Serial.println("[TC] Cold Junction:" + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
+	Serial.print(" CJ: " + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
+    tempf = (((getTCDev())*1.8)+32);
+  Serial.print(" Dev: " + String( round_f( getTCDev() ) )+"ºC " + tempf + "ºF");
+  Serial.println("");
+ TCSanityCheck();
 }
 
 // color code temperature
@@ -147,6 +168,7 @@ void initTC(){
   // Start up the MAX31855
   // @todo sanity
   tc.begin();
+  delay(200);
   tc.readError();
   #ifdef DEBUG
     Serial.println("[TC] MAX31855 Thermocouple Begin...");
@@ -154,7 +176,7 @@ void initTC(){
     printTC();
     // Serial.println("[TC] "+(String)round(tc.readInternal()));
     // Serial.println("[TC] "+(String)round(tc.readCelsius()));
-    // Serial.println("[TC] "+(String)round(tc.readFahrenheit()));
+    // Serial.println("[TC] "+(String)round(readFahrenheit()));
   #endif
   updateTemps();
   resetDev();

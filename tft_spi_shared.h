@@ -193,8 +193,10 @@ void getTextBounds(const char *str, int16_t x, int16_t y,
 
 	int16_t minx = tft.width(), miny = tft.width(), maxx = -1, maxy = -1;
 
-	while ((c = *str++))
+	while ((c = *str++)){
 		charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
+		delay(0);
+	}
 
 	if (maxx >= minx) {
 		*x1 = minx;

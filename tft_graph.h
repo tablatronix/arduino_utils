@@ -1,6 +1,8 @@
 #ifndef tft_graph_h
 #define tft_graph_h
 
+bool DEBUG_POINT = false;
+
 #include "Free_Fonts.h" // Include the header file attached to this sketch
 // #include "NotoSansBold15.h"
 // #include "NotoSansBold36.h"
@@ -37,7 +39,6 @@ double ox_5 = -999, oy_5 = -999; // Force them to be off screen
 double ox_6 = -999, oy_6 = -999; // Force them to be off screen
 
 double _w,_h,_gx,_gy;
-
 
 void setGraphLine(int id, double valueX,double valueY);
 double getGraphLine(int id,int param);
@@ -289,6 +290,7 @@ void Trace(RM_tft &tft, int id, double x,  double y,  byte dp,
 /**
  * [addPoint description]
  * @param tft    tft instance
+ * @param id     trace id (hardcoded 0-6 ATM)
  * @param x      x coord
  * @param y      y coord
  * @param xlo    x lo
@@ -303,12 +305,19 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
            unsigned int pcolor)
 {
 
+  if(DEBUG_POINT){
+    Serial.print("\n[GRAPH] ADDPOINT id: "+(String)id+ " x - y: ");
+    Serial.print(x);
+    Serial.print(" - ");
+    Serial.println(y);
+  }
+
   double w = _w;
   double h = _h;
   double gx = _gx;
   double gy = _gy;
   bool doubleLine = false;
-
+ 
   // the coordinates are now drawn, plot the data
   // the entire plotting code are these few lines...
   // recall that ox and oy are initialized above
@@ -317,23 +326,26 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
 
   if ((x < gx) || (x > gx+w)) {return;}
   if ((y < gy-h) || (y > gy)) {return;}
-
   
-  // Serial.print("\n[GRAPH] x - y ");
-  // Serial.print(x);
-  // Serial.print(" - ");
-  // Serial.println(y);
-  // Serial.print("\n[GRAPH] ox - oy ");
-  // Serial.print(ox);
-  // Serial.print(" - ");
-  // Serial.println(oy);
-
-  // Serial.print(x);
-  // Serial.print(" - ");
-  // Serial.println(y);
-  // Serial.println("------");
   double ox = getGraphLine(id,0);
   double oy = getGraphLine(id,1);
+
+  if(DEBUG_POINT){
+    Serial.print("\n[GRAPH] x - y: ");
+    Serial.print(x);
+    Serial.print(" - ");
+    Serial.println(y);
+    Serial.print("\n[GRAPH] ox - oy: ");
+    Serial.print(ox);
+    Serial.print(" - ");
+    Serial.println(oy);
+
+    Serial.print(gx);
+    Serial.print(" - ");
+    Serial.println(gy);
+    Serial.println("------");
+  }
+
 
   tft.drawLine(ox, oy, x, y, pcolor); // STILL DOUBLE!
 
@@ -410,7 +422,7 @@ unsigned int getLineColor(int id,int param){
     if(param == 1) return oy_3;  
     break;
   case 4:
-    if(param == 0) return WHITE;
+    if(param == 0) return GREY;
     if(param == 1) return oy_4;  
     break;
   case 5:
@@ -424,7 +436,7 @@ unsigned int getLineColor(int id,int param){
   }
 }
 
-void setGraphLine(int id = 0, double valueX = -999,double valueY = -999){
+void setGraphLine(int id, double valueX, double valueY){
   switch(id){
   case 0:
     ox = valueX, oy = valueY;
@@ -450,8 +462,8 @@ void setGraphLine(int id = 0, double valueX = -999,double valueY = -999){
   }
 }
 
-void resetGraphLine(int id = 0, double value = -999){
-  setGraphLine(id);
+void resetGraphLine(int id = 0){
+  setGraphLine(id,-999,-999);
 }
 
 void resetGraphLines(){
@@ -504,7 +516,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   }
 
   // init defaults
-  Serial.println("[GRAPH] init w:" + (String)width + " h: " + (String)height);
+  // Serial.println("[GRAPH] init w:" + (String)width + " h: " + (String)height);
   // int xPos = 0;
   // int yPos = 0;
   
@@ -514,7 +526,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   width  -= xPos+1; // reduce width kludge
   height -= yPos+1;
 
-  Serial.println("[GRAPH] init x:" + (String)width + " y: " + (String)height);
+  // Serial.println("[GRAPH] init x:" + (String)width + " y: " + (String)height);
 
   // axis padding
   bool xaxis = false; // show xaxis padding
@@ -568,9 +580,6 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
 	// Graph(tft, x, y, 2,  30, 135-8, 240-30, 135-8, 0, 6.5, 1, -1, 1, .25, "x", "y", "", display1, YELLOW);
 }
 
-void setupGraph(){
-    init_graph(320,240-35,0,30); // x,y offsets handled automatically  
-}
 
 void test_trace_sin(){
   double x, y; 
@@ -586,23 +595,183 @@ void test_trace_sin(){
 void test_trace(uint32_t c){
   double x, y; 
   for (x = 0; x <= 100; x += 10) {
+    // addPoint(RM_tft &tft, int id, double x,  double y,double xlo, double xhi,double ylo, double yhi,unsigned int pcolor)    
+    // addPoint(RM_tft &tft, id, x,  y, xlo, xhi ylo, yhi, color)    
     addPoint(tft, 0,x, x, 0, 100, 0, 100, c);
     delay(100);
   }
 }
 
 void testTraces(int sample){
+  return;
   int ssize = 240;
   int vsize = 100;
-  for(size_t i=0;i<7;i++){
-    addPoint(tft,i,sample, ((abs(vsize/7))*(i))+random(10), 0, ssize, 0, vsize-random(vsize/6), getLineColor(i,0));    
+  int numTraces = 4;
+  for(int i=0;i<numTraces;i++){
+    addPoint(tft,i/* id **/,sample/* X */, ((abs(vsize/numTraces))*(i))+random(10)/* Y */, 0 /*XLOW*/, ssize /* XHIGH */, 0 /* YLOW */, vsize-random(vsize/6)/* YHIGH */, getLineColor(i,0) /* color */);    
     delay(10);
   }
 }
 
+void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100 ){
+    int i = sample;
+    // int vsize = 100;
+    // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
+    addPoint(tft,id, i, value , 0, numSamples, 0, vsize, getLineColor(id,0));    
+    // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, numSamples, 0, vsize, getLineColor(i-1,0));    
+}
 
-void tft_set_footer_val1(){
+void testTraceScaleOLD(){
+  int id = 5;
+  int ssize = 240;
+  int vsize = 100;
+  int numSamples = 5;
 
+  // setGraphLine(id,0,0);
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0));    
+  // addPoint(tft,id, 1, 10 , 0, 5, 0, vsize, getLineColor(0,0));    
+  // addPoint(tft,id, 2, 20 , 0, 5, 0, vsize, getLineColor(1,0));
+  // return;
+  
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
+  // setGraphLine(id,0,0); ?
+  for(int i=0;i<numSamples+2;i++){
+     // addPoint(RM_tft &tft, id, x,  y, xlo, xhi ylo, yhi, color)    
+    addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, 5, 0, vsize, getLineColor(i-1,0));    
+    delay(100);
+  }
+}
+
+void testTraceScale(){
+  int id = 5;
+  int ssize = 240;
+  int vsize = 100;
+  int numSamples = 5;
+
+  // setGraphLine(id,0,0);
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0));    
+  // addPoint(tft,id, 1, 10 , 0, 5, 0, vsize, getLineColor(0,0));    
+  // addPoint(tft,id, 2, 20 , 0, 5, 0, vsize, getLineColor(1,0));
+  // return;
+  
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
+  // setGraphLine(id,0,0);
+  for(int i=0;i<numSamples+2;i++){
+    addPointSet(id,i,random(vsize),numSamples);
+ // addPoint(RM_tft &tft, id, x,  y, xlo, xhi ylo, yhi, color)    
+    // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, 5, 0, vsize, getLineColor(i-1,0));    
+    delay(100);
+  }
+}
+
+void graphPaste(){
+  int id = 6;
+  int ssize = 320;
+  int vsize = 220;
+  int numSamples = 7;
+
+  // id = 0;
+  // numSamples = 7; 
+  // resetGraphLine(id);
+  // float baseGraphX[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  // float baseGraphY[7] = { 27, 90, 130, 138, 165, 138, 27 }; // value
+  // for(int i=0;i<numSamples;i++){
+  //   addPointSet(id,baseGraphX[i],baseGraphY[i],300,vsize);
+  // }
+
+  // solderPaste[0] = ReflowGraph( "CHIPQUIK", "No-Clean Sn42/Bi57.6/Ag0.4", 138, baseGraphX, baseGraphY, ELEMENTS(baseGraphX), 240, 270 );
+ 
+  // id = 1;
+  // numSamples = 7;  
+  // resetGraphLine(id);  
+  // float baseGraphX2[7] = { 1, 90, 180, 225, 240, 270, 300 }; // time
+  // float baseGraphY2[7] = { 25, 150, 175, 190, 210, 125, 50 }; // value
+
+  // // solderPaste[1] = ReflowGraph( "CHEMTOOLS L", "No Clean 63CR218 Sn63/Pb37", 183, baseGraphX2, baseGraphY2, ELEMENTS(baseGraphX2), 240, 270 );
+  // for(int i=0;i<numSamples;i++){
+  //   addPointSet(id,baseGraphX2[i],baseGraphY2[i],ssize,vsize);
+  // }
+
+  // id = 2;
+  // numSamples = 6;
+  // resetGraphLine(id);   
+  // float baseGraphX3[6] = { 1, 75, 130, 180, 210, 250 }; // time
+  // float baseGraphY3[6] = { 25, 150, 175, 210, 150, 50 }; // value
+
+  // // solderPaste[2] = ReflowGraph( "CHEMTOOLS S", "No Clean 63CR218 Sn63/Pb37", 183, baseGraphX3, baseGraphY3, ELEMENTS(baseGraphX3), 180, 210 );
+  // for(int i=0;i<numSamples;i++){
+  //   addPointSet(id,baseGraphX3[i],baseGraphY3[i],ssize,vsize);
+  // }
+
+  // tmin = 
+  // tmax = 
+
+  id = 2;
+  numSamples = 7;
+  resetGraphLine(id);    
+  float baseGraphX4[7] = { 1, 60-20, 120, 160, 210, 260, 310 }; // time
+  float baseGraphY4[7] = { 25, 105, 150, 150, 220, 150, 20 }; // value
+
+  // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
+  for(int i=0;i<numSamples;i++){
+    addPointSet(id,baseGraphX4[i],baseGraphY4[i],ssize,vsize);
+  }
+
+  id = 3;
+  numSamples = 7;
+  resetGraphLine(id);    
+  float baseGraphX5[7] = { 1, 60, 120, 160, 210, 260, 310 }; // time
+  float baseGraphY5[7] = { 25, 105, 150, 150, 220, 150, 20 }; // value
+
+  // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
+  for(int i=0;i<numSamples;i++){
+    addPointSet(id,baseGraphX5[i],baseGraphY5[i],ssize,vsize);
+  }
+
+  id = 4;
+  numSamples = 8; 
+  resetGraphLine(id);    
+  float baseGraphX6[8] = { 1, 20, 90, 120, 160, 210, 260, 310 }; // time
+  float baseGraphY6[8] = { 0, 0, 105, 150, 150, 220, 150, 20 }; // value
+
+  // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
+  for(int i=0;i<numSamples;i++){
+    addPointSet(id,baseGraphX6[i],baseGraphY6[i],ssize,vsize);
+  }
+
+  // id = 4;
+  // numSamples = 6;
+  // resetGraphLine(id);
+  // float baseGraphX5[6] = { 1,   90,  100,  160, 170, 200  }; // time
+  // float baseGraphY5[6] = { 25, 100, 110, 110, 100, 25 }; // value
+  // solderPaste[4] = ReflowGraph( "PLA", "Anneal 110C/30min", 110, baseGraphX5, baseGraphY5, ELEMENTS(baseGraphX5), 160, 170 );
+  // for(int i=0;i<numSamples;i++){
+  //   addPointSet(id,baseGraphX4[i],baseGraphY4[i],ssize,vsize);
+  // }
+
+  return;
+
+  // addPoint(tft,id, 0, 0 ,  0, 5, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point  
+  // setGraphLine(id,0,0);
+  for(int i=0;i<numSamples;i++){
+    // addPointSet(id,baseGraphX[i],baseGraph Y[i],ssize,vsize);
+  }
+}
+
+void setupGraph(){
+    init_graph(320,240-35,0,30); // x,y offsets handled automatically 
+    // testTraceScale();
+    // graphPaste();
+}
+
+void tft_set_footer_val1(String str = "0"){
+    // Serial.println("footer val1: " + str);
+    tft.setTextColor(WHITE,HC2);  
+    tft.setTextDatum(BL_DATUM);
+    tft.setTextPadding(15);
+    tft.drawString(str + "`c",5,TFT_WIDTH,4);
 }
 
 void tft_set_footer_val2(String str = "Status"){
@@ -610,15 +779,33 @@ void tft_set_footer_val2(String str = "Status"){
     tft.setTextDatum(BC_DATUM);
     tft.setTextPadding(10);
     // println_footer("",HC2);
-    tft.drawString("Status Message",TFT_HEIGHT/2,TFT_WIDTH-4,2);
+    tft.drawString(str,TFT_HEIGHT/2,TFT_WIDTH-4,2);
 }
 
-void tft_set_footer_val3(){
-  
+void tft_set_footer_val2_error(String str = "Status"){
+    tft.setTextColor(RED,HC2);  
+    tft.setTextDatum(BC_DATUM);
+    tft.setTextPadding(15);
+    // println_footer("",HC2);
+    tft.drawString(str,TFT_HEIGHT/2,TFT_WIDTH-4,2);
 }
 
-void tft_set_footer_val4(){
-  
+void tft_set_footer_val3(bool enable){
+    tft.setTextSize(1);
+    tft.setTextColor(enable?GREEN:DKGREY,HC2);  
+    tft.setTextDatum(TR_DATUM);
+    tft.drawString("FAN 1",TFT_HEIGHT-2,TFT_WIDTH-30,2);    
+    // tft.setTextDatum(BR_DATUM);
+    // tft.drawString("FAN 2",TFT_HEIGHT-2,TFT_WIDTH,2);  
+}
+
+void tft_set_footer_val4(bool enable){
+    tft.setTextSize(1);
+    tft.setTextColor(enable?GREEN:DKGREY,HC2);  
+    // tft.setTextDatum(TR_DATUM);
+    // tft.drawString("FAN 1",TFT_HEIGHT-2,TFT_WIDTH-30,2);    
+    tft.setTextDatum(BR_DATUM);
+    tft.drawString("FAN 2",TFT_HEIGHT-2,TFT_WIDTH,2);    
 }
 
 int fpsmicros = millis();
@@ -643,7 +830,7 @@ void tft_footer_val1(){
 
 
 void displayFPS(){
-    tft_footer_val1();
+    // tft_footer_val1();
     return;
     tft.setTextSize(2);
     tft.setTextColor(WHITE,HC2);
@@ -663,5 +850,6 @@ void displayFPS(){
 
 // float smoothing = 0.9; // larger=more smoothing
 // measurement = (measurement * smoothing) + (current * (1.0-smoothing))
+
 
 #endif

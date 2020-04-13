@@ -9,6 +9,7 @@ bool DEBUG_ssr = false;
 #endif
 
 float currentDuty = 0;
+bool invertDuty = true; // invert logic vcc range
 
 int round_f(float x){
   return (int)round(x);
@@ -33,27 +34,30 @@ void ssr_init(){
 void SetSSRFrequency( int duty,int power =1)
 {
   // calculate the wanted duty based on settings power override
-  currentDuty = ((float)duty * power );
-  currentDuty = constrain( round_f( currentDuty ), 0, 255);
-  currentDuty = 255-currentDuty; // invert
-  currentDuty = abs(currentDuty);
+  duty = ((float)duty * power ); // power adjust
+  duty = constrain( round_f( duty ), 0, 255); // round and clamp
+  duty = abs(duty); // convert to whole
 
   // Write the clamped duty cycle to the RELAYPIN GPIO    
-  analogWrite( RELAYPIN, currentDuty );
+  analogWrite( RELAYPIN, invertDuty ? 255-duty : duty );
   
-  // #ifdef DEBUG
   if(duty!=currentDuty){
-    // if(DEBUG_ssr) Serial.println("[SSR] " + (String)currentDuty);
+    // if(DEBUG_ssr) Serial.println("[SSR] " + (String)duty);
     if(duty<1 && DEBUG_ssr) Serial.println("[SSR]: OFF");
     else{
       if(DEBUG_ssr) Serial.print("[SSR] ON");
-      if(DEBUG_ssr) Serial.println( " - duty: " + (String)currentDuty + " " + String( ( currentDuty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );
+      if(DEBUG_ssr) Serial.println( " - duty: " + (String)duty + " " + String( ( duty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );
     }
   }
+  currentDuty = duty;  
 }
 
 void SetRelayFrequency(int duty){
   SetSSRFrequency(duty);
+}
+
+float getSSRDuty(){
+  return currentDuty;
 }
 
 void ssrTest(){

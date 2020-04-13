@@ -3,6 +3,7 @@
 
 #include <motor.h>
 #include <ssr.h>
+#include <pid.h>
 
 // HardwareSerial DebugOut = Serial;
 // HardwareSerial DebugOut(0);
@@ -34,6 +35,7 @@ void recvChar(void) {
       cmd_complete = true;
       Serial.print("received '"); Serial.print(cmd); Serial.println("'");
     }
+    delay(0);
   }
 }
 
@@ -165,6 +167,14 @@ void process_command(){
     if(DEBUG_SERIALCMD) DebugOut.print(F("[SSR] duty:") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     SetSSRFrequency((int)arg);
+  }
+
+  if (strncmp(cmd,"temp ",5) == 0) {
+    uint32_t arg = (uint32_t)atoi(cmd + 5);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[TEMP] set:") );
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    wantedTemp = (int)arg;
+    MatchTemp();
   }
 
   if (strncmp(cmd,"a0 ",3) == 0) {
