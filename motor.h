@@ -5,9 +5,9 @@ bool DEBUG_motor = true;
 
 bool motorChange = false;
 int motorDir     = 0; // 0=off, 1=Forward, 2=reverse
-int motorpinA    = 3;
-int motorpinB    = 4;
-int motorInt     = 7;
+int motorpinA    = 3; // PCF PIN
+int motorpinB    = 4; // PCF PIN
+int motorInt     = 7; // PCF PIN
 int stallcnt = 0;
 
 int motor_lastmicros = 0; 

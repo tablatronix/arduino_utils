@@ -164,30 +164,39 @@ void process_command(){
 
   if (strncmp(cmd,"ssr ",4) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 4);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("[SSR] duty:") );
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[CMD] [SSR] duty:") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     SetSSRFrequency((int)arg);
   }
 
   if (strncmp(cmd,"temp ",5) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 5);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("[TEMP] set:") );
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[CMD] [TEMP] set:") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     wantedTemp = (int)arg;
+    Serial.println("[ERROR] START PID : " + (String)wantedTemp);
     MatchTemp();
   }
 
   if (strncmp(cmd,"a0 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 3);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("[ANALOG] duty:") );
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[CMD] [ANALOG] duty:") );
     if(DEBUG_SERIALCMD) DebugOut.println((int)arg);
     analogWrite(16,(int)(arg));
   }
 
   if (strncmp(cmd,"debug",5) == 0) {
     debug_serialcmd = !debug_serialcmd;
-    if(DEBUG_SERIALCMD) DebugOut.print("[DEBUG]:" + (String)(debug_serialcmd?"ON":"OFF"));
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] [DEBUG]:" + (String)(debug_serialcmd?"ON":"OFF"));
   }
+
+  if (strncmp(cmd,"pidtune ",8) == 0) {
+    uint32_t arg = (uint32_t)atoi(cmd + 8); 
+    targetInputValue = (float)(int)arg;
+    if(DEBUG_SERIALCMD) DebugOut.print("[DEBUG]: AUTOTUNING PID " + (String)arg);
+    init_pidtune();
+  }
+
 
   cmd[0] = '\0';         // reset the commandstring
   cmd_complete = false;  // reset command complete 

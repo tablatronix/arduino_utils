@@ -7,15 +7,33 @@
 #include <IoAbstraction.h>
 #include <IoAbstractionWire.h>
 
-const int interruptPin = 3; // interrupt for io expander
+const int interruptPin = 3; // Real interrupt for io expander
 const int encoderSWPin = 0;
 const int encoderAPin  = 1;
 const int encoderBPin  = 2;
 const int maximumEncoderValue = 128;
 int encoderLast  = 0;
-int encoderCount = 0;
+
+// int encoderNew   = 0;
+// int encoderDir   = 0;
+// int encoderCount = 0;
+// bool encoderHasChange = false;;
 
 volatile bool PCFInterruptFlag = false;
+
+//
+// Each time the encoder value changes, this function runs, as we registered it as a callback
+//
+void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
+  Serial.print("[ENCODER] change to ");
+  Serial.print(newValue);
+  Serial.print(" from ");
+  Serial.print(encoderLast);
+  if(encoderLast == newValue) return;
+  bool dir = (encoderLast > newValue);
+  Serial.println(" dir: " + String(dir ? "CC" : "CW")); // for plotting
+  encoderLast = newValue;
+}
 
 //
 // When the spinwheel is clicked, this function will be run as we registered it as a callback
@@ -25,13 +43,12 @@ void onEncoderSWPressed(uint8_t pin, bool heldDown) {
   Serial.println(heldDown ? "Held" : "Pressed");
 }
 
-
 void setEncoderAccel(HWAccelerationMode accel){
   HardwareRotaryEncoder* hwEncoder = reinterpret_cast<HardwareRotaryEncoder*>(switches.getEncoder());
   hwEncoder->setAccelerationMode(accel);
 }
 
-void ICACHE_RAM_ATTR onInterrupt(uint8_t bits) {
+void ICACHE_RAM_ATTR onInterruptB(uint8_t bits) {
     Serial.print("[INT] Interrupt triggered");
     Serial.print("  Interrupt was ");
     Serial.println(bits);  
@@ -51,17 +68,23 @@ void init_buttons(){
   ioDevicePinMode(switches.getIoAbstraction(), fanCpin,   OUTPUT);
   ioDevicePinMode(switches.getIoAbstraction(), fanDpin,   OUTPUT);
 
+  ioDevicePinMode(switches.getIoAbstraction(), encoderAPin, INPUT);
+  ioDevicePinMode(switches.getIoAbstraction(), encoderBPin, INPUT);
+
   switches.addSwitch(motorInt, onFeedback); // stall feedback
   switches.addSwitch(encoderSWPin, onEncoderSWPressed); // encoder button press
 
   encoderLast = 0;
-  // setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
+  setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
+  switches.changeEncoderPrecision(maximumEncoderValue, 0); // REQUIRED!!!!!
+ 
+  // firstEncoder->setAccelerationMode(HWACCEL_SLOWER); // acceleration mode
+
+  // alt encocder setup
   // HardwareRotaryEncoder* firstEncoder = new HardwareRotaryEncoder(encoderAPin, encoderBPin, onEncoderChange);
   // switches.setEncoder(0, firstEncoder);
-  // switches.getEncoder()->setAccelerationMode(HWACCEL_SLOWER); 
-  // switches.changeEncoderPrecision(maximumEncoderValue, 100);
-  switches.changeEncoderPrecision(maximumEncoderValue,encoderLast);
-  // firstEncoder->setAccelerationMode(HWACCEL_SLOWER); // acceleration mode
+  
+  // interrupt for any
   // taskManager.setInterruptCallback(onInterrupt);
 }
 

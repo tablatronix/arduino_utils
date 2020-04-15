@@ -1,3 +1,5 @@
+#ifndef ntc_h
+#define ntc_h
 
 #include "thermistor.h"
 /** 
@@ -30,7 +32,7 @@ THERMISTOR thermistor(NTC_PIN,        // Analog pin
                       100000);         // Value of the series resistor
 
 // Global temperature reading
-int ntc_temp;
+float ntc_temp;
 
 
 /**
@@ -43,7 +45,7 @@ void init_ntc()
 
 }
 
-int get_ntc(){
+float get_ntc(){
   return ntc_temp;
 }
 
@@ -63,6 +65,8 @@ void read_ntc()
 
 void printNTC(){
   read_ntc();
-  int tempf = (((ntc_temp/10)*1.8)+32);
+  float tempf = (((ntc_temp/10)*1.8)+32);
   Serial.println("[NTC]: " + (String)(get_ntc()/10) + "ºC " + tempf + "ºF");	
 }
+
+#endif

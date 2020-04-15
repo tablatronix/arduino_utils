@@ -18,10 +18,9 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	palevioletred	#DB7093	rgb(219,112,147)
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
-#define INDBRIGHTNESS 255
+#define INDBRIGHTNESS 180
 
 bool INDPINRESET = false;
-
 
 void init_indicator(uint16_t pin){
   ind.setPin(pin);
@@ -29,8 +28,6 @@ void init_indicator(uint16_t pin){
   ind.updateLength(3);
   ind.updateType(NEO_GRB + NEO_KHZ800);
   ind.begin();
-  // ind.setPixelColor(0,255,20,147); // pink
-  ind.setPixelColor(0,255,90,0); // orange
   ind.show();
   ind.show();
 	delay(1);
@@ -44,12 +41,21 @@ void indSetColor(uint32_t c){
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset 
 }
 
+// alias
+void setIndColor(uint32_t c){
+  indSetColor(c);
+}
+
 void indSetColor(uint8_t r,uint8_t g,uint8_t b){
   if(DEBUG_neoind)Serial.println("[IND] set ind color:");    
   ind.setPixelColor(0,r,g,b);
 	ind.show();
   delay(1);
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
+}
+
+void setIndColor(uint8_t r,uint8_t g,uint8_t b){
+  indSetColor(r,g,b);
 }
 
 void stop_indicator(){
