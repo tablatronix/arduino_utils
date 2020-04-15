@@ -34,18 +34,21 @@ int tempSampleRate            = 1000; // how often to sample temperature when id
 Statistics stats(6); // init stats for avg
 
 // Runtime reflow variables
-float currentTemp    = 0;
+float currentTemp    = 0; // current real temp
 float currentTempB   = 0; // alt thermocouple
-float currentTempAvg = 0;
+float currentTempAvg = 0; // current avg temp (avgSamples) mean
 float internalTemp   = 0;  // cold junction
 float currentTempCorr = 0; // linearized k type
 
 float lastTemp       = -1;
 bool tcWarn          = false; // stop and show error if a tc issue is detected
-float maxT;
-float minT;
+float maxT; // highest temp in window (tempSampleRate)
+float minT; // lowest temp in window (tempSampleRate)
 
-uint8_t lastTCStatus = 0;
+uint8_t lastTCStatus = 0; // last error status
+uint16_t numerrors = 0;  // counter for failures
+uint16_t numfailwarn = 10; // how many failures in window
+uint16_t numfailwindow  = 10; // num seconds to compare
 
 // max31855 error states
 #define STATUS_OK               0x00
@@ -92,13 +95,17 @@ void ReadCurrentTemp()
   // Serial.println( status );
   #endif
   if(useInternal){
+    // use internal cj as real temp, useful for testing without tc or monitoring pcb etc
   	internalTemp = tc.readInternal();
   	currentTemp = internalTemp + tempOffset;
-  }	
+  }
   else {
+    // sanity check
+    // @todo replace with sanitycheck
     double readC = tc.readCelsius();
     if(isnan(readC) || readC < 0 || readC > 700){
       Serial.println("[ERROR] TC OUT OF RANGE, skipping " + (String)readC);
+      numerrors++;
       return;
     }
 
@@ -115,8 +122,7 @@ void ReadCurrentTemp()
 }
 
 String getTcStatus(){
-  // tc.read();
-  uint8_t tcStatus = tc.readError();
+  uint8_t tcStatus = lastTCStatus;
   if(tcStatus == STATUS_OK) return "OK";
   else if(tcStatus == STATUS_OPEN_CIRCUIT) return "Open";
   else if(tcStatus == STATUS_SHORT_TO_GND) return "GND Short";
@@ -126,24 +132,19 @@ String getTcStatus(){
 }
 
 void resetDev(){
-  maxT = minT = currentTemp;  
+  maxT = minT = currentTempAvg; // @otdo convert to rolling real dev
+  numerrors = 0; // for now do this here
 }
 
 // MAIN UPDATER SCHDULER
+// @todo consolidate into single cleaner functions
 void updateTemps(){
-    read_ntc();
-	// @todo use timer instead, actually itmust be in sync with main poll, until I have a circular buffer
-    if ( nextTempRead < millis() ) // we only read the probe every second
-    {
-      nextTempRead = millis() + tempSampleRate;
-      resetDev();
-    }
-    
+    read_ntc(); // external lib!
     internalTemp = tc.readInternal(); 
     ReadCurrentTemp();
 	  // Serial.println("deviation: " + (String)(maxT-minT));
-    if(currentTemp>maxT) maxT = currentTemp;
-    if(currentTemp<minT) minT = currentTemp;
+    if(currentTempAvg>maxT) maxT = currentTempAvg;
+    if(currentTempAvg<minT) minT = currentTempAvg;
     // Serial.println(minT);
     // Serial.println(maxT);
 }
@@ -155,7 +156,10 @@ float readTCDev(){
 }
 
 float getTCDev(){
-  return (maxT-minT);
+  float dev = stats.stdDeviation(); // @todo check for nan
+  if(isnan(dev)) Serial.println("[ERROR] stats dev NAN");
+  return isnan(dev) ? 0 : dev;
+  // return (maxT-minT);
 }
 
 bool TCSanityCheck(){
@@ -167,21 +171,20 @@ bool TCSanityCheck(){
 }
 
 float readFahrenheit(){
-  return (currentTemp*1.8)+32;
+  return (currentTempAvg*1.8)+32;
 }
 
 void printTC(){
 	updateTemps();
   	int tempf = readFahrenheit();
-	Serial.print("[TC] TC1: " + String( round_f( currentTemp ) )+"ºC " + tempf + "ºF");
+	Serial.print("[TC] TC1: " + String(( currentTempAvg ))+"ºC " + tempf + "ºF");
   	tempf = (((internalTemp)*1.8)+32);
 	Serial.print(" CJ: " + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
-    tempf = (((getTCDev())*1.8)+32);
-  Serial.print(" Dev: " + String( round_f( getTCDev() ) )+"ºC " + tempf + "ºF");
-  Serial.print(" Mean: ");
-  Serial.print(stats.mean());
-  // Serial.print(" Std Dev: ");
-  // Serial.print(stats.stdDeviation()); 
+  Serial.print(" Dev: " + String( round_f( getTCDev() ) )+"ºC ");
+  Serial.print(" Raw: ");
+  Serial.print(currentTempAvg);
+  // Serial.print(" Dev: ");
+  // Serial.print(stats.stdDeviation());
   // Serial.print(" TCLIN: ");
   // Serial.print(currentTempCorr);
   Serial.print(" NTC: ");
