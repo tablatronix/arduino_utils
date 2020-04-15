@@ -44,8 +44,8 @@ void init_pidtune(){
     // Set it to either PIDAutotuner::ZNModeBasicPID, PIDAutotuner::ZNModeLessOvershoot,
     // or PIDAutotuner::ZNModeNoOvershoot. Test with ZNModeBasicPID first, but if there
     // is too much overshoot you can try the others.
-    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
-    // tuner.setZNMode(PIDAutotuner::ZNModeLessOvershoot);
+    // tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+    tuner.setZNMode(PIDAutotuner::ZNModeLessOvershoot);
     // tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
 
     // This must be called immediately before the tuning loop

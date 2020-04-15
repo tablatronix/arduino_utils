@@ -3,42 +3,51 @@
 
 #include <max31855.h>
 #include <pidtune.h>
-#include <FastPID.h>
+// #include <FastPID.h>
+#include <PID_v1.h> // https://github.com/br3ttb/Arduino-PID-Library
 
 // [PIDTUNE] COMPLETE
 // P 97.403
 // I 3.142
 // D 754.980
 
-float wantedTemp = -1;
-float currentDelta = 0;
-bool isCuttoff = false;
-bool isFanOn = false;
+// 11.6979
+// 0.0234
+// 1468.5591
+// da fuq?
+
+float wantedTemp     = -1;
+float currentDelta   = 0;
+bool isCuttoff       = false;
+bool isFanOn         = false;
 float lastWantedTemp = -1;
 
-bool DEBUG_pid = false;
+bool DEBUG_pid       = false;
 
-// FastPID myPID;
-  float Kp=0.01, Ki=0.5, Kd=0, Hz=10;
-  int output_bits = 1;
-  bool output_signed = false;
-  FastPID myPID(Kp, Ki, Kd, Hz, output_bits, output_signed); 
-  bool res = myPID.setOutputRange(0, 255);
+//Define Variables we'll be connecting to
+double Setpoint, Input, Output;
+
+//Specify the links and initial tuning parameters
+double Kp=3, Ki=0, Kd=1; // P+1
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+// PID myPID(&currentTempAvg, &pidduty, &wantedTemp, Kp, Ki, Kd, DIRECT);
 
 void init_PID(){
   // float Kp=97.403, Ki=3.142, Kd=754.9, Hz=10;
   Serial.println("[PID] init");
-  if(!res) Serial.println("[ERROR] init FAILED (outputrange)");
-  if(myPID.err()) Serial.println("[ERROR] init FAILED (construct)");
+  myPID.SetMode(AUTOMATIC);
+  // myPid.SetOutputLimits();
+  // if(!res) Serial.println("[ERROR] init FAILED (outputrange)");
+  // if(myPID.err()) Serial.println("[ERROR] init FAILED (construct)");
 }
 
 void run_PID(){
-  uint16_t setpoint   = (uint16_t)wantedTemp;
-  uint16_t feedback   = (uint16_t)currentTempAvg;
-  int16_t output = myPID.step(setpoint, feedback);
-  Serial.print("-");
-  Serial.print(output);
-  SetRelayFrequency(output);
+  myPID.Compute();
+  Setpoint = (double)wantedTemp;
+  Input = (double)currentTempAvg;
+  // Serial.print("-");
+  // Serial.print(Output);
+  SetRelayFrequency(Output);
 }
 
 // void MatchTemp_init(int temp){
@@ -48,7 +57,8 @@ void run_PID(){
 
 void MatchTemp()
 {
-  Serial.print(".");
+  updateTemps();
+  // Serial.print(".");
   run_PID();
   return;
   float duty = 0;
