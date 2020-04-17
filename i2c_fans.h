@@ -89,6 +89,7 @@ int getFanStatus(int id){
   if(id==5) return fan_5_status;
 }
 
+// @ todo clamp perc, map to voltage range
 void fanA(int perc){
   setFanStatus(1,perc);
 	int value = constrain(percvalue*perc,0,4095);
@@ -97,9 +98,9 @@ void fanA(int perc){
 }
 
 void fanB(int perc){
-  setFanStatus(2,perc); 
+  setFanStatus(2,perc);
 	int value = constrain(percvalue*perc,0,4095);
-  	dacb.setVoltage(value, false);	
+  	dacb.setVoltage(value, false);
 	if(DEBUG_i2c_fans) Serial.println("[FAN] 2 " + (String)perc +"% -" + value);
 }
 

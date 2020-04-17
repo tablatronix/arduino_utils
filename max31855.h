@@ -5,7 +5,7 @@
 #include "Adafruit_MAX31855.h" // Seperate calls for spiread for each function, no raw bit cache!
 #include <ktypelinear.h>
 // #include <quickstats.h>
-#include <Statistics.h>
+#include <Statistics.h> // https://github.com/provideyourown/statistics
 #include <ntc.h>
 
 // NODEMCU hspi
@@ -31,7 +31,7 @@ int avgReadCount              = 0; // running avg
 int avgSamples                = 10;   // 1 to disable averaging
 int tempSampleRate            = 1000; // how often to sample temperature when idle
 
-Statistics stats(6); // init stats for avg
+Statistics stats(3); // init stats for avg
 
 // Runtime reflow variables
 float currentTemp    = 0; // current real temp
@@ -113,7 +113,7 @@ void ReadCurrentTemp()
     currentTemp = readC + tempOffset;
 
     // average
-    stats.addData(currentTemp);
+    stats.addData((float)currentTemp);
     currentTempAvg = stats.mean();
     
     // linearized
@@ -139,6 +139,7 @@ void resetDev(){
 // MAIN UPDATER SCHDULER
 // @todo consolidate into single cleaner functions
 void updateTemps(){
+    digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
     read_ntc(); // external lib!
     internalTemp = tc.readInternal(); 
     ReadCurrentTemp();
@@ -156,7 +157,7 @@ float readTCDev(){
 }
 
 float getTCDev(){
-  float dev = stats.stdDeviation(); // @todo check for nan
+  float dev = stats.stdDeviation(); // @todo find cause of NAN errors
   if(isnan(dev)) Serial.println("[ERROR] stats dev NAN");
   return isnan(dev) ? 0 : dev;
   // return (maxT-minT);
@@ -180,7 +181,7 @@ void printTC(){
 	Serial.print("[TC] TC1: " + String(( currentTempAvg ))+"ºC " + tempf + "ºF");
   	tempf = (((internalTemp)*1.8)+32);
 	Serial.print(" CJ: " + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
-  Serial.print(" Dev: " + String( round_f( getTCDev() ) )+"ºC ");
+  Serial.print(" Dev: " + String( round_f( getTCDev() ) )+"ºC");
   Serial.print(" Raw: ");
   Serial.print(currentTempAvg);
   // Serial.print(" Dev: ");

@@ -4,6 +4,7 @@
 #include <motor.h>
 #include <ssr.h>
 #include <pid.h>
+#include <reflow.h>
 
 // HardwareSerial DebugOut = Serial;
 // HardwareSerial DebugOut(0);
@@ -109,21 +110,18 @@ void process_command(){
     fanDEnable((int)arg == 1);
   }
 
-  if (strncmp(cmd,"mo ",3) == 0) {
-    uint32_t arg = (uint32_t)atoi(cmd + 2);
+  if (strncmp(cmd,"mo",2) == 0) {
     if(DEBUG_SERIALCMD) DebugOut.print(F("Motor OFF: ") );
-    if(DEBUG_SERIALCMD) DebugOut.println(arg);
-    doMotor(0,(int)arg);
   }
 
-  if (strncmp(cmd,"mf ",3) == 0) {
+  if (strncmp(cmd,"mf",2) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Motor ON F: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     doMotor(1,(int)arg);
   }
 
-  if (strncmp(cmd,"mr ",3) == 0) {
+  if (strncmp(cmd,"mr",2) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Motor ON R: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
@@ -137,16 +135,28 @@ void process_command(){
     // analogWriteFreq(arg); // confirm ?
   }
 
-  if (strncmp(cmd,"A",2) == 0) {
+  if (strncmp(cmd,"A",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Abort") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
   }
 
-  if (strncmp(cmd,"R",2) == 0) {
+  if (strncmp(cmd,"R",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("REFLOW") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
+  }
+
+  if (strncmp(cmd,"C",1) == 0) {
+    uint8_t arg = (uint8_t)atoi(cmd + 2);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("COOLDOWN") );
+    coolDown();
+  }
+
+  if (strncmp(cmd,"S",1) == 0) {
+    uint8_t arg = (uint8_t)atoi(cmd + 2);
+    if(DEBUG_SERIALCMD) DebugOut.print(F("COOLDOWN") );
+    sleep();
   }
 
   if (strncmp(cmd,"B ",2) == 0) {
@@ -155,7 +165,7 @@ void process_command(){
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
   }
 
-  if (strncmp(cmd,"X ",2) == 0) {
+  if (strncmp(cmd,"X",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("REBOOT") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);

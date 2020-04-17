@@ -766,20 +766,26 @@ void setupGraph(){
     // graphPaste();
 }
 
-void tft_set_footer_val1(String str = "0"){
+void tft_set_footer_val1(float str = 0){
     // Serial.println("footer val1: " + str);
     tft.setTextColor(WHITE,HC2);  
     tft.setTextDatum(BL_DATUM);
-    tft.setTextPadding(15);
-    tft.drawString(str + "`c",5,TFT_WIDTH,4);
+    int lpad = 5;
+    tft.setTextPadding(90);
+    lpad = tft.drawFloat((float)str,1,lpad,TFT_WIDTH,4); // 63
+    tft.setTextPadding(0);
+    lpad += tft.drawString("`c",lpad+6,TFT_WIDTH,4); // 22
+    Serial.println(lpad);
 }
 
 void tft_set_footer_val2(String str = "Status"){
-    tft.setTextColor(GREY,HC2);  
+    // str = "ABCDEFGHIJKLMNOPQRS"; // 19 characters
+    str = "Millis: "+(String)millis()+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
+    tft.setTextColor(GREY,HC2);
     tft.setTextDatum(BC_DATUM);
-    tft.setTextPadding(10);
+    tft.setTextPadding(150);
     // println_footer("",HC2);
-    tft.drawString(str,TFT_HEIGHT/2,TFT_WIDTH-4,2);
+    tft.drawString(str,(TFT_HEIGHT/2)+10,TFT_WIDTH-4,2);
 }
 
 void tft_set_footer_val2_error(String str = "Status"){
@@ -787,7 +793,7 @@ void tft_set_footer_val2_error(String str = "Status"){
     tft.setTextDatum(BC_DATUM);
     tft.setTextPadding(15);
     // println_footer("",HC2);
-    tft.drawString(str,TFT_HEIGHT/2,TFT_WIDTH-4,2);
+    tft.drawString("str",TFT_HEIGHT/2,TFT_WIDTH-4,2);
 }
 
 void tft_set_footer_val3(bool enable){

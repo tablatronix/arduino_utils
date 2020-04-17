@@ -108,9 +108,9 @@
 using RM_tft = TFT_eSPI;
 RM_tft tft = RM_tft();
 
-#define TFT_CS   PIN_D8  // Chip select control pin D8
-#define TFT_DC   PIN_D3  // Data Command control pin
-#define TFT_RST  PIN_D4  // Reset pin (could connect to NodeMCU RST, see next line)
+// #define TFT_CS   -1  // Chip select control pin D8
+// #define TFT_DC   0  // Data Command control pin
+// #define TFT_RST  -1  // Reset pin (could connect to NodeMCU RST, see next line)
 
 char* string2char(String command)
 {
@@ -272,15 +272,18 @@ void setAlertMode(int mode = 0){
 	// drawOverlay(colorB);
 }
 
-void tft_init(){
-  Serial.println("[TFT] Starting tft"); 
-  tft.init();
-  tft.setRotation(3);
+void tft_clear(){
   tft.fillScreen(GRAPHBG);
   println_header("HEADER",HC1);
   tft.drawFastHLine(0, 30, tft.width(), BGCOLOR);  
   println_footer("",HC2);
   tft.drawFastHLine(0, tft.height()-30, tft.width(), BGCOLOR);  
+}
+
+void tft_init(){
+  Serial.println("[TFT] Starting tft"); 
+  tft.init();
+  tft.setRotation(3);
 }
 
 void tftDispCenter(){

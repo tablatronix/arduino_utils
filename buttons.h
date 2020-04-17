@@ -14,16 +14,8 @@ const int encoderBPin  = 2;
 const int maximumEncoderValue = 128;
 int encoderLast  = 0;
 
-// int encoderNew   = 0;
-// int encoderDir   = 0;
-// int encoderCount = 0;
-// bool encoderHasChange = false;;
-
 volatile bool PCFInterruptFlag = false;
 
-//
-// Each time the encoder value changes, this function runs, as we registered it as a callback
-//
 void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
   Serial.print("[ENCODER] change to ");
   Serial.print(newValue);
@@ -35,24 +27,29 @@ void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
   encoderLast = newValue;
 }
 
-//
-// When the spinwheel is clicked, this function will be run as we registered it as a callback
-//
-void onEncoderSWPressed(uint8_t pin, bool heldDown) {
+void ICACHE_RAM_ATTR onEncoderSWPressed(uint8_t pin, bool heldDown) {
   Serial.print("[ENCODER] Button ");
   Serial.println(heldDown ? "Held" : "Pressed");
 }
 
-void setEncoderAccel(HWAccelerationMode accel){
-  HardwareRotaryEncoder* hwEncoder = reinterpret_cast<HardwareRotaryEncoder*>(switches.getEncoder());
-  hwEncoder->setAccelerationMode(accel);
+void ICACHE_RAM_ATTR onFeedbackB(uint8_t pin, bool heldDown) {
+  Serial.print("[ENCODER] MOTOR FEEDBACK ");
+  Serial.println(heldDown ? "Held" : "Pressed");
 }
 
 void ICACHE_RAM_ATTR onInterruptB(uint8_t bits) {
-    Serial.print("[INT] Interrupt triggered");
     Serial.print("  Interrupt was ");
     Serial.println(bits);  
   	PCFInterruptFlag = true;
+}
+
+// adjust the encoder acceleraton
+// HWACCEL_FAST
+// HWACCEL_SLOWER
+// HWACCEL_NONE
+void setEncoderAccel(HWAccelerationMode accel){
+  HardwareRotaryEncoder* hwEncoder = reinterpret_cast<HardwareRotaryEncoder*>(switches.getEncoder());
+  hwEncoder->setAccelerationMode(accel);
 }
 
 void init_buttons(){
@@ -61,31 +58,42 @@ void init_buttons(){
   // the second parameter is a flag to use pull up switching, (true is pull up).
   switches.initialiseInterrupt(ioFrom8574(0x20, interruptPin), true);
 
-  // ioDevicePinMode(switches.getIoAbstraction(), ledPin,    OUTPUT);
+  // motor driver DRV8333
   ioDevicePinMode(switches.getIoAbstraction(), motorpinA, OUTPUT);
   ioDevicePinMode(switches.getIoAbstraction(), motorpinB, OUTPUT);
-  ioDevicePinMode(switches.getIoAbstraction(), motorInt,  INPUT);
-  ioDevicePinMode(switches.getIoAbstraction(), fanCpin,   OUTPUT);
-  ioDevicePinMode(switches.getIoAbstraction(), fanDpin,   OUTPUT);
+  // ioDevicePinMode(switches.getIoAbstraction(), 7,  INPUT); // interrupt for motor stall
+  switches.addSwitch(motorInt, onFeedback); // stall feedback
 
+  // transistor sink
+  ioDevicePinMode(switches.getIoAbstraction(), fanCpin,   OUTPUT); // ssr fan stage 1
+  ioDevicePinMode(switches.getIoAbstraction(), fanDpin,   OUTPUT); // ssr fan stage 2
+
+  // encoder
   ioDevicePinMode(switches.getIoAbstraction(), encoderAPin, INPUT);
   ioDevicePinMode(switches.getIoAbstraction(), encoderBPin, INPUT);
-
-  switches.addSwitch(motorInt, onFeedback); // stall feedback
   switches.addSwitch(encoderSWPin, onEncoderSWPressed); // encoder button press
-
+  // init
   encoderLast = 0;
   setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
   switches.changeEncoderPrecision(maximumEncoderValue, 0); // REQUIRED!!!!!
- 
-  // firstEncoder->setAccelerationMode(HWACCEL_SLOWER); // acceleration mode
+
 
   // alt encocder setup
   // HardwareRotaryEncoder* firstEncoder = new HardwareRotaryEncoder(encoderAPin, encoderBPin, onEncoderChange);
   // switches.setEncoder(0, firstEncoder);
+  // firstEncoder->setAccelerationMode(HWACCEL_SLOWER); // acceleration mode
   
   // interrupt for any
   // taskManager.setInterruptCallback(onInterrupt);
 }
 
+  // IoAbstractionRef iodev = switches.getIoAbstraction();
+  // iodev->pinDirection(7,OUTPUT);
+  // bool res = iodev->runLoop();
+  // if(res!=1) Serial.println("devsync: " + (String)res);
+  // taskManager.runLoop();
+  // if(!res){
+  //   Serial.println("error");
+  //   delay(500);
+  // }
 #endif

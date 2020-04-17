@@ -8,7 +8,9 @@ int motorDir     = 0; // 0=off, 1=Forward, 2=reverse
 int motorpinA    = 3; // PCF PIN
 int motorpinB    = 4; // PCF PIN
 int motorInt     = 7; // PCF PIN
-int stallcnt = 0;
+
+int stallcnt     = 0;
+int stallReset   = 500000;
 
 int motor_lastmicros = 0; 
 
@@ -46,13 +48,14 @@ void motorPulse(int dir,int count,int dur,int delayms){
   }
 }
 
-void onFeedback(uint8_t pin, bool heldDown) {
+void ICACHE_RAM_ATTR onFeedback(uint8_t pin, bool heldDown) {
   // first time in a while reset stallcount
   if(micros()-motor_lastmicros > 500000 ){
     stallcnt = 1; // reset stall check, timeout
   }
 
-  if(DEBUG_motor)Serial.println("[MOTOR]: OVERCURRENT DETECTED: " + (String)stallcnt + " " + (String)((micros()-motor_lastmicros)/10000) + "ms" );
+  // if(DEBUG_motor)
+  Serial.println("[MOTOR]: OVERCURRENT DETECTED: " + (String)stallcnt + " " + (String)((micros()-motor_lastmicros)/10000) + "ms" );
   // if(DEBUG_motor)Serial.println(heldDown ? "STALLED" : " ignoring");
 
 bool stalldetect    = true;
