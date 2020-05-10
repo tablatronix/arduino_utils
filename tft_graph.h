@@ -2,10 +2,14 @@
 #define tft_graph_h
 
 bool DEBUG_POINT = false;
+bool debug_box = false;
 
 #include "Free_Fonts.h" // Include the header file attached to this sketch
 // #include "NotoSansBold15.h"
 // #include "NotoSansBold36.h"
+
+#include "InterpolationLib.h"
+
 
 // // The font names are arrays references, thus must NOT be in quotes ""
 // #define AA_FONT_SMALL NotoSansBold15
@@ -37,11 +41,15 @@ double ox_3 = -999, oy_3 = -999; // Force them to be off screen
 double ox_4 = -999, oy_4 = -999; // Force them to be off screen
 double ox_5 = -999, oy_5 = -999; // Force them to be off screen
 double ox_6 = -999, oy_6 = -999; // Force them to be off screen
+double ox_7 = -999, oy_7 = -999; // Force them to be off screen
+double ox_8 = -999, oy_8 = -999; // Force them to be off screen
+double ox_9 = -999, oy_9 = -999; // Force them to be off screen
 
 double _w,_h,_gx,_gy;
 
 void setGraphLine(int id, double valueX,double valueY);
 double getGraphLine(int id,int param);
+
 
 /*
 
@@ -302,7 +310,7 @@ void Trace(RM_tft &tft, int id, double x,  double y,  byte dp,
 void addPoint(RM_tft &tft, int id, double x,  double y,
            double xlo, double xhi,
            double ylo, double yhi,
-           unsigned int pcolor)
+           unsigned int pcolor, int size = 0)
 {
 
   if(DEBUG_POINT){
@@ -350,7 +358,7 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
   tft.drawLine(ox, oy, x, y, pcolor); // STILL DOUBLE!
 
   // drawing 2 more lines to give the graph some thickness
-  if(doubleLine){
+  if(size>0){
     tft.drawLine(ox, oy + 1, x, y + 1, pcolor);
     tft.drawLine(ox, oy - 1, x, y - 1, pcolor);
   }
@@ -398,7 +406,19 @@ double getGraphLine(int id,int param){
     if(param == 0) return ox_6;
     if(param == 1) return oy_6;  
     break;
-  }
+  case 7:
+    if(param == 0) return ox_7;
+    if(param == 1) return oy_7;  
+    break;
+  case 8:
+    if(param == 0) return ox_8;
+    if(param == 1) return oy_8;  
+    break;
+  case 9:
+    if(param == 0) return ox_9;
+    if(param == 1) return oy_9;  
+    break;
+   }
 }
 
 
@@ -422,7 +442,7 @@ unsigned int getLineColor(int id,int param){
     if(param == 1) return oy_3;  
     break;
   case 4:
-    if(param == 0) return GREY;
+    if(param == 0) return GREENYELLOW;
     if(param == 1) return oy_4;  
     break;
   case 5:
@@ -432,6 +452,18 @@ unsigned int getLineColor(int id,int param){
   case 6:
     if(param == 0) return PURPLE;
     if(param == 1) return oy_6;  
+    break;
+    case 7:
+    if(param == 0) return MAGENTA;
+    if(param == 1) return oy_7;  
+    break;
+    case 8:
+    if(param == 0) return CYAN;
+    if(param == 1) return oy_8;  
+    break;
+    case 9:
+    if(param == 0) return PINK;
+    if(param == 1) return oy_9;  
     break;
   }
 }
@@ -458,6 +490,15 @@ void setGraphLine(int id, double valueX, double valueY){
     break;
   case 6:
     ox_6 = valueX, oy_6 = valueY;
+    break;
+  case 7:
+    ox_6 = valueX, oy_7 = valueY;
+    break;
+  case 8:
+    ox_6 = valueX, oy_8 = valueY;
+    break;
+  case 9:
+    ox_6 = valueX, oy_9 = valueY;
     break;
   }
 }
@@ -613,11 +654,14 @@ void testTraces(int sample){
   }
 }
 
-void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100 ){
+void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 0){
+    if(id != filteredId && filteredId >= 0) return;
     int i = sample;
     // int vsize = 100;
     // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
-    addPoint(tft,id, i, value , 0, numSamples, 0, vsize, getLineColor(id,0));    
+    
+    addPoint(tft,id, i, value , 0, numSamples, 0, vsize, getLineColor(id,0),size);
+
     // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, numSamples, 0, vsize, getLineColor(i-1,0));    
 }
 
@@ -669,7 +713,7 @@ void testTraceScale(){
 void graphPaste(){
   int id = 6;
   int ssize = 320;
-  int vsize = 220;
+  int vsize = 230;
   int numSamples = 7;
 
   // id = 0;
@@ -708,38 +752,69 @@ void graphPaste(){
   // tmin = 
   // tmax = 
 
-  id = 2;
-  numSamples = 7;
-  resetGraphLine(id);    
-  float baseGraphX4[7] = { 1, 60-20, 120, 160, 210, 260, 310 }; // time
-  float baseGraphY4[7] = { 25, 105, 150, 150, 220, 150, 20 }; // value
+  // id = 2;
+  // numSamples = 7;
+  // resetGraphLine(id);    
+  // float baseGraphX4[7] = { 1, 60-20, 120, 160, 210, 260, 310 }; // time
+  // float baseGraphY4[7] = { 25, 105, 150, 150, 220, 150, 20 }; // value
 
-  // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
-  for(int i=0;i<numSamples;i++){
-    addPointSet(id,baseGraphX4[i],baseGraphY4[i],ssize,vsize);
-  }
+  // // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
+  // for(int i=0;i<numSamples;i++){
+  //   addPointSet(id,baseGraphX4[i],baseGraphY4[i],ssize,vsize);
+  // }
 
   id = 3;
   numSamples = 7;
   resetGraphLine(id);    
-  float baseGraphX5[7] = { 1, 60, 120, 160, 210, 260, 310 }; // time
-  float baseGraphY5[7] = { 25, 105, 150, 150, 220, 150, 20 }; // value
+  double baseGraphX5[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
+  double baseGraphY5[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value
 
   // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
-  for(int i=0;i<numSamples;i++){
-    addPointSet(id,baseGraphX5[i],baseGraphY5[i],ssize,vsize);
+  
+  // Serial.print(Interpolation::CatmullSpline(xValues, yValues, numValues, xValue));
+
+ int maxtime = 310; // max time frame for reflow, or make sure last point is not drawn
+ int maxtemp = 220+20; // max value + top padding
+
+  for(int i=0;i<maxtime;i++){
+    double x;
+    x = Interpolation::CatmullSpline(baseGraphX5, baseGraphY5, numSamples, i);
+    addPointSet(0,i,x,ssize,maxtemp);
+
+    x = Interpolation::SmoothStep(baseGraphX5, baseGraphY5, numSamples, i);
+    addPointSet(1,i,x,ssize,maxtemp,2);
+
+    x = Interpolation::Linear(baseGraphX5, baseGraphY5, numSamples, i,false);
+    addPointSet(2,i,x,ssize,maxtemp);
+
+    x = Interpolation::Linear(baseGraphX5, baseGraphY5, numSamples, i,true);
+    addPointSet(3,i,x,ssize,maxtemp);
+
+    x = Interpolation::ConstrainedSpline(baseGraphX5, baseGraphY5, numSamples, i);
+    addPointSet(4,i,x,ssize,maxtemp);
+
+    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.0);
+    addPointSet(5,i,x,ssize,maxtemp);
+
+    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.5);
+    addPointSet(6,i,x,ssize,maxtemp);
+
+    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 1.0);
+    addPointSet(7,i,x,ssize,maxtemp);
+
+    Serial.println(x);
   }
 
-  id = 4;
-  numSamples = 8; 
-  resetGraphLine(id);    
-  float baseGraphX6[8] = { 1, 20, 90, 120, 160, 210, 260, 310 }; // time
-  float baseGraphY6[8] = { 0, 0, 105, 150, 150, 220, 150, 20 }; // value
+  // id = 4;
+  // numSamples = 8; 
+  // resetGraphLine(id);    
+  // float baseGraphX6[8] = { 1, 20, 90, 120, 160, 210, 260, 310 }; // time
+  // float baseGraphY6[8] = { 0, 0, 105, 150, 150, 220, 150, 20 }; // value
 
   // solderPaste[3] = ReflowGraph( "DOC SOLDER", "No Clean Sn63/Pb36/Ag2", 187, baseGraphX4, baseGraphY4, ELEMENTS(baseGraphX4), 210, 260 );
-  for(int i=0;i<numSamples;i++){
-    addPointSet(id,baseGraphX6[i],baseGraphY6[i],ssize,vsize);
-  }
+  // for(int i=0;i<numSamples;i++){
+  //   addPointSet(id,baseGraphX6[i],baseGraphY6[i],ssize,vsize);
+  // }
 
   // id = 4;
   // numSamples = 6;
@@ -760,32 +835,132 @@ void graphPaste(){
   }
 }
 
+void interpolationGraph(){
+
+  const int numValues = 10;
+  double xValues[10] = {   5,  12,  30,  50,  60,  70,  74,  84,  92, 100 };
+  double yValues[10] = { 150, 200, 200, 200, 180, 100, 100, 150, 220, 320 };
+
+  for(int i = 0; i < numValues; i++){
+    Serial.print(Interpolation::CatmullSpline(xValues,yValues, numValues, i));
+    addPointSet(6,xValues[i],yValues[i],230,320);
+  }
+
+  return;
+
+  for (float xValue = 0; xValue <= 110; xValue += .25)
+  {
+    
+    Serial.print(Interpolation::Step(xValues, yValues, numValues, xValue, 0.0));
+    Serial.print(',');
+    Serial.print(Interpolation::Step(xValues, yValues, numValues, xValue, 0.5));
+    Serial.print(',');
+    Serial.print(Interpolation::Step(xValues, yValues, numValues, xValue, 1.0));
+    Serial.print(',');
+    Serial.print(Interpolation::SmoothStep(xValues, yValues, numValues, xValue));
+    Serial.print(',');
+    Serial.print(Interpolation::Linear(xValues, yValues, numValues, xValue, false));
+    Serial.print(',');
+    Serial.print(Interpolation::Linear(xValues, yValues, numValues, xValue, true));
+    Serial.print(',');
+    Serial.print(Interpolation::CatmullSpline(xValues, yValues, numValues, xValue));
+    Serial.print(',');
+    Serial.println(Interpolation::ConstrainedSpline(xValues, yValues, numValues, xValue));
+  }
+}
+
 void setupGraph(){
     init_graph(320,240-35,0,30); // x,y offsets handled automatically 
     // testTraceScale();
-    // graphPaste();
+    graphPaste();
+    // interpolationGraph();
+}
+
+void tft_set_header_val1(String str){
+    // Serial.println("footer val1: " + str);
+    if(debug_box) tft.setTextColor(WHITE,RED);
+    else tft.setTextColor(WHITE,HC1);
+    tft.setTextDatum(TL_DATUM);
+    int lpad = 2;
+    tft.setTextPadding(115);
+    // drawDatumMarker(2,2);
+    lpad += tft.drawString(str,lpad,lpad,4); // 22
+    // Serial.println(lpad);
+}
+
+void tft_set_header_val2(String str){
+    if(debug_box) tft.setTextColor(HC1_text,BLUE);
+    else tft.setTextColor(HC1_text,HC1);
+    tft.setTextDatum(BL_DATUM);
+    int lpad = 2;
+    tft.setTextPadding(120);
+    // drawDatumMarker(120,25);
+    lpad += tft.drawString(str,120,25,2); // 22
+    // Serial.println(lpad);
+}
+
+void tft_set_header_val3(String str){
+    if(debug_box) tft.setTextColor(HC1_text,GREEN);
+    else tft.setTextColor(HC1_text,HC1);
+    tft.setTextDatum(BR_DATUM);
+    int rpad = 4;
+    tft.setTextPadding(60);
+    // drawDatumMarker(TFT_HEIGHT-rpad,29);
+    rpad += tft.drawString(str,TFT_HEIGHT-rpad,29,4); // 22
+    // Serial.println(lpad);
 }
 
 void tft_set_footer_val1(float str = 0){
     // Serial.println("footer val1: " + str);
-    tft.setTextColor(WHITE,HC2);  
+    if(debug_box) tft.setTextColor(WHITE,RED);  
+    else tft.setTextColor(WHITE,HC2);  
     tft.setTextDatum(BL_DATUM);
     int lpad = 5;
     tft.setTextPadding(90);
     lpad = tft.drawFloat((float)str,1,lpad,TFT_WIDTH,4); // 63
     tft.setTextPadding(0);
     lpad += tft.drawString("`c",lpad+6,TFT_WIDTH,4); // 22
-    Serial.println(lpad);
+    // Serial.println(lpad);
 }
 
+
+
 void tft_set_footer_val2(String str = "Status"){
-    // str = "ABCDEFGHIJKLMNOPQRS"; // 19 characters
-    str = "Millis: "+(String)millis()+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
-    tft.setTextColor(GREY,HC2);
-    tft.setTextDatum(BC_DATUM);
+    // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
+    // str = "Ms: "+(String)(millis())+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
+    if(debug_box) tft.setTextColor(GREY,BLUE);
+    else tft.setTextColor(GREY,HC2);
+    tft.setTextDatum(BL_DATUM);
+    tft.setTextPadding(145);
+    // println_footer("",HC2);
+    tft.drawString(str,(TFT_HEIGHT/3)+10,TFT_WIDTH-4,2);
+}
+
+void tft_set_footer_val2_left(String str = "Status"){
+    // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
+    // str = "Ms: "+(String)(millis())+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
+    if(debug_box) tft.setTextColor(GREY,BLUE);
+    else tft.setTextColor(GREY,HC2);
+
+    tft.setTextDatum(BL_DATUM);
     tft.setTextPadding(150);
     // println_footer("",HC2);
-    tft.drawString(str,(TFT_HEIGHT/2)+10,TFT_WIDTH-4,2);
+    tft.drawString(str,((TFT_HEIGHT/3)-5),TFT_WIDTH-4,2);
+}
+
+void scrollStatus(String str){
+  static int charindex = 0;
+  int chars = 20;
+  int len = str.length()+20;
+  String pad;
+  for(int i=0;i<chars;i++){
+    pad += " ";
+  }
+  str = pad+str;
+  String newstr = str.substring(charindex, charindex+chars < len ? charindex+chars : len );
+  tft_set_footer_val2_left(newstr);
+  charindex++;
+  if(charindex>len) charindex = 0;
 }
 
 void tft_set_footer_val2_error(String str = "Status"){
@@ -800,6 +975,7 @@ void tft_set_footer_val3(bool enable){
     tft.setTextSize(1);
     tft.setTextColor(enable?GREEN:DKGREY,HC2);  
     tft.setTextDatum(TR_DATUM);
+    tft.setTextPadding(0);
     tft.drawString("FAN 1",TFT_HEIGHT-2,TFT_WIDTH-30,2);    
     // tft.setTextDatum(BR_DATUM);
     // tft.drawString("FAN 2",TFT_HEIGHT-2,TFT_WIDTH,2);  
@@ -810,6 +986,7 @@ void tft_set_footer_val4(bool enable){
     tft.setTextColor(enable?GREEN:DKGREY,HC2);  
     // tft.setTextDatum(TR_DATUM);
     // tft.drawString("FAN 1",TFT_HEIGHT-2,TFT_WIDTH-30,2);    
+    tft.setTextPadding(0);
     tft.setTextDatum(BR_DATUM);
     tft.drawString("FAN 2",TFT_HEIGHT-2,TFT_WIDTH,2);    
 }
