@@ -78,6 +78,8 @@
 #define WHITE     0xFFFF
 #define BLACK     0x0000
 
+#define GREENYELLOW 0xB7E0
+
 #define DKBLUE    0x000D
 #define DKTEAL    0x020C
 #define DKGREEN   0x03E0
@@ -98,8 +100,10 @@
 #define GRAPHBG   BLACK      // graph background (fill before graph, literally BG fillrect)
 #define GRIDCOLOR LTBLACK2 // color of gridlines
 
-#define HC1 LTBLACK // heading top
-#define HC2 LTBLACK  // footer bottom
+#define HC1 LTBLACK // heading top BG
+#define HC2 LTBLACK  // footer bottom BG
+
+#define HC1_text GREY
 
 #define HC3 GREEN    // alert OK
 #define HC4 RED      // alert BAD
@@ -107,6 +111,8 @@
 
 using RM_tft = TFT_eSPI;
 RM_tft tft = RM_tft();
+
+TFT_eSprite img = TFT_eSprite(&tft); 
 
 // #define TFT_CS   -1  // Chip select control pin D8
 // #define TFT_DC   0  // Data Command control pin
@@ -274,7 +280,7 @@ void setAlertMode(int mode = 0){
 
 void tft_clear(){
   tft.fillScreen(GRAPHBG);
-  println_header("HEADER",HC1);
+  println_header("",HC1);
   tft.drawFastHLine(0, 30, tft.width(), BGCOLOR);  
   println_footer("",HC2);
   tft.drawFastHLine(0, tft.height()-30, tft.width(), BGCOLOR);  
@@ -352,6 +358,60 @@ void tft_test(){
 
  	tft.println(F("   TFT_eSPI test"));
     println_Center( tft, "  "+String( ( "Starting..." ) ),tft.width() / 2 - 20, ( tft.height() / 2 ) ); 	
+}
+
+void drawDatumMarker(int x, int y)
+{
+  tft.drawLine(x - 5, y, x + 5, y, TFT_GREEN);
+  tft.drawLine(x, y - 5, x, y + 5, TFT_GREEN);
+}
+
+void build_scroll(String msg, int xpos){
+
+  int IWIDTH = 240;
+  int IHEIGHT = 30;
+
+  int h = IHEIGHT;
+  // We could just use fillSprite(color) but lets be a bit more creative...
+
+  // Fill with rainbow stripes
+  // while (h--) img.drawFastHLine(0, h, IWIDTH, rainbow(h * 4));
+
+  // Draw some graphics, the text will apear to scroll over these
+  // img.fillRect  (IWIDTH / 2 - 20, IHEIGHT / 2 - 10, 40, 20, TFT_YELLOW);
+  // img.fillCircle(IWIDTH / 2, IHEIGHT / 2, 10, TFT_ORANGE);
+
+  // Now print text on top of the graphics
+  img.setTextSize(1);           // Font size scaling is x1
+  img.setTextFont(4);           // Font 4 selected
+  img.setTextColor(TFT_BLACK);  // Black text, no background colour
+  img.setTextWrap(false);       // Turn of wrap so we can print past end of sprite
+
+  // Need to print twice so text appears to wrap around at left and right edges
+  img.setCursor(xpos, 2);  // Print text at xpos
+  img.print(msg);
+
+  img.setCursor(xpos - IWIDTH, 2); // Print text at xpos - sprite width
+  img.print(msg);
+}
+
+void do_scroll(){
+  int IWIDTH = 240;
+  int IHEIGHT = 30;
+  img.setColorDepth(8);
+  // Create the sprite and clear background to black
+  img.createSprite(IWIDTH, IHEIGHT);
+
+  for (int pos = IWIDTH; pos > 0; pos--){
+    build_scroll("Hello World", pos);
+    img.pushSprite(0, 0); 
+    
+    build_scroll("TFT_eSPI sprite" , pos);
+    img.pushSprite(0, 50);
+
+    // Delete sprite to free up the memory
+    img.deleteSprite();
+  }
 }
 
 #endif // END tft_espi_shared_h
