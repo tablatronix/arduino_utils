@@ -207,6 +207,16 @@ void process_command(){
     init_pidtune();
   }
 
+  if (strncmp(cmd,"set title ",10) == 0) {
+    String arg = String(cmd).substring(10,String(cmd).length()); 
+    SetTitle(arg);
+  }
+
+  if (strncmp(cmd,"set filter ",11) == 0) {
+    String arg = String(cmd).substring(11,String(cmd).length()); 
+    setFilterId((int)atoi(arg.c_str()));
+  }
+
 
   cmd[0] = '\0';         // reset the commandstring
   cmd_complete = false;  // reset command complete 

@@ -42,6 +42,7 @@ void init_PID(){
 }
 
 void run_PID(){
+  updateTemps();
   myPID.Compute();
   Setpoint = (double)wantedTemp;
   Input = (double)currentTempAvg;
@@ -57,9 +58,8 @@ void run_PID(){
 
 void MatchTemp()
 {
-  updateTemps();
   // Serial.print(".");
-  run_PID();
+  if(wantedTemp > 0)  run_PID();
   return;
   float duty = 0;
   // float wantedTemp = 0;

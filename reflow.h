@@ -1,6 +1,28 @@
 #ifndef reflow_h
 #define reflow_h
 
+// strings
+// String TITLE = "TITLE";
+String OPT1  = "OPT 1";
+String OPT2  = "OPT 2";
+String STATUSLINE  = "Status Line";
+String DETAILS = "Subheading";
+String SUBDATA = "888";
+
+String TITLE = "PRESET";
+// String OPT1 = "FAN 1";
+// String OPT2 = "FAN 2";
+
+int filteredId = 1; // -1 off
+
+int setFilterId(int id){
+  filteredId = id;
+}
+
+void SetTitle(String str){
+  TITLE = str;
+}
+
 // DOOR
 int doorAbortTime = 50000;
 uint8_t doorAbortTaskID;
