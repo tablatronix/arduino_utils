@@ -31,6 +31,7 @@ int avgReadCount              = 0; // running avg
 int avgSamples                = 10;   // 1 to disable averaging
 int tempSampleRate            = 1000; // how often to sample temperature when idle
 
+bool useAveraging = true;
 Statistics stats(3); // init stats for avg
 
 // Runtime reflow variables
@@ -112,12 +113,15 @@ void ReadCurrentTemp()
     // offset
     currentTemp = readC + tempOffset;
 
-    // average
-    stats.addData((float)currentTemp);
-    currentTempAvg = stats.mean();
-    
     // linearized
     // correctKType();
+    
+    // average
+    if(useAveraging){
+      stats.addData((float)currentTemp);
+      currentTempAvg = stats.mean();
+    }
+    else currentTempAvg = currentTemp;
   }
 }
 
@@ -140,14 +144,10 @@ void resetDev(){
 // @todo consolidate into single cleaner functions
 void updateTemps(){
     digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
-    read_ntc(); // external lib!
-    internalTemp = tc.readInternal(); 
+    internalTemp = tc.readInternal();
     ReadCurrentTemp();
-	  // Serial.println("deviation: " + (String)(maxT-minT));
-    if(currentTempAvg>maxT) maxT = currentTempAvg;
+    if(currentTempAvg>maxT) maxT = currentTempAvg; // update min max
     if(currentTempAvg<minT) minT = currentTempAvg;
-    // Serial.println(minT);
-    // Serial.println(maxT);
 }
 
 float readTCDev(){
@@ -157,10 +157,11 @@ float readTCDev(){
 }
 
 float getTCDev(){
-  float dev = stats.stdDeviation(); // @todo find cause of NAN errors
+  float dev;
+  if(useAveraging) dev = stats.stdDeviation(); // @todo find cause of NAN errors
+  else dev = (maxT-minT);
   if(isnan(dev)) Serial.println("[ERROR] stats dev NAN");
-  return isnan(dev) ? 0 : dev;
-  // return (maxT-minT);
+  return isnan(dev) ? -1 : dev;
 }
 
 bool TCSanityCheck(){
@@ -188,8 +189,8 @@ void printTC(){
   // Serial.print(stats.stdDeviation());
   // Serial.print(" TCLIN: ");
   // Serial.print(currentTempCorr);
-  Serial.print(" NTC: ");
-  Serial.print((String)(float(ntc_temp)/10));
+  // Serial.print(" NTC: ");
+  // Serial.print((String)(float(ntc_temp)/10));
 
   Serial.println("");
   TCSanityCheck();
