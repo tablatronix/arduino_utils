@@ -492,13 +492,13 @@ void setGraphLine(int id, double valueX, double valueY){
     ox_6 = valueX, oy_6 = valueY;
     break;
   case 7:
-    ox_6 = valueX, oy_7 = valueY;
+    ox_7 = valueX, oy_7 = valueY;
     break;
   case 8:
-    ox_6 = valueX, oy_8 = valueY;
+    ox_8 = valueX, oy_8 = valueY;
     break;
   case 9:
-    ox_6 = valueX, oy_9 = valueY;
+    ox_9 = valueX, oy_9 = valueY;
     break;
   }
 }
@@ -508,7 +508,7 @@ void resetGraphLine(int id = 0){
 }
 
 void resetGraphLines(){
-  for(size_t i =0; i< 7;i++){
+  for(size_t i =0; i< 10;i++){
     resetGraphLine(i);
   }
 }
@@ -799,10 +799,10 @@ void graphPaste(){
     x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.5);
     addPointSet(6,i,x,ssize,maxtemp);
 
-    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 1.0);
+    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.2);
     addPointSet(7,i,x,ssize,maxtemp);
+    if(filteredId == 7) Serial.println(x);
 
-    Serial.println(x);
   }
 
   // id = 4;
