@@ -11,20 +11,43 @@ const int interruptPin = 3; // Real interrupt for io expander
 const int encoderSWPin = 0;
 const int encoderAPin  = 1;
 const int encoderBPin  = 2;
-const int maximumEncoderValue = 128;
-int encoderLast  = 0;
+const int maximumEncoderValue = 9; // 128; 0 for non counting mode
+int encoderStale  = 0;
+int encoderLast   = 0;
+bool encoderHasChange = false;
 
 volatile bool PCFInterruptFlag = false;
 
 void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
-  Serial.print("[ENCODER] change to ");
+  if(maximumEncoderValue > 0){
+    Serial.print("[ENCODER] change to ");
   Serial.print(newValue);
-  Serial.print(" from ");
-  Serial.print(encoderLast);
-  if(encoderLast == newValue) return;
-  bool dir = (encoderLast > newValue);
-  Serial.println(" dir: " + String(dir ? "CC" : "CW")); // for plotting
-  encoderLast = newValue;
+    Serial.print(" from ");
+    Serial.print(encoderLast);
+    if(encoderLast == newValue){
+      Serial.println("\n");
+      return;
+    }
+    bool dir = (encoderLast > newValue);
+    Serial.println(" dir: " + String(dir ? "CC" : "CW"));
+    encoderStale = encoderLast;
+    encoderLast  = newValue;
+    encoderHasChange = true;
+  }
+  else{
+    if(newValue == 0){
+      Serial.print("[ENCODER] no change");
+      return;
+    }
+    Serial.print("[ENCODER] change by ");
+    Serial.print(newValue);
+    bool dir = (newValue == 1);
+    Serial.println(" dir: " + String(dir ? "CW" : "CC")); // for plotting use 10,20 etc
+    
+    encoderStale = encoderLast;
+    encoderLast  = newValue;
+    encoderHasChange = true;
+  }
 }
 
 void ICACHE_RAM_ATTR onEncoderSWPressed(uint8_t pin, bool heldDown) {
@@ -73,10 +96,9 @@ void init_buttons(){
   ioDevicePinMode(switches.getIoAbstraction(), encoderBPin, INPUT);
   switches.addSwitch(encoderSWPin, onEncoderSWPressed); // encoder button press
   // init
-  encoderLast = 0;
-  setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
-  switches.changeEncoderPrecision(maximumEncoderValue, 0); // REQUIRED!!!!!
 
+  setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
+  if(maximumEncoderValue > 0) switches.changeEncoderPrecision(maximumEncoderValue, 0); // REQUIRED!!!!!
 
   // alt encocder setup
   // HardwareRotaryEncoder* firstEncoder = new HardwareRotaryEncoder(encoderAPin, encoderBPin, onEncoderChange);

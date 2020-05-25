@@ -9,19 +9,28 @@ int motorpinA    = 3; // PCF PIN
 int motorpinB    = 4; // PCF PIN
 int motorInt     = 7; // PCF PIN
 
-int stallcnt     = 0;
-int stallReset   = 500000;
+int stallcnt         = 0; // counter for stall
+int stallReset       = 500000; // reset stall count duration micros
+bool stalldetect     = true; // use interupt to detect stalls
+int stalllimit       = 5;    // stall limit, num interrupts for stall detect
+bool autoreverse     = true; // autoreverse on stall
+int autoreversepause = 200; // autoreverse delay
+int autoreversetime  = 1000; // autoreverse duratiton
 
 int motor_lastmicros = 0; 
 
+#define MOTORDIR_OFF 0
+#define MOTORDIR_F 1
+#define MOTORDIR_R 2
+
 void motor(int dir,int dur){
   if(DEBUG_motor)Serial.print("[MOTOR]: ");
-  if(dir==0){
+  if(dir==MOTORDIR_OFF){
     if(DEBUG_motor)Serial.println("OFF");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinB, HIGH);
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinA, HIGH);
   }
-  else if(dir==1){
+  else if(dir==MOTORDIR_F){
     if(DEBUG_motor)Serial.println("F");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinB, LOW);
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinA, HIGH);
@@ -30,7 +39,7 @@ void motor(int dir,int dur){
       motor(0,0);
     } 
   }
-  else if(dir==2){
+  else if(dir==MOTORDIR_R){
     if(DEBUG_motor)Serial.println("R");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinB, HIGH);
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), motorpinA, LOW);
@@ -39,6 +48,10 @@ void motor(int dir,int dur){
       motor(0,0);
     }  
   }
+}
+
+void motorOff(){
+  motor(MOTORDIR_OFF,0);
 }
 
 void motorPulse(int dir,int count,int dur,int delayms){
@@ -50,7 +63,7 @@ void motorPulse(int dir,int count,int dur,int delayms){
 
 void ICACHE_RAM_ATTR onFeedback(uint8_t pin, bool heldDown) {
   // first time in a while reset stallcount
-  if(micros()-motor_lastmicros > 500000 ){
+  if(micros()-motor_lastmicros > stallReset ){
     stallcnt = 1; // reset stall check, timeout
   }
 
@@ -58,22 +71,16 @@ void ICACHE_RAM_ATTR onFeedback(uint8_t pin, bool heldDown) {
   Serial.println("[MOTOR]: OVERCURRENT DETECTED: " + (String)stallcnt + " " + (String)((micros()-motor_lastmicros)/10000) + "ms" );
   // if(DEBUG_motor)Serial.println(heldDown ? "STALLED" : " ignoring");
 
-bool stalldetect    = true;
-int stalllimit      = 5;
-bool autoreverse    = true;
-int autoreversepause = 200;
-int autoreversetime = 1000;
-
-  if(stalldetect && (stallcnt >= stalllimit) && motorDir>0){
+  if(stalldetect && (stallcnt >= stalllimit) && motorDir>MOTORDIR_OFF){
     if(DEBUG_motor)Serial.println("[MOTOR]: STALLED");    
     stallcnt = 0;
-    motor(0,0); // motor off
+    motor(MOTORDIR_OFF,0); // motor off
     if(autoreverse){
       delay(autoreversepause);
-      motor(motorDir == 1?2:1,autoreversetime); // motor Back
-      motor(0,0);
+      motor(motorDir == MOTORDIR_F?MOTORDIR_R:MOTORDIR_F,autoreversetime); // motor Back
+      motor(MOTORDIR_OFF,0);
     }
-    motorDir = 0;
+    motorDir = MOTORDIR_OFF;
   } else stallcnt++;
 
   motor_lastmicros = micros();
@@ -81,11 +88,11 @@ int autoreversetime = 1000;
 
 void motorTest(){
   int dur = 1000;
-  motor(0,0); 
-  motor(1,dur);
+  motorOff();
+  motor(MOTORDIR_F,dur);
   delay(500);
-  motor(2,dur);
-  motor(0,0);
+  motor(MOTORDIR_R,dur);
+  motorOff();
 }
 
 #endif

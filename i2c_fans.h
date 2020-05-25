@@ -163,11 +163,11 @@ void fanDEnable(bool enable){
 /**
  * [SSRFan description]
  * @param {[type]}  bool enable [description]
- * @param {Boolean} bool power  false 50% true 100%
+ * @param {Boolean} bool fullpower  false 50% true 100%
  */
-void SSRFan(bool enable,bool power = true){
+void SSRFan(bool enable,bool fullpower = true){
   fanCEnable(enable);
-  fanDEnable(enable && power);
+  fanDEnable(enable && fullpower);
 }
 
 void fansOn(){
@@ -240,17 +240,26 @@ void fanTest(){
   SSRFan(false);
 }
 
-void fan_init(){
+bool fan_init(){
+  bool res = true;
+
   dac.begin(0x60);
   dacb.begin(0x61);
 
   dac.setVoltage(0, true);  // fan 1
   dacb.setVoltage(0, true); // fan 2
-  if(!getDacSuccess())  Serial.println("[ERROR] MCP4725 A Failed");
-  if(!getDacbSuccess()) Serial.println("[ERROR] MCP4725 B Failed");
+  if(!getDacSuccess()){
+    if(DEBUG_i2c_fans) Serial.println("[ERROR] MCP4725 A Failed");
+    res = false;
+  }  
+  if(!getDacbSuccess()){
+    if(DEBUG_i2c_fans) Serial.println("[ERROR] MCP4725 B Failed");
+    res = false;
+  }
 
   // fanCEnable(false);  // fan 3 (NOT LOADED YET)
-  // fanDEnable(false);  // fan 4 (NOT LOADED YET)
+  // fanDEnable(false);  // fan 4 (NOT LOADED YET
+  return res;
 }
 
 #endif
