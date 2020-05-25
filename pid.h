@@ -1,9 +1,15 @@
 #ifndef pid_h
 #define pid_h
 
+// testing
+// fastpid https://github.com/mike-matera/FastPID
+// autopid https://github.com/r-downing/AutoPID/blob/master/examples/BasicTempControl/BasicTempControl.ino
+// arduino pid library pid_v1 https://github.com/br3ttb/Arduino-PID-Library
+// pidautotuner https://github.com/jackw01/arduino-pid-autotuner
+
 #include <max31855.h>
 #include <pidtune.h>
-// #include <FastPID.h>
+// #include <FastPID.h> 
 #include <PID_v1.h> // https://github.com/br3ttb/Arduino-PID-Library
 
 // [PIDTUNE] COMPLETE
