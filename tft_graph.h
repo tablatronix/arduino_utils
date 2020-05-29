@@ -1,8 +1,13 @@
 #ifndef tft_graph_h
 #define tft_graph_h
 
-bool DEBUG_POINT = false;
-bool debug_box = false;
+bool _DEBUG_POINT = false;
+bool _debug_box = false;
+
+int filteredId = 1; // filter graph line indexs -1 off
+
+int FOOTERH = 40;
+int HEADERH = 30;
 
 #include "Free_Fonts.h" // Include the header file attached to this sketch
 // #include "NotoSansBold15.h"
@@ -10,8 +15,6 @@ bool debug_box = false;
 
 #include "InterpolationLib.h"
 
-
-// // The font names are arrays references, thus must NOT be in quotes ""
 // #define AA_FONT_SMALL NotoSansBold15
 // #define AA_FONT_LARGE NotoSansBold36
 
@@ -313,7 +316,7 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
            unsigned int pcolor, int size = 0)
 {
 
-  if(DEBUG_POINT){
+  if(_DEBUG_POINT){
     Serial.print("\n[GRAPH] ADDPOINT id: "+(String)id+ " x - y: ");
     Serial.print(x);
     Serial.print(" - ");
@@ -338,7 +341,7 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
   double ox = getGraphLine(id,0);
   double oy = getGraphLine(id,1);
 
-  if(DEBUG_POINT){
+  if(_DEBUG_POINT){
     Serial.print("\n[GRAPH] x - y: ");
     Serial.print(x);
     Serial.print(" - ");
@@ -369,11 +372,14 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
   // oy = y;
 }
 
+
 /*
 
   End of graphing function
 
 */
+
+int numGraphSlots = 10;
 
 double getGraphLine(int id,int param){
   switch(id){
@@ -508,10 +514,31 @@ void resetGraphLine(int id = 0){
 }
 
 void resetGraphLines(){
-  for(size_t i =0; i< 10;i++){
+  for(size_t i =0; i< numGraphSlots;i++){
     resetGraphLine(i);
   }
 }
+
+/**
+ * [addPointSet description]
+ * @param {[type]} int    id         [description]
+ * @param {[type]} int    sample     [description]
+ * @param {[type]} double value      [description]
+ * @param {[type]} int    numSamples [description]
+ * @param {Number} int    vsize      [description]
+ * @param {Number} int    size       [description]
+ */
+void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 0){
+    // if(id != filteredId && filteredId >= 0) return;
+    int i = sample;
+    // int vsize = 100;
+    // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
+    int yindexstart = 25; // start Y at non 0 value
+    addPoint(tft,id, i, value , 0, numSamples, yindexstart, vsize, getLineColor(id,0),size);
+
+    // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, numSamples, 0, vsize, getLineColor(i-1,0));    
+}
+
 
 void init_graph_tft(){
   // if (TFT_BL > 0) {
@@ -524,13 +551,22 @@ void init_graph_tft(){
   tft.setRotation(3);
 }
 
-void drawBorder(unsigned int c = BLACK){
+void drawBorder(unsigned int c = LTBLACK){
   // Draw border left bottom
   tft.drawFastVLine(0,0,tft.height(),c);
   tft.drawFastHLine(0,tft.height()-1,tft.width()-1,c);
 
   tft.drawFastVLine(tft.width()-1,0,tft.height()-1,c);
   tft.drawFastHLine(0,0,tft.width()-1,c);  
+}
+
+void drawBorderB(unsigned int c = LTBLACK){
+  // Draw border left bottom
+  tft.drawFastVLine(1,1,tft.height(),c);
+  tft.drawFastHLine(1,tft.height()-2,tft.width()-2,c);
+
+  tft.drawFastVLine(tft.width()-2,1,tft.height()-2,c);
+  tft.drawFastHLine(1,1,tft.width()-2,c);  
 }
 
 void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
@@ -557,7 +593,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   }
 
   // init defaults
-  // Serial.println("[GRAPH] init w:" + (String)width + " h: " + (String)height);
+  Serial.println("[GRAPH] init w:" + (String)width + " h: " + (String)height);
   // int xPos = 0;
   // int yPos = 0;
   
@@ -567,7 +603,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   width  -= xPos+1; // reduce width kludge
   height -= yPos+1;
 
-  // Serial.println("[GRAPH] init x:" + (String)width + " y: " + (String)height);
+  Serial.println("[GRAPH] init x:" + (String)width + " y: " + (String)height);
 
   // axis padding
   bool xaxis = false; // show xaxis padding
@@ -652,17 +688,6 @@ void testTraces(int sample){
     addPoint(tft,i/* id **/,sample/* X */, ((abs(vsize/numTraces))*(i))+random(10)/* Y */, 0 /*XLOW*/, ssize /* XHIGH */, 0 /* YLOW */, vsize-random(vsize/6)/* YHIGH */, getLineColor(i,0) /* color */);    
     delay(10);
   }
-}
-
-void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 0){
-    if(id != filteredId && filteredId >= 0) return;
-    int i = sample;
-    // int vsize = 100;
-    // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
-    
-    addPoint(tft,id, i, value , 0, numSamples, 0, vsize, getLineColor(id,0),size);
-
-    // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, numSamples, 0, vsize, getLineColor(i-1,0));    
 }
 
 void testTraceScaleOLD(){
@@ -778,31 +803,46 @@ void graphPaste(){
 
   for(int i=0;i<maxtime;i++){
     double x;
+
+    if(filteredId == 0){
     x = Interpolation::CatmullSpline(baseGraphX5, baseGraphY5, numSamples, i);
     addPointSet(0,i,x,ssize,maxtemp);
+    }
 
-    x = Interpolation::SmoothStep(baseGraphX5, baseGraphY5, numSamples, i);
-    addPointSet(1,i,x,ssize,maxtemp,2);
+    if(filteredId == 1){    
+      x = Interpolation::SmoothStep(baseGraphX5, baseGraphY5, numSamples, i);
+      addPointSet(1,i,x,ssize,maxtemp,2);
+    }
 
-    x = Interpolation::Linear(baseGraphX5, baseGraphY5, numSamples, i,false);
-    addPointSet(2,i,x,ssize,maxtemp);
+    if(filteredId == 2){    
+     x = Interpolation::Linear(baseGraphX5, baseGraphY5, numSamples, i,false);
+     addPointSet(2,i,x,ssize,maxtemp);
+    }
 
-    x = Interpolation::Linear(baseGraphX5, baseGraphY5, numSamples, i,true);
-    addPointSet(3,i,x,ssize,maxtemp);
+    if(filteredId == 3){
+      x = Interpolation::Linear(baseGraphX5, baseGraphY5, numSamples, i,true);
+      addPointSet(3,i,x,ssize,maxtemp);
+    }
 
-    x = Interpolation::ConstrainedSpline(baseGraphX5, baseGraphY5, numSamples, i);
-    addPointSet(4,i,x,ssize,maxtemp);
+    if(filteredId == 4){
+      x = Interpolation::ConstrainedSpline(baseGraphX5, baseGraphY5, numSamples, i);
+      addPointSet(4,i,x,ssize,maxtemp);
+    }
 
-    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.0);
-    addPointSet(5,i,x,ssize,maxtemp);
+    if(filteredId == 5){
+      x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.0);
+      addPointSet(5,i,x,ssize,maxtemp);
+    }
 
-    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.5);
-    addPointSet(6,i,x,ssize,maxtemp);
+    if(filteredId == 6){
+      x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.5);
+      addPointSet(6,i,x,ssize,maxtemp);
+    }
 
-    x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.2);
-    addPointSet(7,i,x,ssize,maxtemp);
-    if(filteredId == 7) Serial.println(x);
-
+    if(filteredId == 7){
+      x = Interpolation::Step(baseGraphX5, baseGraphY5, numSamples, i, 0.2);
+      addPointSet(7,i,x,ssize,maxtemp);
+    }
   }
 
   // id = 4;
@@ -870,7 +910,10 @@ void interpolationGraph(){
 }
 
 void setupGraph(){
-    init_graph(320,240-35,0,30); // x,y offsets handled automatically 
+    int ypad = 3;
+    // TFT+TFT_WIDTH,TFT_HEIGHT - footerH,
+    
+    init_graph(320,240-(FOOTERH+ypad),0,HEADERH+ypad); // x,y offsets handled automatically and adjusted to TL 
     // testTraceScale();
     graphPaste();
     // interpolationGraph();
@@ -878,7 +921,7 @@ void setupGraph(){
 
 void tft_set_header_val1(String str){
     // Serial.println("footer val1: " + str);
-    if(debug_box) tft.setTextColor(WHITE,RED);
+    if(_debug_box) tft.setTextColor(WHITE,RED);
     else tft.setTextColor(WHITE,HC1);
     tft.setTextDatum(TL_DATUM);
     int lpad = 2;
@@ -889,7 +932,7 @@ void tft_set_header_val1(String str){
 }
 
 void tft_set_header_val2(String str){
-    if(debug_box) tft.setTextColor(HC1_text,BLUE);
+    if(_debug_box) tft.setTextColor(HC1_text,BLUE);
     else tft.setTextColor(HC1_text,HC1);
     tft.setTextDatum(BL_DATUM);
     int lpad = 2;
@@ -900,7 +943,7 @@ void tft_set_header_val2(String str){
 }
 
 void tft_set_header_val3(String str){
-    if(debug_box) tft.setTextColor(HC1_text,GREEN);
+    if(_debug_box) tft.setTextColor(HC1_text,GREEN);
     else tft.setTextColor(HC1_text,HC1);
     tft.setTextDatum(BR_DATUM);
     int rpad = 4;
@@ -912,7 +955,7 @@ void tft_set_header_val3(String str){
 
 void tft_set_footer_val1(float str = 0){
     // Serial.println("footer val1: " + str);
-    if(debug_box) tft.setTextColor(WHITE,RED);  
+    if(_debug_box) tft.setTextColor(WHITE,RED);  
     else tft.setTextColor(WHITE,HC2);  
     tft.setTextDatum(BL_DATUM);
     int lpad = 5;
@@ -928,7 +971,7 @@ void tft_set_footer_val1(float str = 0){
 void tft_set_footer_val2(String str = "Status"){
     // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
     // str = "Ms: "+(String)(millis())+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
-    if(debug_box) tft.setTextColor(GREY,BLUE);
+    if(_debug_box) tft.setTextColor(GREY,BLUE);
     else tft.setTextColor(GREY,HC2);
     tft.setTextDatum(BL_DATUM);
     tft.setTextPadding(145);
@@ -939,7 +982,7 @@ void tft_set_footer_val2(String str = "Status"){
 void tft_set_footer_val2_left(String str = "Status"){
     // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
     // str = "Ms: "+(String)(millis())+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
-    if(debug_box) tft.setTextColor(GREY,BLUE);
+    if(_debug_box) tft.setTextColor(GREY,BLUE);
     else tft.setTextColor(GREY,HC2);
 
     tft.setTextDatum(BL_DATUM);
