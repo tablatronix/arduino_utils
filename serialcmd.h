@@ -1,10 +1,10 @@
 #ifndef serialcmd_h
 #define serialcmd_h
 
+#include <reflow.h>
 #include <motor.h>
 #include <ssr.h>
 #include <pid.h>
-#include <reflow.h>
 
 // HardwareSerial DebugOut = Serial;
 // HardwareSerial DebugOut(0);
@@ -214,7 +214,7 @@ void process_command(){
 
   if (strncmp(cmd,"set filter ",11) == 0) {
     String arg = String(cmd).substring(11,String(cmd).length()); 
-    setFilterId((int)atoi(arg.c_str()));
+    SetFilterId((int)atoi(arg.c_str()));
   }
 
 
