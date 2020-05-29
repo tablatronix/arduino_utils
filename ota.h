@@ -1,3 +1,5 @@
+#ifndef MY_OTA_H
+#define MY_OTA_H
 
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
@@ -97,3 +99,5 @@ void OTAReboot(bool always = false,int timeout = 10000){
     }
   }
 }
+
+#endif
