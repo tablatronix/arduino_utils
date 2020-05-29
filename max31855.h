@@ -31,8 +31,12 @@ int avgReadCount              = 0; // running avg
 int avgSamples                = 10;   // 1 to disable averaging
 int tempSampleRate            = 1000; // how often to sample temperature when idle
 
+// clean up averaging, when using stats lib some are not used
 bool useAveraging = true;
-Statistics stats(3); // init stats for avg
+
+#define USESTATS
+uint16_t max31855_numsamples;
+Statistics stats(max31855_numsamples); // init stats for avg (samples)
 
 // Runtime reflow variables
 float currentTemp    = 0; // current real temp
@@ -46,10 +50,10 @@ bool tcWarn          = false; // stop and show error if a tc issue is detected
 float maxT; // highest temp in window (tempSampleRate)
 float minT; // lowest temp in window (tempSampleRate)
 
-uint8_t lastTCStatus = 0; // last error status
-uint16_t numerrors = 0;  // counter for failures
-uint16_t numfailwarn = 10; // how many failures in window
-uint16_t numfailwindow  = 10; // num seconds to compare
+uint8_t lastTCStatus   = 0; // last error status
+uint16_t numerrors     = 0;  // counter for failures
+uint16_t numfailwarn   = 10; // how many failures in window
+uint16_t numfailwindow = 10; // num seconds to compare
 
 // max31855 error states
 #define STATUS_OK               0x00
