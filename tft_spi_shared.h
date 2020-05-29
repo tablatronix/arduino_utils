@@ -77,6 +77,7 @@
 #define GRAY      0xC618
 #define WHITE     0xFFFF
 #define BLACK     0x0000
+// #define SILVER    0xC618
 
 #define GREENYELLOW 0xB7E0
 
@@ -108,6 +109,10 @@
 #define HC3 GREEN    // alert OK
 #define HC4 RED      // alert BAD
 #define HC5 ORANGE   // alert WARN
+
+#define DEBUG_HC1 RED
+#define DEBUG_HC2 BLUE
+#define DEBUG_HC3 DKGREEN
 
 using RM_tft = TFT_eSPI;
 RM_tft tft = RM_tft();
@@ -214,39 +219,6 @@ void getTextBounds(const char *str, int16_t x, int16_t y,
 	}
 }
 
-void println_header(const char *string, uint16_t color)
-{
-  int thickness = 24;
-  int vpad = 3;
-  int fontsize = 4;
-  int rad = 0; // 5;
-
-  // tft.fillScreen(color);
-  tft.setTextSize(1);
-  tft.setTextColor(TFT_WHITE);
-  if(rad > 0) tft.fillRoundRect(0, 0, 320, thickness,rad, color);
-  else tft.fillRect(0, 0, 320, thickness, color);
-  // void TFT_eSPI::fillRoundRect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, uint32_t color)
-  tft.setTextDatum(TC_DATUM);
-  // tft.drawString(string, 160, 2, fontsize); // Font 4 for fast drawing with background
-  tft.drawString(string,tft.width()/2,vpad,fontsize);  
-}
-
-void println_footer(const char *string, uint16_t color){
-	// void TFT_eSPI::fillRect(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color)
-	int thickness = 30;
-	int vpad = 3;
-	int fontsize = 4;
-	int rad = 0;// 5;
-
-	tft.setTextSize(1);
-    if(rad > 0) tft.fillRoundRect(0, tft.height()-thickness , tft.width(), thickness, rad,color);
-    else tft.fillRect(0, tft.height()-thickness , tft.width(), thickness, color);
-    tft.setTextDatum(TC_DATUM);
-    tft.setTextColor(TFT_WHITE);
-    tft.drawString(string,tft.width()/2,tft.height()-(thickness-vpad),fontsize);
-}
-
 void drawOverlay(unsigned int c = BLACK){
   // Draw border left bottom
   tft.drawFastVLine(0,0,tft.height(),c);
@@ -273,24 +245,24 @@ void setAlertMode(int mode = 0){
 	}
 	// println_header("HEADER",color);
 	// tft.drawFastHLine(0, 24, tft.width(), colorB);  
-	println_footer("FOOTER",color);
+	// println_footer("FOOTER",color);
 	tft.drawFastHLine(0, tft.height()-24, tft.width(), colorB);
 	// drawOverlay(colorB);
 }
 
 void tft_clear(){
   tft.fillScreen(GRAPHBG);
-  println_header("",HC1);
+  // println_header("",HC1);
   tft.drawFastHLine(0, 30, tft.width(), BGCOLOR);  
-  println_footer("",HC2);
+  // println_footer("",HC2);
   tft.drawFastHLine(0, tft.height()-30, tft.width(), BGCOLOR);  
 }
 
-void tft_init(){
-  Serial.println("[TFT] Starting tft"); 
-  tft.init();
-  tft.setRotation(3);
-}
+// void tft_init(){
+//   Serial.println("[TFT] Starting tft"); 
+//   tft.init();
+//   tft.setRotation(3);
+// }
 
 void tftDispCenter(){
 
