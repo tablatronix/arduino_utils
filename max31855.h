@@ -4,7 +4,7 @@
 // #include "MAX31855.h" // by Rob Tillaart Library Manager (NO HSPI!!)
 #include "Adafruit_MAX31855.h" // Seperate calls for spiread for each function, no raw bit cache!
 #include <ktypelinear.h>
-// #include <quickstats.h>
+// #include <quickstats.h> // @todo test quickstats, add child class for container
 #include <Statistics.h> // https://github.com/provideyourown/statistics
 #include <ntc.h>
 
@@ -23,32 +23,34 @@ Adafruit_MAX31855 tc(MAXCS);
 Adafruit_MAX31855 tcB(1);
 #endif
 
-int tempOffset                = 0;
-bool useInternal              = false;
-unsigned long nextTempRead    = 0;
-unsigned long nextTempAvgRead = 0;
-int avgReadCount              = 0; // running avg
+bool useInternal              = false; // use internal temp as TC
+// averaging vars when not using stats averaging
+unsigned long nextTempRead    = 0; // NI averaging timing
+unsigned long nextTempAvgRead = 0; // NI averaging timing
+// clean up averaging, when using stats lib some below are not used
+int avgReadCount              = 0; // running avg counter
 int avgSamples                = 10;   // 1 to disable averaging
 int tempSampleRate            = 1000; // how often to sample temperature when idle
-
-// clean up averaging, when using stats lib some are not used
-bool useAveraging = true;
+float maxT; // highest temp in window (tempSampleRate)
+float minT; // lowest temp in window (tempSampleRate)
 
 #define USESTATS
-uint16_t max31855_numsamples;
+bool useAveraging = true; // use stats lib averaging
+int max31855_numsamples = 10;
 Statistics stats(max31855_numsamples); // init stats for avg (samples)
 
+float tempOffset     = 0; // allow temp skew
+
 // Runtime reflow variables
-float currentTemp    = 0; // current real temp
+float currentTemp    = 0; // current real temp w offset applied
 float currentTempB   = 0; // alt thermocouple
 float currentTempAvg = 0; // current avg temp (avgSamples) mean
 float internalTemp   = 0;  // cold junction
 float currentTempCorr = 0; // linearized k type
 
-float lastTemp       = -1;
+float lastTemp       = -1; // used in pid.h
+
 bool tcWarn          = false; // stop and show error if a tc issue is detected
-float maxT; // highest temp in window (tempSampleRate)
-float minT; // lowest temp in window (tempSampleRate)
 
 uint8_t lastTCStatus   = 0; // last error status
 uint16_t numerrors     = 0;  // counter for failures
@@ -107,26 +109,34 @@ void ReadCurrentTemp()
   else {
     // sanity check
     // @todo replace with sanitycheck
+    // also check for dev not changing over long periods, could be bad tc, or runaway is heat is being applied
     double readC = tc.readCelsius();
     if(isnan(readC) || readC < 0 || readC > 700){
       Serial.println("[ERROR] TC OUT OF RANGE, skipping " + (String)readC);
       numerrors++;
+      // @todo
+      // if(heating && deviation < 1)
+      // thermal runaway detection
       return;
     }
 
     // offset
     currentTemp = readC + tempOffset;
 
-    // linearized
+    // linearized NI
     // correctKType();
-    
+    }
+
     // average
     if(useAveraging){
       stats.addData((float)currentTemp);
       currentTempAvg = stats.mean();
     }
     else currentTempAvg = currentTemp;
-  }
+}
+
+bool getTcHasError(){
+  return lastTCStatus != STATUS_OK;
 }
 
 String getTcStatus(){
@@ -139,9 +149,9 @@ String getTcStatus(){
   else return "ERROR";
 }
 
-void resetDev(){
-  maxT = minT = currentTempAvg; // @otdo convert to rolling real dev
-  numerrors = 0; // for now do this here
+void updateDevVars(){
+  if(currentTempAvg>maxT) maxT = currentTempAvg; // update min max
+  if(currentTempAvg<minT) minT = currentTempAvg;
 }
 
 // MAIN UPDATER SCHDULER
@@ -150,8 +160,12 @@ void updateTemps(){
     digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
     internalTemp = tc.readInternal();
     ReadCurrentTemp();
-    if(currentTempAvg>maxT) maxT = currentTempAvg; // update min max
-    if(currentTempAvg<minT) minT = currentTempAvg;
+    if(!useAveraging)updateDevVars();
+}
+
+void resetDev(){
+  maxT = minT = currentTempAvg;
+  numerrors = 0; // for now do this here
 }
 
 float readTCDev(){
@@ -160,18 +174,37 @@ float readTCDev(){
   return dev;
 }
 
+// @todo add windowing, dev is currently tied to averageCount and samplerate
+// track time stamp calls or period and track dev over time window
+// eg. rate of change per second, or extrapolate
+// add timer and average, then avg dev over 500ms and double
+// y = m * log(x) + b
 float getTCDev(){
   float dev;
-  if(useAveraging) dev = stats.stdDeviation(); // @todo find cause of NAN errors
+  if(useAveraging){
+    dev = stats.stdDeviation(); // @note will return nan, if 0
+    if(isnan(dev)){
+      dev = 0;
+      // Serial.println("[ERROR] stats dev NAN");
+    }
+  }
   else dev = (maxT-minT);
-  if(isnan(dev)) Serial.println("[ERROR] stats dev NAN");
-  return isnan(dev) ? -1 : dev;
+  return dev;
 }
 
 bool TCSanityCheck(){
+  bool ret = true;
+  if(numerrors > numfailwarn){
+    Serial.println("[ERROR] TC has read errors");    
+    ret = false;
+  }
+  if(getTcHasError()){
+    Serial.println("[ERROR] TC Status Error");
+    ret = false;
+  }
   if((int)currentTemp > 300 || (int)currentTemp < 0) {
     Serial.println("[ERROR] TC OUT OF RANGE");
-    return false;
+    ret = false;
   }
   return true;
 }
@@ -188,7 +221,7 @@ void printTC(){
 	Serial.print(" CJ: " + String( round_f( internalTemp ) )+"ºC " + tempf + "ºF");
   Serial.print(" Dev: " + String( round_f( getTCDev() ) )+"ºC");
   Serial.print(" Raw: ");
-  Serial.print(currentTempAvg);
+  Serial.print(currentTemp);
   // Serial.print(" Dev: ");
   // Serial.print(stats.stdDeviation());
   // Serial.print(" TCLIN: ");
@@ -213,13 +246,14 @@ else tft.setTextColor( YELLOW, BLACK );
 
 void initTC(){
   // Start up the MAX31855
-  // @todo sanity
   tc.begin();
   delay(200);
   tc.readError();
+  // check for sanity
+  Serial.println("[TC] MAX31855 Thermocouple Begin...");
+  if(!TCSanityCheck()) Serial.println("[ERROR] Status: "+ getTcStatus());
+  
   #ifdef DEBUG
-    Serial.println("[TC] MAX31855 Thermocouple Begin...");
-    if((uint8_t)tc.readError() != STATUS_OK) Serial.println("[ERROR] Status: "+ getTcStatus());
     printTC();
     // Serial.println("[TC] "+(String)round(tc.readInternal()));
     // Serial.println("[TC] "+(String)round(tc.readCelsius()));
