@@ -720,7 +720,7 @@ B00000000,B00000000, //  . . . . . . . . . . . . . . . .
 const GFXglyph SymbolMono18pt7bGlyphs[] PROGMEM = {
   //Index,  W, H,xAdv,dX, dY
   {     0, 16,21, 21, 3,-19}, // 32,00 test square
-  {    42, 16,15, 21, 3,-18}, // 33,01 Upper_Left_Arrow
+  {    42, 16,15, 21, 3,-16}, // 33,01 Upper_Left_Arrow
   {    72, 16,15, 21, 3,-16}, // 34,02 Upper_Right_Arrow
   {   102, 16,15, 21, 3,-16}, // 35,03 lower left arrow
   {   132, 16,15, 21, 3,-18}, // 36,04 lower right arrow

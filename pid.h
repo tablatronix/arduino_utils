@@ -62,6 +62,12 @@ void run_PID(){
 //   wantedTemp = temp;
 // }
 
+// ensure we reset everything and stop pid
+void stop_PID(){
+  wantedTemp = 0;
+  SetRelayFrequency(0);
+}
+
 void MatchTemp()
 {
   // Serial.print(".");

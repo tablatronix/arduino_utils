@@ -62,6 +62,8 @@
 #define LTGREY    0xE71C
 #define LTGRAY    0xE71C
 
+#define REDORANGE 	0xFAA6
+
 #define BLUE      0x001F
 #define TEAL      0x0438
 #define GREEN     0x07E0
@@ -77,7 +79,7 @@
 #define GRAY      0xC618
 #define WHITE     0xFFFF
 #define BLACK     0x0000
-// #define SILVER    0xC618
+#define SILVER    0xC618
 
 #define GREENYELLOW 0xB7E0
 

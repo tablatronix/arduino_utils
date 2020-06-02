@@ -134,6 +134,45 @@ void checkWifi(){
 //   if (SW_RESET == reason) { return REASON_EXT_SYS_RST; }
 // }
 
+bool wifiIsConnected(){
+  return WiFi.status() == WL_CONNECTED;
+}
+
+String WiFi_SSID(bool persistent) {
+
+    #ifdef ESP8266
+    struct station_config conf;
+    if(persistent) wifi_station_get_config_default(&conf);
+    else wifi_station_get_config(&conf);
+
+    char tmp[33]; //ssid can be up to 32chars, => plus null term
+    memcpy(tmp, conf.ssid, sizeof(conf.ssid));
+    tmp[32] = 0; //nullterm in case of 32 char ssid
+    return String(reinterpret_cast<char*>(tmp));
+    
+    #elif defined(ESP32)
+    if(persistent){
+      wifi_config_t conf;
+      esp_wifi_get_config(WIFI_IF_STA, &conf);
+      return String(reinterpret_cast<const char*>(conf.sta.ssid));
+    }
+    else {
+      if(WiFiGenericClass::getMode() == WIFI_MODE_NULL){
+          return String();
+      }
+      wifi_ap_record_t info;
+      if(!esp_wifi_sta_get_ap_info(&info)) {
+          return String(reinterpret_cast<char*>(info.ssid));
+      }
+      return String();
+    }
+    #endif
+}
+
+bool wifiIsAutoConnect(){
+  return WiFi_SSID(true) != "";  
+}
+
 String getResetReason(){
     int reason;
     #ifdef ESP8266

@@ -9,7 +9,7 @@
 // HardwareSerial DebugOut = Serial;
 // HardwareSerial DebugOut(0);
 // Print Debug = &Serial;
-Stream &DebugOut = Serial1;
+Stream &DebugOut = Serial;
 
 #ifdef DEBUG
 bool debug_serialcmd = true;
@@ -19,22 +19,31 @@ bool debug_serialcmd = true;
 
 bool DEBUG_SERIALCMD = debug_serialcmd;
 
+// @todo use single stream listener
+// see `readSerial` for serial and telnet etc.
+
   // SERIAL CONSOLE
 #define MAX_NUM_CHARS 32 // maximum number of characters read from the Serial Monitor
 char cmd[MAX_NUM_CHARS];       // char[] to store incoming serial commands
-boolean cmd_complete = false;  // whether the command string is complete
+bool cmd_complete = false;  // whether the command string is complete
 
 void recvChar(void) {
   static byte index = 0;
   while (Serial.available() > 0 && cmd_complete == false) {
     char rc = Serial.read();
+    // Serial.println(rc);
+    // @todo handle endlines of any type
     if (rc != '\n') {
       if(index < MAX_NUM_CHARS) cmd[index++] = rc;
     } else {
       cmd[index] = '\0'; // terminate the string
       index = 0;
       cmd_complete = true;
-      Serial.print("received '"); Serial.print(cmd); Serial.println("'");
+      if(DEBUG_SERIALCMD){
+        Serial.print("received '"); 
+        Serial.print(cmd); 
+        Serial.println("'");
+      }
     }
     delay(0);
   }
@@ -71,6 +80,8 @@ void doMotor(int dir,int duration){
   motorChange = true;
 }
 
+
+// @todo replace with api or command processor library from ESPLSS
 void process_command(){
   if (strncmp(cmd,"f ",2) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
@@ -174,7 +185,7 @@ void process_command(){
 
   if (strncmp(cmd,"ssr ",4) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 4);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("[CMD] [SSR] duty:") );
+    if(DEBUG_SERIALCMD) DebugOut.print(F("[CMD] [SSR] MANUAL SET duty:") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     SetSSRFrequency((int)arg);
   }
@@ -185,6 +196,7 @@ void process_command(){
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     wantedTemp = (int)arg;
     Serial.println("[ERROR] START PID : " + (String)wantedTemp);
+    if(wantedTemp == 0) stop_PID();
     MatchTemp();
   }
 
@@ -217,6 +229,22 @@ void process_command(){
     SetFilterId((int)atoi(arg.c_str()));
   }
 
+  // new code
+  String inputCmd = "";
+  int numargs = 0;
+  int cmdLen = 0;
+
+  inputCmd = "set ind";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+         if(arg == "white") setIndColor(255,255,255);
+    else if(arg == "black" || arg == "0") setIndColor(0,0,0);
+    else setIndColor(indWheel((byte)atoi(arg.c_str())));
+  }
 
   cmd[0] = '\0';         // reset the commandstring
   cmd_complete = false;  // reset command complete 

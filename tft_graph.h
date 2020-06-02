@@ -351,12 +351,14 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
     Serial.print(" - ");
     Serial.println(oy);
 
+    Serial.print("\n[GRAPH] gx - gy: ");
     Serial.print(gx);
     Serial.print(" - ");
     Serial.println(gy);
     Serial.println("------");
+    Serial.println("DrawLine");
+    Serial.flush();
   }
-
 
   tft.drawLine(ox, oy, x, y, pcolor); // STILL DOUBLE!
 
@@ -530,10 +532,16 @@ void resetGraphLines(){
  */
 void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 0){
     // if(id != filteredId && filteredId >= 0) return;
+    if(_DEBUG_POINT){
+      Serial.println("addPointSet");
+      Serial.println(id);
+      Serial.println(sample);
+      Serial.println(value);
+    }
     int i = sample;
     // int vsize = 100;
     // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
-    int yindexstart = 25; // start Y at non 0 value
+    int yindexstart = 0; // start Y at non 0 value
     addPoint(tft,id, i, value , 0, numSamples, yindexstart, vsize, getLineColor(id,0),size);
 
     // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, numSamples, 0, vsize, getLineColor(i-1,0));    
