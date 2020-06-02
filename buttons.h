@@ -7,7 +7,7 @@
 #include <IoAbstraction.h>
 #include <IoAbstractionWire.h>
 
-const int interruptPin = 3; // Real interrupt for io expander
+const int interruptPin = 3; // if stalldetect, Real interrupt for io expander USES SERIAL RX!!!
 const int encoderSWPin = 0;
 const int encoderAPin  = 1;
 const int encoderBPin  = 2;
@@ -79,7 +79,8 @@ void init_buttons(){
   // First we set up the switches library, giving it the task manager and tell it where the pins are located
   // We could also of chosen IO through an i2c device that supports interrupts.
   // the second parameter is a flag to use pull up switching, (true is pull up).
-  switches.initialiseInterrupt(ioFrom8574(0x20, interruptPin), true);
+  if(stalldetect)switches.initialiseInterrupt(ioFrom8574(0x20, interruptPin), true);
+  else switches.initialiseInterrupt(ioFrom8574(0x20), true);
 
   // motor driver DRV8333
   ioDevicePinMode(switches.getIoAbstraction(), motorpinA, OUTPUT);
