@@ -23,23 +23,28 @@ Adafruit_MAX31855 tc(MAXCS);
 Adafruit_MAX31855 tcB(1);
 #endif
 
+
+// Averaging
+// options
 bool useInternal              = false; // use internal temp as TC
+int avgSamples                = 10;   // 1 to disable averaging
+float tempOffset              = 0; // allow temp skew
+int tempSampleRate            = 1000; // how often to sample temperature when idle
+
 // averaging vars when not using stats averaging
 unsigned long nextTempRead    = 0; // NI averaging timing
 unsigned long nextTempAvgRead = 0; // NI averaging timing
 // clean up averaging, when using stats lib some below are not used
 int avgReadCount              = 0; // running avg counter
-int avgSamples                = 10;   // 1 to disable averaging
-int tempSampleRate            = 1000; // how often to sample temperature when idle
 float maxT; // highest temp in window (tempSampleRate)
 float minT; // lowest temp in window (tempSampleRate)
 
 #define USESTATS
+// options
 bool useAveraging = true; // use stats lib averaging
-int max31855_numsamples = 10;
+int max31855_numsamples = 10; // use avgSamples?
 Statistics stats(max31855_numsamples); // init stats for avg (samples)
-
-float tempOffset     = 0; // allow temp skew
+Statistics tcdev(16); // init stats for avg (samples)
 
 // Runtime reflow variables
 float currentTemp    = 0; // current real temp w offset applied
@@ -47,15 +52,17 @@ float currentTempB   = 0; // alt thermocouple
 float currentTempAvg = 0; // current avg temp (avgSamples) mean
 float internalTemp   = 0;  // cold junction
 float currentTempCorr = 0; // linearized k type
-
 float lastTemp       = -1; // used in pid.h
 
+
+// TC WARN
+// options
 bool tcWarn          = false; // stop and show error if a tc issue is detected
+uint16_t numfailwarn   = 10; // how many failures in window
+uint16_t numfailwindow = 10000; // ms to compare
 
 uint8_t lastTCStatus   = 0; // last error status
-uint16_t numerrors     = 0;  // counter for failures
-uint16_t numfailwarn   = 10; // how many failures in window
-uint16_t numfailwindow = 10; // num seconds to compare
+uint16_t TCnumErrors     = 0;  // counter for failures
 
 // max31855 error states
 #define STATUS_OK               0x00
@@ -113,7 +120,7 @@ void ReadCurrentTemp()
     double readC = tc.readCelsius();
     if(isnan(readC) || readC < 0 || readC > 700){
       Serial.println("[ERROR] TC OUT OF RANGE, skipping " + (String)readC);
-      numerrors++;
+      TCnumErrors++;
       // @todo
       // if(heating && deviation < 1)
       // thermal runaway detection
@@ -131,8 +138,18 @@ void ReadCurrentTemp()
     if(useAveraging){
       stats.addData((float)currentTemp);
       currentTempAvg = stats.mean();
+      tcdev.addData(currentTempAvg);
     }
     else currentTempAvg = currentTemp;
+}
+
+// @todo use actual window, using a periodic reset now
+void resetError(){
+  TCnumErrors = 0;
+}
+
+uint16_t getTCErrorCount(){
+  return TCnumErrors;
 }
 
 bool getTcHasError(){
@@ -165,7 +182,7 @@ void updateTemps(){
 
 void resetDev(){
   maxT = minT = currentTempAvg;
-  numerrors = 0; // for now do this here
+  TCnumErrors = 0; // for now do this here
 }
 
 float readTCDev(){
@@ -182,7 +199,7 @@ float readTCDev(){
 float getTCDev(){
   float dev;
   if(useAveraging){
-    dev = stats.stdDeviation(); // @note will return nan, if 0
+    dev = tcdev.stdDeviation(); // @note will return nan, if 0
     if(isnan(dev)){
       dev = 0;
       // Serial.println("[ERROR] stats dev NAN");
@@ -194,7 +211,7 @@ float getTCDev(){
 
 bool TCSanityCheck(){
   bool ret = true;
-  if(numerrors > numfailwarn){
+  if(TCnumErrors > numfailwarn){
     Serial.println("[ERROR] TC has read errors");    
     ret = false;
   }
