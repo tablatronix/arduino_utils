@@ -37,10 +37,10 @@ void init_indicator(uint16_t pin){
   ind.updateType(NEO_GRB + NEO_KHZ800);
   ind.begin();
   ind.show();
-  ind.show();
+  ind.show(); // on purpose, ensure its blanked for glitched resets
 	delay(1);
 	if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
-  init_strip();
+  // init_strip();
 }
 
 void indSetColor(uint32_t c){
@@ -51,6 +51,11 @@ void indSetColor(uint32_t c){
 }
 
 // alias
+
+void setIndBrightness(uint16_t alpha = INDBRIGHTNESS){
+  ind.setBrightness(alpha);
+}
+
 void setIndColor(uint32_t c){
   indSetColor(c);
 }
