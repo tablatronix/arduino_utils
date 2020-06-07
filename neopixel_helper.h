@@ -9,14 +9,15 @@ bool DEBUG_neohelp = false;
 
 #include <Adafruit_NeoPixel.h>
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel();
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(4, 12, NEO_GRB + NEO_KHZ800);
+// Adafruit_NeoPixel strip = Adafruit_NeoPixel(4, -1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel();
 
 // these are const, so they don't eat RAM
 const uint32_t np_white  = strip.Color(255,255,255);
 const uint32_t np_black  = strip.Color(0  ,0,0);
 const uint32_t np_red    = strip.Color(255,0,0);
 const uint32_t np_orange = strip.Color(255,128,0);
-const uint32_t np_yellow = strip.Color(255,255,0);
+const uint32_t np_yellow = strip.Color(255,100,0); // 255,100,0
 const uint32_t np_green  = strip.Color(0  ,255,0);
 const uint32_t np_cyan   = strip.Color(0  ,255,128);
 const uint32_t np_blue   = strip.Color(0  ,0,255);
