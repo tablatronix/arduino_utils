@@ -18,8 +18,13 @@
 
 #include <tft_graph.h>
 #include <io_utils.h>
-
+#include <time_funcs.h>
 #include <pid.h>
+
+// ota bargraph
+#include <BarGraph.h>
+#define SCALECOLOR 0xFFFF
+BarGraph bar0;
 
 #define TFTROT 3
 
@@ -34,12 +39,15 @@
   #include <ntc.h>
 #endif
 
+// symbol glyph font for icons
 #include "SymbolMono18pt7b.h"
 #define AA_FONT_SMALL &SymbolMono18pt7b
 #define GFXFF 1
 
 // #include "/Users/shawn/.platformio/lib/TFT_eSPI_ID1559/Fonts/GFXFF/FreeMono24pt7b.h"
 // #include "FreeMono24pt7b.h"
+
+#include "Free_Fonts.h"
 
 #include "NotoSansBold15.h"
 #include "NotoSansBold36.h"
@@ -53,8 +61,7 @@
 #define GFXX18pt &FreeSans18pt7b
 // #define GFXX18pt &FreeMono18pt7b
 
-
-bool USEWIFI = false;
+bool USEWIFI = true; // enabled wifi
 
 Statistics fps(10); // init stats for avg (samples)
 
@@ -64,13 +71,17 @@ bool animStateA = true;
 bool animStateB = false;
 bool testIcons  = false; // set icons states randomly/Demo mode
 
+unsigned long stateStartMS = 0; // state start timers
+
 // app states
 int reflowState = 0; // @todo add enum state, maybe queue
 
 // temperature
-int hotTemp  = 30; // C burn temperature for HOT indication, 0=disable
-int coolTemp = 28; // C burn temperature for HOT indication, 0=disable
+int hotTemp  = 70; // C burn temperature for HOT indication, 0=disable
+int coolTemp = 50; // C safe temperature for HOT indication, 0=disable
+int lowTemp  = 30; // C of TC warmed than typical CJ
 int shutDownTemp = 210; // degrees C
+bool enableThermalCheck = false;
 
 // strings
 // String TITLE = "TITLE";
@@ -85,6 +96,8 @@ String SUBDATA = ""; // top right
 String FOOTERA = ""; // bottom left
 float  FOOTERA_FLOAT = 0; // bottom left float num
 String FOOTERCENTER = ""; // footer center
+String FOOTERCENTERL1 = ""; // footer center
+String FOOTERCENTERL2 = ""; // footer center
 String FOOTERB = ""; // footer center
 String FOOTERC = ""; // opt1
 String FOOTERD = ""; // opt2
@@ -98,11 +111,36 @@ bool DEBUG_DATUM = false; // NI debug show datum origin point
 int footerBG = HC2;
 
 // init_graph(320,240-(FOOTERH+ypad),0,HEADERH+ypad);
-int SCREENWIDTH = 320;
-int SCREENHEIGHT = 240;
+int SCREENWIDTH = 320; // TFT_HEIGHT
+int SCREENHEIGHT = 240; // TFT_WIDTH
 
-// int GRAPHHEIGHT = SCREENHEIGHT-(FOOTERH+3); //padding
-// int GRAPHWIDTH  = SCREENWIDTH;
+int GRAPHHEIGHT = SCREENHEIGHT-(FOOTERH); //padding 200px
+int GRAPHWIDTH  = SCREENWIDTH;
+
+int graphInterval = 1000; // graph update rate ms
+
+// FANS
+uint8_t coolAbortTaskID;
+
+// DOOR
+int doorAbortTime = 50000; // time we expect door full operations to take, will disable door motor after this time
+uint8_t doorAbortTaskID; // timer task
+
+void stateTimerReset(){
+  stateStartMS = millis();
+}
+
+void setgraphInterval(int intv){
+  graphInterval = intv;
+}
+
+void reflow_graph(){
+  int ypad = 3; // padding
+  // int FOOTERH = 40;
+  // int HEADERH = 30;
+  init_graph(GRAPHWIDTH,240-(FOOTERH+ypad),0,HEADERH+ypad);
+  // graphPaste();
+}
 
 // int filteredId = -1; // filter graph line indexs -1 off
 
@@ -139,6 +177,10 @@ void SetFooterB(String str){
   FOOTERCENTER = str;
 }
 
+void setFooterBL1(String str){
+  FOOTERCENTERL1 = str;
+}
+
 void SetFooterBSCROLL(String str){
   SCROLL = true;
   STATUSLINE = str;
@@ -165,9 +207,6 @@ void setTempDisp(){
   // SetFooterA();
 }
 
-// DOOR
-int doorAbortTime = 50000; // time we expect door full operations to take, will disable door motor after this time
-uint8_t doorAbortTaskID; // timer task
 
 void doorCancelAbort(){
 	if(doorAbortTaskID >0) taskManager.cancelTask(doorAbortTaskID);
@@ -198,14 +237,29 @@ void doorClose(){
 // MACROS
 
 void extract(){
-  // turn on extract fan into filter to absorb or vent smoke and fumes before opening door and cooling
-  // test for cooling effect to ensure reflow not affected
   fanA(50); // extract 50%
+}
+
+// cancel a task, pass ref?
+// add ojbect to handle tasks and ids
+uint16_t cancelTask(uint16_t taskid){
+  if(taskid >0) taskManager.cancelTask(taskid);
+  return 0;
+}
+
+void coolComplete(){
+  if(currentTempAvg < lowTemp){
+    if(coolAbortTaskID >0) taskManager.cancelTask(coolAbortTaskID);
+    coolAbortTaskID = 0;
+    doorClose();
+    fanB(0);
+  }
 }
 
 void coolDown(){
   doorOpen();
   fanB(100); // outake 100%
+  coolAbortTaskID = taskManager.scheduleFixedRate(1000, coolComplete);  
 }
 
 void standby(){
@@ -312,6 +366,8 @@ void SetFanInd(){
  * --------------------------------------
  */
 
+uint8_t TITLETOPPAD = 4;
+
 void updateTitle(){
     String str = TITLE;
     // Serial.println("footer val1: " + str);
@@ -322,8 +378,21 @@ void updateTitle(){
     tft.setTextPadding(115);
     // drawDatumMarker(2,2);
     // tft.setFreeFont(AA_FONT_MED);    // Must load the font first    
-    lpad += tft.drawString(str,lpad,lpad,4);
+    lpad += tft.drawString(str,lpad,TITLETOPPAD,4);
     // Serial.println(lpad);
+    tft.setTextPadding(0);
+}
+
+void updateTimer(){
+    String str = DETAILS;
+    if(DEBUG_BOX) tft.setTextColor(HC1_text,DEBUG_HC2);
+    else tft.setTextColor(HC1_text,HC1);
+    tft.setTextDatum(BL_DATUM);
+    int lpad = 2;
+    tft.setTextPadding(120);
+    // drawDatumMarker(120,25);
+    lpad += tft.drawString(str,120,30,4); // 22
+    // Serial.println(lpad);    
     tft.setTextPadding(0);
 }
 
@@ -335,7 +404,7 @@ void updateTitleB(){
     int lpad = 2;
     tft.setTextPadding(120);
     // drawDatumMarker(120,25);
-    lpad += tft.drawString(str,120,25,2); // 22
+    lpad += tft.drawString(str,120,30,4); // 22
     // Serial.println(lpad);    
     tft.setTextPadding(0);
 }
@@ -346,9 +415,9 @@ void updateTitleC(){
     else tft.setTextColor(HC1_text,HC1);
     tft.setTextDatum(BR_DATUM);
     int rpad = 4;
-    tft.setTextPadding(60);
+    tft.setTextPadding(80);
     // drawDatumMarker(SCREENWIDTH-rpad,29);
-    rpad += tft.drawString(str,SCREENWIDTH-rpad,29,4); // 22
+    rpad += tft.drawString(str,SCREENWIDTH-rpad,30,4); // 22
     // Serial.println(lpad);
     tft.setTextPadding(0);
 }
@@ -377,7 +446,7 @@ void updateFooterA_C(unsigned int c){
       lpad = spr.drawFloat((float)str,1,0,GFXFF); // 63
       // if(DEBUG_BOX) spr.setTextColor(WHITE,MAROON);  
       spr.unloadFont();
-      spr.drawString("`c",lpad+5,0,4); // 22
+      spr.drawString("`c",lpad+5,2,4); // 22
       
       spr.pushSprite(5, SCREENHEIGHT-35,BLACK);
       spr.deleteSprite();
@@ -399,6 +468,7 @@ void updateFooterA_C(unsigned int c){
     #endif
 }
 
+// user footerb_l
 void updateFooterB(){
     String str = FOOTERCENTER;
     // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
@@ -415,7 +485,7 @@ void updateFooterB(){
 }
 
 void updateFooterB_ERROR(){
-    bool center = true;    
+    bool center = false;    
     String str = ERRORSTR;
     if(DEBUG_BOX) tft.setTextColor(GREY,DEBUG_HC2); 
     else tft.setTextColor(RED,HC2);
@@ -424,14 +494,15 @@ void updateFooterB_ERROR(){
     else tft.setTextDatum(BL_DATUM);
     tft.setTextPadding(150);
 
-    int posx = (SCREENWIDTH/3)-5;
-    if(center)posx = SCREENWIDTH/2+15;
+    int posx = (SCREENWIDTH/2)-35;
+    if(center)posx = (SCREENWIDTH/2)+23;
     tft.drawString(str,posx,SCREENHEIGHT-4,2);
     // tft.drawString(str,SCREENWIDTH/2,SCREENHEIGHT-4,2);
     tft.setTextPadding(0);
 }
 
 // left aligned
+// rework all of this, since we can do 2 lines now!!
 void updateFooterB_L(){
     String str = FOOTERCENTER;
     // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
@@ -445,12 +516,31 @@ void updateFooterB_L(){
     if(maxchars > 0) newstr = str.substring(0,maxchars);
     else newstr = str;
 
-    // tft.setFreeFont(AA_FONT_SMALL);    // Must load the font first
-    tft.setTextDatum(BL_DATUM);
     tft.setTextPadding(150);
+    tft.setTextDatum(BL_DATUM);
     // println_footer("",HC2);
     tft.drawString(newstr,(SCREENWIDTH/2)-35,SCREENHEIGHT-4,2);
-    tft.setTextPadding(0);
+}
+
+void updatefooterBL1(){
+    String str = FOOTERCENTERL1;
+    // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
+    // str = "Ms: "+(String)(millis())+" RSSI: "+(String)getRSSIasQuality(); // 19 characters
+    if(DEBUG_BOX) tft.setTextColor(GREY,DEBUG_HC2);
+    else tft.setTextColor(GREY,HC2);
+
+    // text clipping
+    int maxchars = 0;
+    String newstr;
+    if(maxchars > 0) newstr = str.substring(0,maxchars);
+    else newstr = str;
+
+    tft.setTextDatum(BL_DATUM);
+    tft.setTextPadding(150);
+    tft.drawString(str,(SCREENWIDTH/2)-35,SCREENHEIGHT-20,2);
+}
+
+void updatefooterBL2(){
 
 }
 
@@ -521,9 +611,17 @@ void drawFooterBorder(unsigned int c = RED){
   // tft.drawFastHLine(0,0,tft.width()-1,c);
 }
 
+
+void drawFooterLineBottom(unsigned int c){
+  tft.drawFastHLine(0,0,SCREENWIDTH,c);  
+  tft.drawFastHLine(0,1,SCREENWIDTH,c);  
+}
+
 void drawFooterLine(unsigned int c){
   tft.drawFastHLine(0,SCREENHEIGHT-FOOTERH,SCREENWIDTH,c);  
+  tft.drawFastHLine(0,SCREENHEIGHT-FOOTERH-1,SCREENWIDTH,c);  
 }
+
 
 // @NOTE If Y is off screen is snaps to negative
 
@@ -553,7 +651,6 @@ void wifiIcon(bool enabled = true,bool connected = false){
     tft.setTextDatum(TR_DATUM);
     tft.setTextPadding(0);
     tft.drawString(str,iconDX,iconDY,GFXFF);
-    tft.unloadFont();
     if(!connected){
       tft.setTextColor(RED);
       tft.drawString("!",iconDX-6,iconDY+2,2);
@@ -561,24 +658,35 @@ void wifiIcon(bool enabled = true,bool connected = false){
     // tft.drawString("8",SCREENWIDTH-20,SCREENHEIGHT-(FOOTERH-2),GFXFF);
 }
 
-// Wifi mananger or ap is running for config/pairing
+// fonts from custom glyph
+// using symbolMono18pt7b test for now, needs cleanup
+#define ICON_CHR_WIFI "!"
+#define ICON_CHR_WIFI_OVERA "!"
+#define ICON_CHR_WIFI_OVERB "*"
+#define ICON_CHR_FANA "\""
+#define ICON_CHR_FANB "#"
+#define ICON_CHR_FANOVERA"$"
+#define ICON_CHR_FANOVERB "%"
+#define ICON_CHR_HEAT "&"
+
+// NI Wifi mananger or ap is running for config/pairing
 void wifiSetupIcon(){
-    String str = "!";
+    String str = ICON_CHR_WIFI;
     tft.setFreeFont(AA_FONT_SMALL);    // Must load the font first
     tft.setTextColor(ICONACTIVECOLOR,DEBUG_BOX?DEBUG_HC3:HC2);  
     tft.setTextDatum(TR_DATUM);
     tft.setTextPadding(0);
     tft.drawString(str,iconDX,iconDY,GFXFF);
-    tft.unloadFont();
     tft.setTextColor(BLUE);
-    tft.drawString("*",iconDX-6,iconDY+2,2); 
+    tft.drawString(ICON_CHR_WIFI_OVERB,iconDX-6,iconDY+2,2); 
+    tft.unloadFont();
 }
 
 void fanAIcon(bool enabled = false){
-  String str = "\"";
+  String str = ICON_CHR_FANA;
 
   if(enabled){
-    if(animStateA) str = "#";
+    if(animStateA) str = ICON_CHR_FANB;
     animStateA = !animStateA;
     tft.setTextColor(ICONACTIVECOLOR,DEBUG_BOX?DEBUG_HC3:HC2);  
   }
@@ -588,13 +696,14 @@ void fanAIcon(bool enabled = false){
   tft.setFreeFont(AA_FONT_SMALL);    // Must load the font first
   tft.setTextDatum(TR_DATUM);
   tft.setTextPadding(0);
-  tft.drawString(str,iconAX,iconAY,GFXFF);  
+  tft.drawString(str,iconAX,iconAY,GFXFF);
+  tft.unloadFont();
 }
 
 void fanBIcon(bool enabled = false){
-  String str = "\"";
+  String str = ICON_CHR_FANA;
   if(enabled){
-    if(animStateB) str = "#";
+    if(animStateB) str = ICON_CHR_FANB;
     animStateB = !animStateB;
     tft.setTextColor(ICONACTIVECOLOR,DEBUG_BOX?DEBUG_HC3:HC2);  
   }
@@ -617,7 +726,8 @@ void iconC(bool enabled = false){
   tft.setFreeFont(AA_FONT_SMALL);    // Must load the font first
   tft.setTextDatum(TR_DATUM);
   tft.setTextPadding(0);
-  tft.drawString("&",iconCX,iconCY,GFXFF);  // W,H
+  tft.drawString(ICON_CHR_HEAT,iconCX,iconCY,GFXFF);  // W,H
+  tft.unloadFont();
 }
 
 void fanAIcon_ring(unsigned int c){
@@ -627,7 +737,8 @@ void fanAIcon_ring(unsigned int c){
   tft.setTextColor(c);
   tft.setTextDatum(TR_DATUM);
   tft.setTextPadding(0);
-  tft.drawString("$",SCREENWIDTH-50-17,SCREENHEIGHT-30,GFXFF);  
+  tft.drawString(ICON_CHR_FANOVERA,SCREENWIDTH-50-17,SCREENHEIGHT-30,GFXFF);  
+  tft.unloadFont();  
 }
 
 void fanBIcon_ring(unsigned int c,bool full){
@@ -637,18 +748,26 @@ void fanBIcon_ring(unsigned int c,bool full){
   tft.setTextColor(c);
   tft.setTextDatum(TR_DATUM);
   tft.setTextPadding(0);
-  tft.drawString(full ? "$" : "%",SCREENWIDTH-50-17-17,SCREENHEIGHT-30,GFXFF);  
+  tft.drawString(full ? ICON_CHR_FANOVERA : ICON_CHR_FANOVERB,SCREENWIDTH-50-17-17,SCREENHEIGHT-30,GFXFF);  
+  tft.unloadFont();    
 }
 
+// Red DANGER burns
+// Orange HOT use caution
+// Green Above ambient
+// Blue, cooldown remove PCB ? NI
 void updateFooterLine(){
-  if(currentTemp > hotTemp) drawFooterLine(RED);
-  else if(currentTemp > coolTemp) drawFooterLine(ORANGE);
-  else if(currentTemp > 25) drawFooterLine(GREEN);
+  if(currentTempAvg > hotTemp) drawFooterLine(RED);
+  else if(currentTempAvg > coolTemp) drawFooterLine(ORANGE);
+  else if(currentTempAvg > lowTemp) drawFooterLine(GREEN);
   else drawFooterLine(BLACK);
 }
 
 void doAlert(int mode = 0);
 
+void updateSSRIcon(){
+  iconC(getSSRDuty() > 0);
+}
 
 // random indication icon test
 void testIconsUpdate(){
@@ -673,12 +792,26 @@ void updateIcons(){
   fanBIcon(getFanStatus(2)>0);
   // fanBIcon_ring(LTBLACK,true);
   // fanBIcon_ring(TFT_SILVER,false);
-  iconC(getSSRDuty() > 0);
+  updateSSRIcon();
+}
+
+
+void dispReflowStats(){
+  String str = "";
+  str = "NTC: "+(String)(int)(round(get_ntc()/10));
+  str += " CJ: " + (String)(int)(round(internalTemp));
+  setFooterBL1(str);
+  str = "";
+  str += "P: " + (String)(int)getSSRPower() + "%";
+  str += " o: " + (String)getTCDev();
+  str += " E: " + (String)getTCErrorCount();
+  SetFooterB(str);
 }
 
 void updateAll(){
-  updateFPS(); 
+  // updateFPS(); 
   // updateDev();
+  dispReflowStats();
   updateFooterA_C(WHITE);
 
   updateTitle();
@@ -687,9 +820,11 @@ void updateAll(){
 
   updateFooterLine();
 
+  updatefooterBL1();
   if(ERRORSTR !="") updateFooterB_ERROR();
   else if(SCROLL) UpdateScroll();
   else updateFooterB_L();
+
   // updateIcons();
   // doAlert(0);
   // drawFooterLine();
@@ -754,6 +889,7 @@ void displayProfile(uint16_t = 0){
   // show titleC target/max temperature
   
   // placeholders atm
+  // 
   SetTitle("PRESET");
   SetTitleB("Sn63/Pb37 10-20um");
   SetTitleC("220`c");
@@ -764,6 +900,7 @@ void displayProfile(uint16_t = 0){
   updateTitleC();
 }
 
+// reflow header!
 void displayReflow(){
   // set icons
   // draw profile graph
@@ -773,15 +910,22 @@ void displayReflow(){
   // use footer and scroll for status or alerts, debugging
 
   // placeholders atm
-  SetTitle("PREHEAT"); // assign titles for each profile zone ?
-  SetTitleB("2:22 30%"); // 
-  SetTitleC("50`c");
+  SetTitle("REFLOW"); // assign titles for each profile zone ?
+  
+  // timer disp
+  // real time, change to use stepping from reflow instead
+  if(graphInterval < 1000) SetTitleB("   " + (String)getTimerMS(millis()-stateStartMS)); // 
+  else SetTitleB("   " + (String)getTimer(millis()-stateStartMS)); // 
+  
+  // SetTitleC("50`c");
 
   // updateheader()
   updateTitle();
   updateTitleB();
+  // updateTimer();
   updateTitleC();
 
+  updateAll();
 }
 
 void displayPower(){
@@ -793,8 +937,9 @@ void displayPower(){
 }
 
 void testPaste(){
-  displayProfile(0);
-  SetFooterA(currentTemp);
+  // displayProfile(0);
+  displayReflow();
+  SetFooterA(currentTempAvg);
 
   // String str = "Ms: "+(String)(millis())+" RSSI: "+(String)getRSSIasQuality(); // 19 characters 
   // SetFooterBSCROLL(str);
@@ -813,7 +958,167 @@ void tft_init(){
   tft.setRotation(TFTROT);
 }
 
-// timings
+// quick dirty tc check, 
+// if heating, and temp not changing enough, and 10s since start of temp call
+// will have to add an actual tracking mechanism fo rrate of change expected and change since as startState is used for entire profile
+bool thermalCheck(){
+  if(!enableThermalCheck) return true;
+  if(wantedTemp > 0 && getSSRDuty() > 3 && getTCDev()<0.10 && (millis()-stateStartMS > 10000)){
+    Serial.println("THERMAL RUNAWAY");
+    setERRORSTR("THERMAL RUNAWAY");
+    return false;
+  }
+  return true;
+}
+
+uint16_t reflowZone = 0;
+
+void reflowNextZone(){
+  Serial.println("ms:" + (String)millis());
+  const int numSamples = 7;
+  if(reflowZone == numSamples-1){
+    Serial.println("[REFLOW] DONE");
+    // continue cooling, slow graph rate to log ? show some other way
+    stop_PID();
+  }
+  else Serial.println("[REFLOW] SET ZONE: " + (String)reflowZone);
+  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
+  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value  
+  wantedTemp = yValues[reflowZone];
+  reflowZone++;
+  SetTitleC((String)(int)round((wantedTemp))+"`c");
+}
+
+void doPasteReflow(){
+
+  const int numSamples = 7;
+  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
+  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value
+
+ int maxtime = 310; // max time frame for reflow, or make sure last point is not drawn
+ int maxtemp = 220+20; // max value + top padding
+ int ssize = 320;
+
+  for(int i=0;i<maxtime;i++){
+    double y;
+    y = Interpolation::SmoothStep(xValues, yValues, numSamples, i);
+    Serial.println("y: " + (String)y);
+    addPointSet(5,i,y,ssize,maxtemp,0);
+  }
+
+  for(int i = 0; i < numSamples; i++){
+    // Serial.print(Interpolation::CatmullSpline(xValues,yValues, numSamples, i));
+    // addPointSet(5,xValues[i],yValues[i],ssize,maxtemp);
+    Serial.println("x2 timer " + (String)((int)round(xValues[i])*1000));
+    taskManager.scheduleOnce(xValues[i], reflowNextZone,TIME_SECONDS);
+    stateTimerReset();
+  }
+  reflowNextZone(); 
+}
+
+
+// BARGRAPH
+// 
+void update_bargraph(int perc){
+  bar0.drawBarHorizontal(perc);  
+}
+
+void init_bargraph(){
+    bar0.begin( 0,  300-20,  20,  50, &tft);  
+    bar0.setColor(WHITE, BLACK);
+    tft.fillScreen(BLACK);
+
+    tft.unloadFont();
+    // tft.setFreeFont(AA_FONT_SMALL); 
+    // tft.setFreeFont(FONT2);
+    tft.setTextFont(FONT2);
+    // tft.setFreeFont(FM12);
+    tft.setCursor(20,20);
+    tft.setTextSize(1);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK); 
+    tft.println("OTA Update in Progress...");
+}
+
+void testBargraph(){
+  Serial.println("initbargraph");
+  init_bargraph();
+
+  // tft.fillRect(20, 50 + 14, 280, 15,  RED);
+  for(int i=0;i<100;i++){
+      update_bargraph(i);
+      delay(50);
+  }
+  bar0.setColor(GREEN, BLACK);
+  update_bargraph(100);  
+  delay(1000);
+
+  tft.setCursor(10,10);
+  tft.println("Rebooting...                     ");
+
+  for(int i=0;i<100;i++){
+      update_bargraph(100-i);
+      delay(50);
+  }
+  bar0.setColor(WHITE, RED);
+  update_bargraph(1);
+  update_bargraph(0);
+  delay(1000);
+}
+
+void setupOtaCB(){
+  ArduinoOTA.onStart([]() {
+      otastarted = true;
+      // init_bargraph();
+       // Serial.println("\nOTA onStart");
+  });
+
+  ArduinoOTA.onEnd([]() {
+        otastarted = false;
+        bar0.setColor(GREEN, BLACK);
+        update_bargraph(100);
+        tft.setTextSize(1);
+        // Serial.println("\nOTA onEnd");
+  });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("OTA Progress: %u%%\n", (progress / (total / 100)));
+    update_bargraph((int)(progress / (total / 100)));
+  });
+}
+
+// [graphing]
+// - [ ] fix start graph -999 to >0 line , fix to not draw first line if adding first point
+// - [ ] add dotted lines
+// - [ ] add marker lines
+// - [ ] add indicator labels, side of screen lock to trace or move 
+// - [ ] add power meter
+// - [ ] add percentage and timer
+// - [ ] draw buffer around desired trend line for profile
+// - [ ] rework the grid increments
+// - [ ] Temperature trend indicator <o> up down holding 
+// 
+// Fan control
+// - [ ] Start FanA extract on fume temp, peak reflow, make sure it does not preturb temperature
+// - [ ] Test slow speed FanB for heat distribution during warmup, convection probably not useful since its IR direct heating
+// - [ ] NTC auto run internal fans, SSR kick 100% when reflow starts, ensure this does not pull additional heat into chamber, add cool intake on bottom of enclosure
+// - [ ]turn on extract fan into filter to absorb or vent smoke and fumes before opening door and cooling
+// - [ ] test for cooling effect to ensure reflow not affected
+// 
+// Runtime
+// - [ ] Time to temp, startimer, record time to reach temp, all states, cool etc create logging array for debug output later or transmission stats
+// - [ ] Record Max temp reached and time, detect overshoots!
+
+
+// [PID]
+// - [ ] PID KickAdd Reflow Peak kick if PID is not getting there fast enough, special PID overrides for plateus.
+// - [ ] Custom power per stage, use power for kick, normalize to 100% , 125% kick on ramp start etc..
+// - [ ] Record time when PID stops pushing, detect early rise, rise too fast or slow
+// - [ ] Calculate slope for all temp ranges/zones record linearity across ranges
+// - [ ] Ideal PID for HEAT stages, cooldown, temperatures above 100C may take longer to reach, 
+// - [ ] account for thermal masses and board colors can be inferred here, power might also help here
+// - [x] Thermal runway (quick dirty)
+
+// [timings]
 // 
 // Timing for temperature readings, averaging plus sample rate, smoothing as needed
 // display and graphing might need seperate smoothing algos
@@ -821,6 +1126,7 @@ void tft_init(){
 // update speed of icons, use ondemand updates then periodic catch ups
 // animated icons may need their own intervals based on frame rate
 // Time Division for graph, 320 divisions max
+// Use timer for profile and each stage or PV change, used for thermal runaway and rate of change insufficiant reflow failure detciton or bail.
 
 // status icons
 // 
@@ -829,181 +1135,7 @@ void tft_init(){
 // state color
 // add frames, map to glyps
 // toggle animations, dependant of state or not
-
-
-  // Escape any special HTML (unsafe) characters in a string. e.g. anti-XSS.
-  // Args:
-  //   unescaped: A string containing text to make HTML safe.
-  // Returns:
-  //   A string that is HTML safe.
-  String htmlEscape(const String unescaped) {
-    String result = "";
-    uint16_t ulen = unescaped.length();
-    result.reserve(ulen);  // The result will be at least the size of input.
-    for (size_t i = 0; i < ulen; i++) {
-      char c = unescaped[i];
-      switch (c) {
-        // ';!-"<>=&#{}() are all unsafe.
-        case '\'':
-          result += F("&apos;");
-          break;
-        case ';':
-          result += F("&semi;");
-          break;
-        case '!':
-          result += F("&excl;");
-          break;
-        case '-':
-          result += F("&dash;");
-          break;
-        case '\"':
-          result += F("&quot;");
-          break;
-        case '<':
-          result += F("&lt;");
-          break;
-        case '>':
-          result += F("&gt;");
-          break;
-        case '=':
-          result += F("&#equals;");
-          break;
-        case '&':
-          result += F("&amp;");
-          break;
-        case '#':
-          result += F("&num;");
-          break;
-        case '{':
-          result += F("&lcub;");
-          break;
-        case '}':
-          result += F("&rcub;");
-          break;
-        case '(':
-          result += F("&lpar;");
-          break;
-        case ')':
-          result += F("&rpar;");
-          break;
-        default:
-          result += c;
-      }
-    }
-    return result;
-  }
-
-String uint64ToString(uint64_t input, uint8_t base = 10);
-
-// Convert a uint64_t (unsigned long long) to a string.
-// Arduino String/toInt/Serial.print() can't handle printing 64 bit values.
-//
-// Args:
-//   input: The value to print
-//   base:  The output base.
-// Returns:
-//   A string representation of the integer.
-// Note: Based on Arduino's Print::printNumber()
-String uint64ToString(uint64_t input, uint8_t base) {
-  String result = "";
-  // prevent issues if called with base <= 1
-  if (base < 2) base = 10;
-  // Check we have a base that we can actually print.
-  // i.e. [0-9A-Z] == 36
-  if (base > 36) base = 10;
-
-  // Reserve some string space to reduce fragmentation.
-  // 16 bytes should store a uint64 in hex text which is the likely worst case.
-  // 64 bytes would be the worst case (base 2).
-  result.reserve(16);
-
-  do {
-    char c = input % base;
-    input /= base;
-
-    if (c < 10)
-      c += '0';
-    else
-      c += 'A' - 10;
-    result = c + result;
-  } while (input);
-  return result;
-}
-
-#ifdef ARDUINO
-// Print a uint64_t/unsigned long long to the Serial port
-// Serial.print() can't handle printing long longs. (uint64_t)
-//
-// Args:
-//   input: The value to print
-//   base: The output base.
-void serialPrintUint64(uint64_t input, uint8_t base) {
-  Serial.print(uint64ToString(input, base));
-}
-#endif
-
-#define D_CHR_TIME_SEP ":"
-#define D_STR_DAY "Day"
-#define D_STR_DAYS D_STR_DAY "s"
-#define D_STR_HOUR "Hour"
-#define D_STR_HOURS D_STR_HOUR "s"
-#define D_STR_MINUTE "Minute"
-#define D_STR_MINUTES D_STR_MINUTE "s"
-#define D_STR_SECOND "Second"
-#define D_STR_SECONDS D_STR_SECOND "s"
-#define D_STR_NOW "Now"
-
-const PROGMEM char* kTimeSep    = D_CHR_TIME_SEP;
-const PROGMEM char* kDayStr     = D_STR_DAY;
-const PROGMEM char* kDaysStr    = D_STR_DAYS;
-const PROGMEM char* kHourStr    = D_STR_HOUR;
-const PROGMEM char* kHoursStr   = D_STR_HOURS;
-const PROGMEM char* kMinuteStr  = D_STR_MINUTE;
-const PROGMEM char* kMinutesStr = D_STR_MINUTES;
-const PROGMEM char* kSecondStr  = D_STR_SECOND;
-const PROGMEM char* kSecondsStr = D_STR_SECONDS;
-const PROGMEM char* kNowStr     = D_STR_NOW;
-
-  String msToString(uint32_t const msecs) {
-    uint32_t totalseconds = msecs / 1000;
-    if (totalseconds == 0) return kNowStr;
-
-    // Note: uint32_t can only hold up to 45 days, so uint8_t is safe.
-    uint8_t days = totalseconds / (60 * 60 * 24);
-    uint8_t hours = (totalseconds / (60 * 60)) % 24;
-    uint8_t minutes = (totalseconds / 60) % 60;
-    uint8_t seconds = totalseconds % 60;
-
-    String result = "";
-    if (days)
-      result += uint64ToString(days) + ' ' + ((days > 1) ? "kDaysStr" : kDayStr);
-    if (hours) {
-      if (result.length()) result += ' ';
-      result += uint64ToString(hours) + ' ' + ((hours > 1) ? kHoursStr
-                                                           : kHourStr);
-    }
-    if (minutes) {
-      if (result.length()) result += ' ';
-      result += uint64ToString(minutes) + ' ' + ((minutes > 1) ? kMinutesStr
-                                                               : kMinuteStr);
-    }
-    if (seconds) {
-      if (result.length()) result += ' ';
-      result += uint64ToString(seconds) + ' ' + ((seconds > 1) ? kSecondsStr
-                                                               : kSecondStr);
-    }
-    return result;
-  }
-
-  String minsToString(const uint16_t mins) {
-    String result = "";
-    result.reserve(5);  // 23:59 is the typical worst case.
-    if (mins / 60 < 10) result += '0';  // Zero pad the hours
-    result += uint64ToString(mins / 60) + kTimeSep;
-    if (mins % 60 < 10) result += '0';  // Zero pad the minutes.
-    result += uint64ToString(mins % 60);
-    return result;
-  }
-
-
+// - [x] toggle heater faster than the rest
+// - [ ] add TC warn icon
+// 
 #endif
