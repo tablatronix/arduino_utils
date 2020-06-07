@@ -40,7 +40,7 @@ void recvChar(void) {
       index = 0;
       cmd_complete = true;
       if(DEBUG_SERIALCMD){
-        Serial.print("received '"); 
+        Serial.print("[CMD] received '"); 
         Serial.print(cmd); 
         Serial.println("'");
       }
@@ -81,6 +81,11 @@ void doMotor(int dir,int duration){
 }
 
 
+void command_reset(){
+  cmd[0] = '\0';         // reset the commandstring
+  cmd_complete = false;  // reset command complete 
+}
+
 // @todo replace with api or command processor library from ESPLSS
 void process_command(){
   if (strncmp(cmd,"f ",2) == 0) {
@@ -98,7 +103,7 @@ void process_command(){
     if((int)arg == 1) arg = 500;
     fanAVolts((int)arg);
   }
-
+\
   if (strncmp(cmd,"f2 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Set B voltage to: ") );
@@ -122,7 +127,8 @@ void process_command(){
   }
 
   if (strncmp(cmd,"mo",2) == 0) {
-    if(DEBUG_SERIALCMD) DebugOut.print(F("Motor OFF: ") );
+    if(DEBUG_SERIALCMD) DebugOut.println(F("Motor OFF: ") );
+    doMotor(0,0);
   }
 
   if (strncmp(cmd,"mf",2) == 0) {
@@ -139,11 +145,11 @@ void process_command(){
     doMotor(2,(int)arg);
   }
 
-  if (strncmp(cmd,"b ",2) == 0) {
-    uint32_t arg = (uint32_t)atoi(cmd + 2);
+  if (strncmp(cmd,"freq ",5) == 0) {
+    uint32_t arg = (uint32_t)atoi(cmd + 5);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Set freq to: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
-    // analogWriteFreq(arg); // confirm ?
+    analogWriteFreq(arg); // confirm ?
   }
 
   if (strncmp(cmd,"A",1) == 0) {
@@ -160,13 +166,13 @@ void process_command(){
 
   if (strncmp(cmd,"C",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("COOLDOWN") );
+    if(DEBUG_SERIALCMD) DebugOut.println(F("COOLDOWN") );
     coolDown();
   }
 
   if (strncmp(cmd,"S",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("COOLDOWN") );
+    if(DEBUG_SERIALCMD) DebugOut.println(F("SLEEP") );
     sleep();
   }
 
@@ -197,6 +203,7 @@ void process_command(){
     wantedTemp = (int)arg;
     Serial.println("[ERROR] START PID : " + (String)wantedTemp);
     if(wantedTemp == 0) stop_PID();
+    stateTimerReset(); 
     MatchTemp();
   }
 
@@ -207,15 +214,23 @@ void process_command(){
     analogWrite(16,(int)(arg));
   }
 
+  if (strncmp(cmd,"debugbox",8) == 0) {
+    debug_serialcmd = !debug_serialcmd;
+    DEBUG_BOX = !DEBUG_BOX;
+    if(DEBUG_SERIALCMD) DebugOut.println("[CMD] [DEBUGBOX]:" + (String)(DEBUG_BOX?"ON":"OFF"));
+    command_reset();
+    return;
+  }
+
   if (strncmp(cmd,"debug",5) == 0) {
     debug_serialcmd = !debug_serialcmd;
-    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] [DEBUG]:" + (String)(debug_serialcmd?"ON":"OFF"));
+    if(DEBUG_SERIALCMD) DebugOut.println("[CMD] [DEBUG]:" + (String)(debug_serialcmd?"ON":"OFF"));
   }
 
   if (strncmp(cmd,"pidtune ",8) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 8); 
     targetInputValue = (float)(int)arg;
-    if(DEBUG_SERIALCMD) DebugOut.print("[DEBUG]: AUTOTUNING PID " + (String)arg);
+    if(DEBUG_SERIALCMD) DebugOut.println("[DEBUG]: AUTOTUNING PID " + (String)arg);
     init_pidtune();
   }
 
@@ -246,8 +261,59 @@ void process_command(){
     else setIndColor(indWheel((byte)atoi(arg.c_str())));
   }
 
-  cmd[0] = '\0';         // reset the commandstring
-  cmd_complete = false;  // reset command complete 
+  inputCmd = "set int";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    setgraphInterval((int)atoi(arg.c_str()));
+  }
+
+  inputCmd = "set pid p";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    Kp = ((double)atoi(arg.c_str()));
+    myPID.SetTunings(Kp, Ki, Kd); 
+  }
+
+  inputCmd = "set pid i";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    Ki = ((double)atoi(arg.c_str()));
+    myPID.SetTunings(Kp, Ki, Kd); 
+
+  }
+
+  inputCmd = "set pid d";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    Kd = ((double)atoi(arg.c_str()));
+    myPID.SetTunings(Kp, Ki, Kd);     
+  }
+ 
+  inputCmd = "testbargraph";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    if(DEBUG_SERIALCMD) DebugOut.println("testbargraph");
+    testBargraph();
+  }
+
+command_reset();
 }
 
 void serialprocess(){
@@ -271,7 +337,6 @@ void emptyBuffer(){
     inData[0] = (char)0;
     inputString = "";
 }
-
 
 void parseSerial(Stream & consolePort,char *cmdStr){
     DebugOut.println("---------------------------");
@@ -332,7 +397,7 @@ void readSerial(Stream & consolePort){
         }
         else if(inChar != 0x00){
             consolePort.println("ERROR: CMD BUFFER FULL");
-            emptyBuffer();    
+            emptyBuffer();
         }
     }
 }
