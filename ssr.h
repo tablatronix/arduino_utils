@@ -25,7 +25,7 @@ void ssr_init(){
 
   #ifdef ESP8266
   analogWriteRange(255); // esp8266 
-  // analogWriteFreq(120); // min 100hz
+  // analogWriteFreq(240); // min 100hz
   #elif defined(ESP32)
   #endif 
 }
@@ -58,6 +58,10 @@ void SetRelayFrequency(int duty){
 
 float getSSRDuty(){
   return currentDuty;
+}
+
+float getSSRPower(){
+  return ( currentDuty / 256.0 ) * 100;
 }
 
 void ssrTest(){
