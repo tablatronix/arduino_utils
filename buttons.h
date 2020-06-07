@@ -7,11 +7,11 @@
 #include <IoAbstraction.h>
 #include <IoAbstractionWire.h>
 
-const int interruptPin = 3; // if stalldetect, Real interrupt for io expander USES SERIAL RX!!!
+const int interruptPin = 3; // if motor.h stalldetect, Real interrupt for io expander USES SERIAL RX!!!
 const int encoderSWPin = 0;
 const int encoderAPin  = 1;
 const int encoderBPin  = 2;
-const int maximumEncoderValue = 9; // 128; 0 for non counting mode
+const int maximumEncoderValue = 0; // 128; 0 for non counting mode
 int encoderStale  = 0;
 int encoderLast   = 0;
 bool encoderHasChange = false;
