@@ -69,8 +69,10 @@ void telnet_status(){
     Telnet.print((String)rssi + " dB");
   }
   Telnet.print(ansiEL);
-
-  delay(0); // to fast might crash terminals	
+  Telnet.print("\n\n");
+  Telnet.flush();  // clear input buffer, else you get strange characters         
+  emptyBuffer();
+  delay(20); // to fast might crash terminals	
 }
 
 // new client connected
