@@ -63,6 +63,7 @@ void startOTA(){
 
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("[OTA] Error[%u]: ", error);
+    // @todo set ota fail flag, keep otastarted flag on for a bit so retries succeed
     otastarted = false;
     if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
     else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
@@ -82,6 +83,7 @@ void init_ota(){
 	startOTA();
 }
 
+// @todo add singleton, allow to be used in loop return status to main code
 void OTAReboot(bool always = false,int timeout = 10000){
   // if code is crashing, add delay for ota for recovery emergencies
   if(getResetReason() == "Exception" || always){ // @todo add reset reason masks

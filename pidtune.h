@@ -5,7 +5,7 @@
 #include <ssr.h>
 
 float targetInputValue = 40.00;
-long loopInterval = 100000; // pid loop ms
+long loopInterval = 100; // pid loop ms
 
 float doSomethingToGetInput(){
 	// updateTemps();
@@ -33,7 +33,7 @@ void init_pidtune(){
 
     // Set the loop interval in microseconds
     // This must be the same as the interval the PID control loop will run at
-    tuner.setLoopInterval(loopInterval);
+    tuner.setLoopInterval(loopInterval*100);
 
     // Set the output range
     // These are the maximum and minimum possible output values of whatever you are
@@ -44,8 +44,8 @@ void init_pidtune(){
     // Set it to either PIDAutotuner::ZNModeBasicPID, PIDAutotuner::ZNModeLessOvershoot,
     // or PIDAutotuner::ZNModeNoOvershoot. Test with ZNModeBasicPID first, but if there
     // is too much overshoot you can try the others.
-    // tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
-    tuner.setZNMode(PIDAutotuner::ZNModeLessOvershoot);
+    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+    // tuner.setZNMode(PIDAutotuner::ZNModeLessOvershoot);
     // tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
 
     // This must be called immediately before the tuning loop
