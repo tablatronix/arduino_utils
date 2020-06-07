@@ -20,13 +20,14 @@ int HEADERH = 30;
 
 // tft graphing
 
-  unsigned int gcolor    = GRIDCOLOR; // gridline color
-  unsigned int gxcolor   = DKGREY; // gridline x axis color @NI
-  unsigned int gmincolor = DKGREY; // gridline minor color @NI
-  unsigned int acolor    = RED;    // axis line color
-  unsigned int lcolor    = GREY;    // axis label color
-  unsigned int tcolor    = WHITE;  // text color
-  unsigned int bcolor    = LTBLACK;  // bg color
+// @todo refactor color customization
+unsigned int gcolor    = GRIDCOLOR; // gridline color
+unsigned int gxcolor   = DKGREY; // gridline x axis color @NI
+unsigned int gmincolor = DKGREY; // gridline minor color @NI
+unsigned int acolor    = RED;    // axis line color
+unsigned int lcolor    = GREY;    // axis label color
+unsigned int tcolor    = WHITE;  // text color
+unsigned int bcolor    = LTBLACK;  // bg color
 
 // these are the only external variables used by the graph function
 // it's a flag to draw the coordinate system only on the first call to the Graph() function
@@ -363,7 +364,7 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
   tft.drawLine(ox, oy, x, y, pcolor); // STILL DOUBLE!
 
   // drawing 2 more lines to give the graph some thickness
-  if(size>0){
+  if(size>1){
     tft.drawLine(ox, oy + 1, x, y + 1, pcolor);
     tft.drawLine(ox, oy - 1, x, y - 1, pcolor);
   }
@@ -530,7 +531,7 @@ void resetGraphLines(){
  * @param {Number} int    vsize      [description]
  * @param {Number} int    size       [description]
  */
-void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 0){
+void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 1){
     // if(id != filteredId && filteredId >= 0) return;
     if(_DEBUG_POINT){
       Serial.println("addPointSet");
@@ -542,11 +543,16 @@ void addPointSet(int id, int sample, double value, int numSamples,int vsize = 10
     // int vsize = 100;
     // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
     int yindexstart = 0; // start Y at non 0 value
-    addPoint(tft,id, i, value , 0, numSamples, yindexstart, vsize, getLineColor(id,0),size);
+    unsigned int c = WHITE;
+    if(size==0){
+      size = 2;
+      c = GRAY;
+    }
+    else c = getLineColor(id,0);
+    addPoint(tft,id, i, value , 0, numSamples, yindexstart, vsize, c,size);
 
     // addPoint(tft,id, i, ((abs(vsize/numSamples))*(i)) , 0, numSamples, 0, vsize, getLineColor(i-1,0));    
 }
-
 
 void init_graph_tft(){
   // if (TFT_BL > 0) {
@@ -577,6 +583,8 @@ void drawBorderB(unsigned int c = LTBLACK){
   tft.drawFastHLine(1,1,tft.width()-2,c);  
 }
 
+
+// candidate for class
 void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   double x, y;
 
@@ -655,16 +663,21 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
 	char *xlabel       = "x";        // xlabel = x asis label
 	char *ylabel       = "y";        // ylabel = y asis label
 	boolean &redraw    = display1;   // &redraw = flag to redraw graph on first call only
-	unsigned int color = PURPLE;     // color = plotted trace colour
+	
+  unsigned int color = PURPLE;     // color = plotted trace colour
+  unsigned int bgcolor = bcolor;
 
-
-  // tft.fillRoundRect((int16_t)xPos-3,(int16_t)yPos-5,(int16_t)w+8,(int16_t)h+10,5,BGOVER);
-  tft.fillRect((int16_t)xPos,(int16_t)yPos-6,(int16_t)w,(int16_t)h+11,BGCOLOR);
-  drawBorder();
+  // draw background to overwrite previous traces
+  int padding = 3; // we add bg padding so you can see traces at 0 and max
+  tft.fillRect((int16_t)xPos,(int16_t)yPos-padding,(int16_t)w,(int16_t)h+(padding*2),bgcolor);
+  // drawBorder(RED);
 	Graph(tft, _x, _y, dp, gx, gy,    w,          h, xlo, xhi, xinc, ylo, yhi, yinc, title, xlabel, ylabel,redraw, color);
 	// Graph(tft, x, y, 2,  30, 135-8, 240-30, 135-8, 0, 6.5, 1, -1, 1, .25, "x", "y", "", display1, YELLOW);
 }
 
+
+
+// test stuff an old 
 
 void test_trace_sin(){
   double x, y; 
@@ -687,6 +700,7 @@ void test_trace(uint32_t c){
   }
 }
 
+// add a bunch of traces for testing
 void testTraces(int sample){
   return;
   int ssize = 240;
@@ -720,6 +734,7 @@ void testTraceScaleOLD(){
   }
 }
 
+// testing prescaling, you can already pass in ylo yhi and let graph point scale, this scales actual values
 void testTraceScale(){
   int id = 5;
   int ssize = 240;
@@ -920,7 +935,6 @@ void interpolationGraph(){
 void setupGraph(){
     int ypad = 3;
     // TFT+TFT_WIDTH,TFT_HEIGHT - footerH,
-    
     init_graph(320,240-(FOOTERH+ypad),0,HEADERH+ypad); // x,y offsets handled automatically and adjusted to TL 
     // testTraceScale();
     graphPaste();
@@ -973,8 +987,6 @@ void tft_set_footer_val1(float str = 0){
     lpad += tft.drawString("`c",lpad+6,TFT_WIDTH,4); // 22
     // Serial.println(lpad);
 }
-
-
 
 void tft_set_footer_val2(String str = "Status"){
     // str = "ABCDEFGHIJKLMNOPQR"; // 19 characters
@@ -1042,9 +1054,6 @@ void tft_set_footer_val4(bool enable){
     tft.drawString("FAN 2",TFT_HEIGHT-2,TFT_WIDTH,2);    
 }
 
-int fpsmicros = millis();
-char buffer [32];
-
 void tft_footer_val1(){
     // tft.loadFont(AA_FONT_LARGE);    // Must load the font first
 
@@ -1062,6 +1071,8 @@ void tft_footer_val1(){
     tft_set_footer_val2();    
 }
 
+int fpsmicros = millis();
+char buffer [32];
 
 void displayFPS(){
     // tft_footer_val1();
@@ -1082,6 +1093,7 @@ void displayFPS(){
     fpsmicros = millis();
 }
 
+// what is this note? lol
 // float smoothing = 0.9; // larger=more smoothing
 // measurement = (measurement * smoothing) + (current * (1.0-smoothing))
 
