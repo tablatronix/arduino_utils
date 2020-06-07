@@ -11,7 +11,13 @@ int motorInt     = 7; // PCF PIN
 
 int stallcnt         = 0; // counter for stall
 int stallReset       = 500000; // reset stall count duration micros
+
+#ifdef DEMO_UNIT
+bool stalldetect     = false; // use interupt to detect stalls
+#else
 bool stalldetect     = true; // use interupt to detect stalls
+#endif
+
 int stalllimit       = 5;    // stall limit, num interrupts for stall detect
 bool autoreverse     = true; // autoreverse on stall
 int autoreversepause = 200; // autoreverse delay
