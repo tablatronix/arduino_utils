@@ -5,6 +5,11 @@
 
 // const char* hostname   = "esp8266REFLOW";
 
+
+// enable wifi sta
+// disable sleep
+// timeout connect
+// set hostname ?
 void init_WiFi(int timeout = 10000){
     WiFi.mode(WIFI_STA);
     #ifdef ESP8266
@@ -65,6 +70,15 @@ void checkWifi(){
       indSetColor(0,255,0);
     #endif
   }
+}
+
+void enableWiFi(){
+  WiFi.mode(WIFI_STA);
+  init_WiFi();
+}
+
+void disableWiFi(){
+  WiFi.mode(WIFI_OFF);
 }
 
 // uint32_t ResetReason(void)
