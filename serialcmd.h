@@ -156,18 +156,21 @@ void process_command(){
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Abort") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    reflowabort();
   }
 
   if (strncmp(cmd,"R",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("REFLOW") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    doPasteReflow();    
   }
 
   if (strncmp(cmd,"C",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.println(F("COOLDOWN") );
-    coolDown();
+    cool(false);
+    // coolDown();
   }
 
   if (strncmp(cmd,"S",1) == 0) {
@@ -249,6 +252,18 @@ void process_command(){
   int numargs = 0;
   int cmdLen = 0;
 
+  inputCmd = "set indbright";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    setIndBrightness(atoi(arg.c_str()));
+    command_reset();
+    return;    
+  }
+
   inputCmd = "set ind";
   numargs = 1;
   cmdLen = String(inputCmd).length();
@@ -256,9 +271,28 @@ void process_command(){
     String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
     if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
-         if(arg == "white") setIndColor(255,255,255);
+         if(arg == "white" || arg == "1") setIndColor(255,255,255);
     else if(arg == "black" || arg == "0") setIndColor(0,0,0);
-    else setIndColor(indWheel((byte)atoi(arg.c_str())));
+    else if(arg == "red" || arg == "bad") setIndColor(255,0,0);
+    else if(arg == "green" || arg == "good") setIndColor(0,255,0);
+    else if(arg == "blue") setIndColor(0,0,255);
+    else indSetColor(indWheel((byte)atoi(arg.c_str())));
+  }
+
+  inputCmd = "set accent";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length());
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: '");
+    if(DEBUG_SERIALCMD) DebugOut.print(arg);
+    if(DEBUG_SERIALCMD) DebugOut.print("'");
+         if(arg == "white") indAccentSetColor(255,255,255);
+    else if(arg == "black") indAccentSetColor(0,0,0);
+    else if(arg == "red" || arg == "bad") indAccentSetColor(255,0,0);
+    else if(arg == "green" || arg == "good") indAccentSetColor(0,255,0);
+    else if(arg == "blue") indAccentSetColor(0,0,255);
+    else indAccentSetColor(indWheel((byte)atoi(arg.c_str())));
   }
 
   inputCmd = "set int";
@@ -269,6 +303,16 @@ void process_command(){
     if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
     setgraphInterval((int)atoi(arg.c_str()));
+  }
+
+  inputCmd = "set tcint";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    setTCInterval((int)atoi(arg.c_str()));
   }
 
   inputCmd = "set pid p";
@@ -311,6 +355,17 @@ void process_command(){
   if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
     if(DEBUG_SERIALCMD) DebugOut.println("testbargraph");
     testBargraph();
+  }
+  
+  inputCmd = "wifi";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
+    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    if(arg=="off")WiFi.mode(WIFI_OFF);
+    else WiFi.mode(WIFI_STA);
   }
 
 command_reset();
