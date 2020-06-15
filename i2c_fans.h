@@ -1,6 +1,16 @@
 #ifndef i2c_fans_h
 #define i2c_fans_h
-
+/**
+ * 2 fans are on Adafruit_MCP4725 s
+ * Fan 1 12v
+ * Fan 2 5v
+ *
+ * ssr fan is 2 stage transistor gain consisting of fan 3+ fan 4
+ * Fan 3 is pcf8741 pin 5
+ * Fan 4 is pcf8741 pin 6
+ * OPTIONS
+ * Fan 4 can be disabled and used for active buzzer, fan3 bias resistor needs to be adjusted for full range
+ */
 
 #ifdef DEBUG
 bool DEBUG_i2c_fans = true;
@@ -12,7 +22,9 @@ bool DEBUG_i2c_fans = true;
 #include <IoAbstraction.h>
 #include <IoAbstractionWire.h>
 
-#define MCP4725ERROR // use error checking on modded lib https://github.com/adafruit/Adafruit_MCP4725/pull/14
+#define MCP4725ERROR // use error checking on XXmodded libXX (now implemented)
+// https://github.com/adafruit/Adafruit_MCP4725/pull/14
+// added via busio refactor https://github.com/adafruit/Adafruit_MCP4725/commit/47adab47c43f97e85132ad6ab93e85bee5828d04
 Adafruit_MCP4725 dac;
 Adafruit_MCP4725 dacb;
 
@@ -28,6 +40,7 @@ int fanBVCC_out = 5; // 5.2;
 
 const int fanCpin = 5;
 const int fanDpin = 6;
+// const int fanDpin = -1; // -1 for disabled using for buzzer
 
 int fan_1_status = 0;
 int fan_2_status = 0;
@@ -94,14 +107,14 @@ void fanA(int perc){
   setFanStatus(1,perc);
 	int value = constrain(percvalue*perc,0,4095);
   dac.setVoltage(value, false);	
-	if(DEBUG_i2c_fans) Serial.println("[FAN] 1 " + (String)perc +"% -" + value);
+	if(DEBUG_i2c_fans) Serial.println("[FAN] 1 " + (String)perc +"% - " + value);
 }
 
 void fanB(int perc){
   setFanStatus(2,perc);
 	int value = constrain(percvalue*perc,0,4095);
   	dacb.setVoltage(value, false);
-	if(DEBUG_i2c_fans) Serial.println("[FAN] 2 " + (String)perc +"% -" + value);
+	if(DEBUG_i2c_fans) Serial.println("[FAN] 2 " + (String)perc +"% - " + value);
 }
 
 void fanAVolts(int value){
@@ -149,7 +162,8 @@ void fanCEnable(bool enable){
 }
 
 void fanDEnable(bool enable){
-  setFanStatus(4,(int)enable);   
+  if(fanDpin == -1) return;
+  setFanStatus(4,(int)enable);
   if(enable){
     if(DEBUG_i2c_fans) Serial.println("[FAN] fan 4 Enabled");
     ioDeviceDigitalWriteS(switches.getIoAbstraction(), fanDpin, true);
