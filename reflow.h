@@ -32,6 +32,7 @@ BarGraph bar0;
 #ifdef USENEOIND
   #define NEOINDPIN 2
   #include <neoindicator.h>
+  #include <neo_ind_accent.h>
 #endif
 
 // #define USENTC // use thermistor
@@ -63,7 +64,7 @@ BarGraph bar0;
 
 bool USEWIFI = true; // enabled wifi
 
-Statistics fps(10); // init stats for avg (samples)
+Average<float> fps(10); // init stats for avg (samples)
 
 // ICONS 
 // states for fan animations, only 2 state atm
@@ -75,6 +76,7 @@ unsigned long stateStartMS = 0; // state start timers
 
 // app states
 int reflowState = 0; // @todo add enum state, maybe queue
+int reflowGraphCounter = 0; // counter period for graphing graphInterval
 
 // temperature
 int hotTemp  = 70; // C burn temperature for HOT indication, 0=disable
@@ -120,14 +122,20 @@ int GRAPHWIDTH  = SCREENWIDTH;
 int graphInterval = 1000; // graph update rate ms
 
 // FANS
-uint8_t coolAbortTaskID;
+int coolAbortTaskID; // -1 empty
 
 // DOOR
 int doorAbortTime = 50000; // time we expect door full operations to take, will disable door motor after this time
-uint8_t doorAbortTaskID; // timer task
+
+int doorAbortTaskID = -1; // timer task
+int reflowStepTaskID = -1;
 
 void stateTimerReset(){
   stateStartMS = millis();
+}
+
+int getStateDuration(){
+  return millis()-stateStartMS;
 }
 
 void setgraphInterval(int intv){
@@ -209,8 +217,8 @@ void setTempDisp(){
 
 
 void doorCancelAbort(){
-	if(doorAbortTaskID >0) taskManager.cancelTask(doorAbortTaskID);
-	doorAbortTaskID = 0;
+	if(doorAbortTaskID >-1) taskManager.cancelTask(doorAbortTaskID);
+	doorAbortTaskID = -1;
 }
 
 void doorAbort(){
@@ -242,18 +250,33 @@ void extract(){
 
 // cancel a task, pass ref?
 // add ojbect to handle tasks and ids
-uint16_t cancelTask(uint16_t taskid){
-  if(taskid >0) taskManager.cancelTask(taskid);
-  return 0;
+int cancelTask(uint16_t taskid){
+  Serial.println("[TASK] cancel task: " + (String)taskid);
+  if(taskid >-1){
+    taskManager.cancelTask(taskid);
+    return -1;
+  }
+  return taskid;
 }
 
 void coolComplete(){
   if(currentTempAvg < lowTemp){
-    if(coolAbortTaskID >0) taskManager.cancelTask(coolAbortTaskID);
-    coolAbortTaskID = 0;
+    Serial.println("[COOL] Cooldown Complete");
+    if(coolAbortTaskID >-1){
+      coolAbortTaskID = cancelTask(coolAbortTaskID);
+    }
+    Serial.println("[COOL] Closing Door, shutoff fans");
     doorClose();
     fanB(0);
   }
+}
+
+void cool(bool dooropen){
+  Serial.println("[COOL] cooldown");
+  if(dooropen) doorOpen();
+  fanB(100); // outake 100%
+  Serial.println("[COOL] setup cooldown timer");
+  coolAbortTaskID = taskManager.scheduleFixedRate(1000, coolComplete);
 }
 
 void coolDown(){
@@ -276,12 +299,18 @@ void sleep(){
   SSRFan(false); // ssr fan full
 }
 
+void setReflowState(int state){
+  reflowState = state;
+}
+
+
 void reflow(){
 
 }
 
 void reflowabort(){
-
+  setReflowState(0);
+  SetTitle("REFLOW ABORTED");
 }
 
 void reboot(){
@@ -592,7 +621,7 @@ void updateFooterD(bool enable){
 unsigned int ICONACTIVECOLOR = SILVER;
 
 void updateFPS(){
-    fps.addData((1000/(millis()-fpsmicros)));
+    fps.push((1000/(millis()-fpsmicros)));
     fpsmicros = millis();
     SetFooterB((String)fps.mean() + " FPS");
 }
@@ -763,6 +792,13 @@ void updateFooterLine(){
   else drawFooterLine(BLACK);
 }
 
+void updateAccentColor(){
+  if(currentTempAvg > hotTemp) indAccentSetColor(255,0,0);
+  else if(currentTempAvg > coolTemp) indAccentSetColor(255,128,0);
+  else if(currentTempAvg > lowTemp) indAccentSetColor(0,255,0);
+  else indAccentSetColor(accentColor);
+}
+
 void doAlert(int mode = 0);
 
 void updateSSRIcon(){
@@ -819,6 +855,7 @@ void updateAll(){
   updateTitleC();
 
   updateFooterLine();
+  updateAccentColor();  
 
   updatefooterBL1();
   if(ERRORSTR !="") updateFooterB_ERROR();
@@ -842,11 +879,6 @@ void doAlert(int mode){
     // drawFooterBorder(DKGREEN);
   }
 }
-
-void setReflowState(int state){
-  int ReflowState = state;
-}
-
 
 // graphics
 // @todo rename
@@ -973,6 +1005,14 @@ bool thermalCheck(){
 
 uint16_t reflowZone = 0;
 
+int getMaxTemp(){
+  return 170; // max temp plus padding
+}
+
+int getMaxTime(){
+  return 330; // max temp plus padding
+}
+
 void reflowNextZone(){
   Serial.println("ms:" + (String)millis());
   const int numSamples = 7;
@@ -989,31 +1029,84 @@ void reflowNextZone(){
   SetTitleC((String)(int)round((wantedTemp))+"`c");
 }
 
-void doPasteReflow(){
-
+void reflowNextRate(){
+  Serial.println("ms:" + (String)millis());
   const int numSamples = 7;
-  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
-  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value
+  int lookahead = 0; // seconds
+  if(reflowZone > 260/1 || reflowState==0){
+    Serial.println("[REFLOW] DONE");
+    // continue cooling, slow graph rate to log ? show some other way
+    reflowStepTaskID = cancelTask(reflowStepTaskID);
+    stop_PID();
+    SetTitleC("0`c");
+    reflowZone = 0;
+    cool(false);
+    SetTitle("COOLDOWN");
+    updateTitle();
+    return;
+  }
+  else Serial.print("[REFLOW] SET ZONE: " + (String)reflowZone);
 
- int maxtime = 310; // max time frame for reflow, or make sure last point is not drawn
- int maxtemp = 220+20; // max value + top padding
- int ssize = 320;
+  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  // double yValues[7] = { 27, 90, 130, 138, 165, 138, 27 }; // value  
+  // double xValues[7] = {  0,  60, 120, 160, 210, 260,  330  }; // time
+  // double yValues[7] = {  25, 105, 150, 150, 220, 220,  25 }; // value  
+  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  double yValues[7] = { 25, 90, 130, 138, 165, 138, 25 }; // value
+  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
+  wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*1)+lookahead); 
+  // Serial.println(" " + (String)wantedTemp);
+  reflowZone++;
+  SetTitleC((String)(int)round((wantedTemp))+"`c");
+}
+
+void doPasteGraph(){
+  Serial.println("[START] doPasteReflow");
+  reflow_graph();
+  const int numSamples = 7;
+  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  // double yValues[7] = { 27, 90, 130, 138, 165, 138, 27 }; // value   
+  // double xValues[7] = {  0,  60, 120, 160, 210, 260,  320  }; // time
+  // double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value
+  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  double yValues[7] = { 25, 90, 130, 138, 165, 138, 25 }; // value 
+  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
+
+ int maxtime = getMaxTime(); // max time frame for reflow, or make sure last point is not drawn huh ?
+ int maxtemp = getMaxTemp(); // max value + top padding
+ int ssize = maxtime;
 
   for(int i=0;i<maxtime;i++){
     double y;
     y = Interpolation::SmoothStep(xValues, yValues, numSamples, i);
-    Serial.println("y: " + (String)y);
+    // Serial.println("y: " + (String)y);
     addPointSet(5,i,y,ssize,maxtemp,0);
-  }
+  }  
+}
 
-  for(int i = 0; i < numSamples; i++){
-    // Serial.print(Interpolation::CatmullSpline(xValues,yValues, numSamples, i));
-    // addPointSet(5,xValues[i],yValues[i],ssize,maxtemp);
-    Serial.println("x2 timer " + (String)((int)round(xValues[i])*1000));
-    taskManager.scheduleOnce(xValues[i], reflowNextZone,TIME_SECONDS);
-    stateTimerReset();
-  }
-  reflowNextZone(); 
+void doPasteReflow(){
+  resetGraphLines();
+  doPasteGraph();
+  reflowGraphCounter = 0;  // reset graph counter for main loop
+  setReflowState(1);
+
+  // min sample rate
+  // for(int i = 0; i < numSamples; i++){
+  //   // Serial.print(Interpolation::CatmullSpline(xValues,yValues, numSamples, i));
+  //   // addPointSet(5,xValues[i],yValues[i],ssize,maxtemp);
+  //   Serial.println("x2 timer " + (String)((int)round(xValues[i])*1000));
+  //   taskManager.scheduleOnce(xValues[i], reflowNextZone,TIME_SECONDS);
+  // }
+  reflowStepTaskID = taskManager.scheduleFixedRate(1000, reflowNextRate);
+  Serial.println("[REFLOW] step task created: " + (String)reflowStepTaskID);
+  stateTimerReset();
+  // reflowZone = 6;
+  // reflowNextZone();
+  reflowNextRate();
+  pidStart();
+  SSRFan(true);
 }
 
 
@@ -1086,56 +1179,4 @@ void setupOtaCB(){
   });
 }
 
-// [graphing]
-// - [ ] fix start graph -999 to >0 line , fix to not draw first line if adding first point
-// - [ ] add dotted lines
-// - [ ] add marker lines
-// - [ ] add indicator labels, side of screen lock to trace or move 
-// - [ ] add power meter
-// - [ ] add percentage and timer
-// - [ ] draw buffer around desired trend line for profile
-// - [ ] rework the grid increments
-// - [ ] Temperature trend indicator <o> up down holding 
-// 
-// Fan control
-// - [ ] Start FanA extract on fume temp, peak reflow, make sure it does not preturb temperature
-// - [ ] Test slow speed FanB for heat distribution during warmup, convection probably not useful since its IR direct heating
-// - [ ] NTC auto run internal fans, SSR kick 100% when reflow starts, ensure this does not pull additional heat into chamber, add cool intake on bottom of enclosure
-// - [ ]turn on extract fan into filter to absorb or vent smoke and fumes before opening door and cooling
-// - [ ] test for cooling effect to ensure reflow not affected
-// 
-// Runtime
-// - [ ] Time to temp, startimer, record time to reach temp, all states, cool etc create logging array for debug output later or transmission stats
-// - [ ] Record Max temp reached and time, detect overshoots!
-
-
-// [PID]
-// - [ ] PID KickAdd Reflow Peak kick if PID is not getting there fast enough, special PID overrides for plateus.
-// - [ ] Custom power per stage, use power for kick, normalize to 100% , 125% kick on ramp start etc..
-// - [ ] Record time when PID stops pushing, detect early rise, rise too fast or slow
-// - [ ] Calculate slope for all temp ranges/zones record linearity across ranges
-// - [ ] Ideal PID for HEAT stages, cooldown, temperatures above 100C may take longer to reach, 
-// - [ ] account for thermal masses and board colors can be inferred here, power might also help here
-// - [x] Thermal runway (quick dirty)
-
-// [timings]
-// 
-// Timing for temperature readings, averaging plus sample rate, smoothing as needed
-// display and graphing might need seperate smoothing algos
-// update speed of scroller
-// update speed of icons, use ondemand updates then periodic catch ups
-// animated icons may need their own intervals based on frame rate
-// Time Division for graph, 320 divisions max
-// Use timer for profile and each stage or PV change, used for thermal runaway and rate of change insufficiant reflow failure detciton or bail.
-
-// status icons
-// 
-// create icon 
-// w,h,x,y
-// state color
-// add frames, map to glyps
-// toggle animations, dependant of state or not
-// - [x] toggle heater faster than the rest
-// - [ ] add TC warn icon
-// 
 #endif
