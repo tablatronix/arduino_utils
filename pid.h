@@ -22,6 +22,11 @@
 // 1468.5591
 // da fuq?
 
+uint16_t fullPowerPeriod = 15000; // full power startup pulse period
+bool fullPowerStartup = false;
+
+int long pidTimerStart = 0;
+
 float wantedTemp     = -1;
 float currentDelta   = 0;
 bool isCuttoff       = false;
@@ -82,19 +87,56 @@ double Setpoint, Input, Output;
 // double Kp=15, Ki=0, Kd=0; // P+1
 // 0.01 for Kp and 0.0001 for Ki
 
-double Kp=3, Ki=0, Kd=.4; // GOOD FOR NOW, slight over/undershoots depending on range
+// double Kp;
+// double Ki;
+// double Kd;
+
+// double Kp=4;
+// double Ki=0;
+// double Kd=0;
+
+// double Kp = 4, Ki = 0.5, Kd = 1.5;
+// double Kp = 5, Ki = 0.01, Kd = 20;
+double Kp = 5, Ki = 0.5, Kd = 20;
+
+// window size 5000 bang bang
+// // ***** PID PARAMETERS *****
+// // ***** PRE-HEAT STAGE *****
+// float PID_KP_PREHEAT         = 300;
+// float PID_KI_PREHEAT         = 0.05;
+// float PID_KD_PREHEAT         = 350; 
+// // ***** SOAKING STAGE *****
+// float PID_KP_SOAK            = 300;
+// float PID_KI_SOAK            = 0.05;
+// float PID_KD_SOAK            = 350;
+// // ***** REFLOW STAGE *****
+// float PID_KP_REFLOW          = 300;
+// float PID_KI_REFLOW          = 0.05;
+// float PID_KD_REFLOW          = 350; 
+// #define PID_SAMPLE_TIME 1000
+
+ // dead time 9 secs
+// Kp=1, Ki=0, Kd=0; // GOOD FOR NOW, slight over/undershoots depending on range
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 // PID myPID(&currentTempAvg, &pidduty, &wantedTemp, Kp, Ki, Kd, DIRECT);
+
+// feed pid with rate of change instead of temps
+// should allow lookaheads to work better and have finer control
+// add calculation for slope
 
 void init_PID(){
   // float Kp=97.403, Ki=3.142, Kd=754.9, Hz=10;
   Serial.println("[PID] init");
   Serial.println("[PID] PID : " + (String)Kp + " " + (String)Ki + " " + (String)Kd);
   myPID.SetMode(AUTOMATIC);
-  // myPid.SetOutputLimits(low,high); // depnding on tghe ssr freq, low value do nothing < 5%
+  myPID.SetOutputLimits(0,250); // depending on the ssr freq, low values do nothing < 5%, test this, even 1% will slowly add thermal over time
   // myPID.SetSampleTime(120);
   // if(!res) Serial.println("[ERROR] init FAILED (outputrange)");
   // if(myPID.err()) Serial.println("[ERROR] init FAILED (construct)");
+}
+
+void pidStart(){
+  pidTimerStart = millis();
 }
 
 void run_PID(){
@@ -106,6 +148,16 @@ void run_PID(){
   myPID.Compute();
   // Serial.print("-");
   // Serial.print(Output);
+  if(fullPowerStartup){
+    if(millis()-pidTimerStart < fullPowerPeriod){
+      // myPID.SetMode(MANUAL);
+      // Output = 250; // output never returns to normal
+      SetRelayFrequency(255);
+      return;
+    }
+  }
+  // else myPID.SetMode(AUTOMATIC);
+
   SetRelayFrequency(Output);
 }
 
@@ -127,9 +179,9 @@ void MatchTemp()
   return;
   float duty = 0;
   // float wantedTemp = 0;
-  float wantedDiff = 0;
-  float tempDiff = 0;
-  float perc = 0;
+  float wantedDiff = 0; // rate of change from samples
+  float tempDiff = 0; // diff actual temperature
+  float perc = 0; // diff between wanted and actual change
   
     if(wantedTemp < 0) return;
 
@@ -193,6 +245,7 @@ if(DEBUG_pid){
 }
   
   duty = base + ( 172 * perc ); // 172?
+
 if(DEBUG_pid){
   Serial.print("  Duty: ");
   Serial.print( duty );
