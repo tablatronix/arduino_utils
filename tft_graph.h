@@ -651,13 +651,18 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
 	double w           = graph_w;    //  w = width of graph
 	double h           = graph_h;    //  h = height of graph
 
+  // @todo make grid value based not pixel, stupid
   double xlo         = 0;          // xlo = lower bound of x axis - x scale min
   double xhi         = 100;        // xhi = upper bound of x axis - x scale max
-  double xinc        = 5;          // xinc = division of x axis (distance not count)
+  double xinc        = 5;          // xinc = division of x axis (pixels not count)
+
+  int xgridpx = (h/(xhi-xlo))*xinc;
 
   double ylo         = 0;         // ylo = lower bound of y axis - y scale min
-  double yhi         = 100;          // yhi = upper bound of y axis  - y scale max
-  double yinc        = 5;        // yinc = division of y axis (distance not count)
+  double yhi         = 100;       // yhi = upper bound of y axis  - y scale max
+  double yinc        = 5;        // yinc = division of y axis (pixels not count)
+  
+  int ygridpx = (w/(yhi-ylo))*yinc;
 
 	char *title        = "";    // title = title of graph
 	char *xlabel       = "x";        // xlabel = x asis label
@@ -666,6 +671,9 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
 	
   unsigned int color = PURPLE;     // color = plotted trace colour
   unsigned int bgcolor = bcolor;
+
+  Serial.println("[GRAPH] grid x px: " + (String)xgridpx);
+  Serial.println("[GRAPH] grid y px: " + (String)ygridpx);
 
   // draw background to overwrite previous traces
   int padding = 3; // we add bg padding so you can see traces at 0 and max
