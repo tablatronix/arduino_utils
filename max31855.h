@@ -5,8 +5,9 @@
 #include "Adafruit_MAX31855.h" // Seperate calls for spiread for each function, no raw bit cache!
 #include <ktypelinear.h>
 // #include <quickstats.h> // @todo test quickstats, add child class for container
-#include <Statistics.h> // https://github.com/provideyourown/statistics
+// #include <Statistics.h> // https://github.com/provideyourown/statistics
 #include <ntc.h>
+#include <Average.h>
 
 // NODEMCU hspi
 // HW scl      D5 14
@@ -23,6 +24,7 @@ Adafruit_MAX31855 tc(MAXCS);
 Adafruit_MAX31855 tcB(1);
 #endif
 
+bool updateLock = false;
 
 // Averaging
 // options
@@ -43,8 +45,16 @@ float minT; // lowest temp in window (tempSampleRate)
 // options
 bool useAveraging = true; // use stats lib averaging
 int max31855_numsamples = 10; // use avgSamples?
-Statistics stats(max31855_numsamples); // init stats for avg (samples)
-Statistics tcdev(16); // init stats for avg (samples)
+// Statistics stats(max31855_numsamples); // init stats for avg (samples)
+// Statistics tcdev(16); // init stats for avg (samples)
+
+bool useModeAveraging = true; // use mode for averages to reduce spurious noise, noise is usually negative value temps
+// @todo change library, only supports ints atm
+ 
+Average<float> stats(max31855_numsamples);
+Average<float> tcdev(max31855_numsamples*2);
+
+// inline Average::addData(T entry) {push(T entry);}
 
 // Runtime reflow variables
 float currentTemp    = 0; // current real temp w offset applied
@@ -54,6 +64,7 @@ float internalTemp   = 0;  // cold junction
 float currentTempCorr = 0; // linearized k type
 float lastTemp       = -1; // used in pid.h
 
+int TCinterval = 200; // temp reading interval
 
 // TC WARN
 // options
@@ -74,6 +85,21 @@ uint16_t TCnumErrors     = 0;  // counter for failures
 // Adafruit_MAX31855 tc(MAXCLK, MAXCS, MAXDO);
 // Initialise the MAX31855 IC for thermocouple tempterature reading
 // MAX31855 tc(MAXCLK, MAXCS, MAXDO);
+
+
+void averages(){
+    int minat = 0;
+    int maxat = 0;  
+    Serial.print("Mean:   "); Serial.println(stats.mean());
+    Serial.print("Mode:   "); Serial.println(stats.mode());
+    Serial.print("Max:    "); Serial.println(stats.maximum(&maxat));
+    Serial.print(" at:    "); Serial.println(maxat);
+    Serial.print("Min:    "); Serial.println(stats.minimum(&minat));
+    Serial.print(" at:    "); Serial.println(minat);
+    Serial.print("StdDev: "); Serial.println(stats.stddev()); 
+    // Serial.print("predict: "); Serial.println(stats.predict(x)); // linear regression ?
+    // Serial.print("leastSquares: "); Serial.println(stats.leastSquares(m,b,r)); 
+}
 
 // Really not needed for reflow temps, fairly linear in region, makes almost no difference
 float correctKType(){
@@ -121,9 +147,6 @@ void ReadCurrentTemp()
     if(isnan(readC) || readC < 0 || readC > 700){
       Serial.println("[ERROR] TC OUT OF RANGE, skipping " + (String)readC);
       TCnumErrors++;
-      // @todo
-      // if(heating && deviation < 1)
-      // thermal runaway detection
       return;
     }
 
@@ -136,9 +159,19 @@ void ReadCurrentTemp()
 
     // average
     if(useAveraging){
-      stats.addData((float)currentTemp);
-      currentTempAvg = stats.mean();
-      tcdev.addData(currentTempAvg);
+      stats.push(currentTemp);
+      if(useModeAveraging){
+        currentTempAvg = stats.mode();
+        tcdev.push(stats.mode());
+      }
+      else {
+        currentTempAvg = stats.mean();
+        tcdev.push(currentTempAvg); // might lag, better to use currentTemp but will include more noise
+      }  
+      // Serial.print("[TEMP] tc ");
+      // Serial.println(currentTemp);
+      // Serial.print("[TEMP] tc avg ");
+      // Serial.println(currentTempAvg);
     }
     else currentTempAvg = currentTemp;
 }
@@ -171,13 +204,26 @@ void updateDevVars(){
   if(currentTempAvg<minT) minT = currentTempAvg;
 }
 
+void updateAltTemps(){
+  internalTemp = tc.readInternal();
+  lastTCStatus = tc.readError();  
+}
+
+
+void setTCInterval(int intv){
+  TCinterval = intv;
+}
+
 // MAIN UPDATER SCHDULER
 // @todo consolidate into single cleaner functions
 void updateTemps(){
+    // if(updateLock) return;
     digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
+    delay(TCinterval); // stabilizes temperatures ????
     internalTemp = tc.readInternal();
     ReadCurrentTemp();
     if(!useAveraging)updateDevVars();
+    Serial.println(currentTemp);
 }
 
 void resetDev(){
@@ -199,7 +245,7 @@ float readTCDev(){
 float getTCDev(){
   float dev;
   if(useAveraging){
-    dev = tcdev.stdDeviation(); // @note will return nan, if 0
+    dev = tcdev.stddev(); // @note will return nan, if 0
     if(isnan(dev)){
       dev = 0;
       // Serial.println("[ERROR] stats dev NAN");
@@ -263,7 +309,8 @@ else tft.setTextColor( YELLOW, BLACK );
 
 void initTC(){
   // Start up the MAX31855
-  tc.begin();
+  bool res = tc.begin();
+  // if(!res) add check now, see commits
   delay(200);
   tc.readError();
   // check for sanity
