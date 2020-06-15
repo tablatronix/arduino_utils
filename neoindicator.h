@@ -21,8 +21,8 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	palevioletred	#DB7093	rgb(219,112,147)
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
-#define INDBRIGHTNESS 180
-#define INDNUMPIXELS 4
+uint16_t INDBRIGHTNESS = 180;
+int INDNUMPIXELS = 1;
 #define INDPIXELSTYPE NEO_GRB + NEO_KHZ800
 
 bool INDPINRESET = false;
@@ -74,7 +74,7 @@ void setIndColor(uint8_t r,uint8_t g,uint8_t b){
 
 void stop_indicator(){
   if(DEBUG_neoind)Serial.println("[IND] stop");    
-  for(size_t i=0; i<ind.numPixels(); i++) {
+  for(size_t i=0; i<INDNUMPIXELS; i++) {
     ind.setPixelColor(i,0,0,0);
   }  
 	ind.show();
@@ -165,7 +165,7 @@ void indTest(){
 
     indSetColor(0,0,0); // set black
     ind.setBrightness(INDBRIGHTNESS); // set normal brightness
-    Serial.println("indtest complete");
+    Serial.println("[IND] indtest complete");
 }
 
 void accentSetColor(uint32_t c){
