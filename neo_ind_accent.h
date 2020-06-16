@@ -5,12 +5,12 @@
 #include <neoindicator.h>
 #include <neopixel_helper.h>
 
-bool DEBUG_neoaccentind = true;
+bool DEBUG_neoaccentind = false;
 
 uint16_t INDACCENTBRIGHTNESS = 180;
 int INDACCENTNUMPIXELS  = 2;
 
-uint32_t accentColor = np_black;
+uint32_t accentColor = np_turquoise; // turquoise
 
 void init_ind_accent(){
   ind.updateLength(INDNUMPIXELS+INDACCENTNUMPIXELS);
