@@ -87,6 +87,7 @@ void command_reset(){
 }
 
 // @todo replace with api or command processor library from ESPLSS
+// @todo newlines included in arguments!!
 void process_command(){
   if (strncmp(cmd,"f ",2) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
@@ -154,8 +155,8 @@ void process_command(){
 
   if (strncmp(cmd,"A",1) == 0) {
     uint8_t arg = (uint8_t)atoi(cmd + 2);
-    if(DEBUG_SERIALCMD) DebugOut.print(F("Abort") );
-    if(DEBUG_SERIALCMD) DebugOut.println(arg);
+    if(DEBUG_SERIALCMD) DebugOut.println(F("ABORT REFLOW") );
+    // if(DEBUG_SERIALCMD) DebugOut.println(arg);
     reflowabort();
   }
 
@@ -163,7 +164,7 @@ void process_command(){
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("REFLOW") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
-    doPasteReflow();    
+    startReflow();  
   }
 
   if (strncmp(cmd,"C",1) == 0) {

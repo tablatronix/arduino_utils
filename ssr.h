@@ -52,7 +52,7 @@ void SetSSRFrequency( int duty,int power =1)
   currentDuty = duty;  
 }
 
-void SetRelayFrequency(int duty){
+void setSSR(int duty){
   SetSSRFrequency(duty);
 }
 
