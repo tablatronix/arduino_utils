@@ -83,7 +83,10 @@ int hotTemp  = 70; // C burn temperature for HOT indication, 0=disable
 int coolTemp = 50; // C safe temperature for HOT indication, 0=disable
 int lowTemp  = 30; // C of TC warmed than typical CJ
 int shutDownTemp = 210; // degrees C
+
 bool enableThermalCheck = false;
+
+int fanTemp = lowTemp+5; // cooldown complete fan off low temp
 
 // strings
 // String TITLE = "TITLE";
@@ -129,11 +132,23 @@ int doorAbortTime = 50000; // time we expect door full operations to take, will 
 
 int doorAbortTaskID = -1; // timer task
 int reflowStepTaskID = -1;
+int PIDTaskID = -1;
+
+
+// REFLOW STATES
+#define RS_IDLE     0
+#define RS_PREHEAT  1 // wait for reflow sync, pid or no pid
+#define RS_START    2 // for setup of reflow curve and any pre reflow tasks
+#define RS_REFLOW   3 // actual reflow
+#define RS_PEAK     4 // run safety, logging for reflow etc,
+#define RS_COOL     5 // do cooldown
+#define RS_ABORT   999 // special mode for abort, stay in abort until reset!
 
 void stateTimerReset(){
   stateStartMS = millis();
 }
 
+// return millis since start of state
 int getStateDuration(){
   return millis()-stateStartMS;
 }
@@ -259,30 +274,38 @@ int cancelTask(uint16_t taskid){
   return taskid;
 }
 
-void coolComplete(){
-  if(currentTempAvg < lowTemp){
+void coolCancel(){
+  if(coolAbortTaskID >-1){
+    coolAbortTaskID = cancelTask(coolAbortTaskID);
+  }
+}
+
+void coolCompleteWatcher(){
+  if(currentTempAvg < fanTemp){
     Serial.println("[COOL] Cooldown Complete");
-    if(coolAbortTaskID >-1){
-      coolAbortTaskID = cancelTask(coolAbortTaskID);
-    }
+    coolCancel();
     Serial.println("[COOL] Closing Door, shutoff fans");
     doorClose();
     fanB(0);
+    SSRFan(false);
   }
 }
 
 void cool(bool dooropen){
   Serial.println("[COOL] cooldown");
+  coolCancel(); // make sure we do not create multiples timers
+  if(currentTempAvg < fanTemp){
+    Serial.println("[COOL] cooldown not needed, skipping");
+    return;
+  }
   if(dooropen) doorOpen();
   fanB(100); // outake 100%
   Serial.println("[COOL] setup cooldown timer");
-  coolAbortTaskID = taskManager.scheduleFixedRate(1000, coolComplete);
+  coolAbortTaskID = taskManager.scheduleFixedRate(1000, coolCompleteWatcher);
 }
 
 void coolDown(){
-  doorOpen();
-  fanB(100); // outake 100%
-  coolAbortTaskID = taskManager.scheduleFixedRate(1000, coolComplete);  
+  cool(true);
 }
 
 void standby(){
@@ -303,14 +326,16 @@ void setReflowState(int state){
   reflowState = state;
 }
 
-
 void reflow(){
-
+  // setPasteId = 0;
+  // doPasteReflow();
 }
 
 void reflowabort(){
-  setReflowState(0);
-  SetTitle("REFLOW ABORTED");
+  setReflowState(RS_ABORT);
+  // abort immediate
+  setSSR(0);
+  SetTitle("ABORTED");
 }
 
 void reboot(){
@@ -318,10 +343,6 @@ void reboot(){
 }
 
 void cancel(){
-
-}
-
-void preheat(){
 
 }
 
@@ -804,7 +825,7 @@ void doAlert(int mode = 0);
 void updateSSRIcon(){
   iconC(getSSRDuty() > 0);
 }
-
+    
 // random indication icon test
 void testIconsUpdate(){
   wifiIcon(random(2)-1,random(2)-1);
@@ -942,7 +963,7 @@ void displayReflow(){
   // use footer and scroll for status or alerts, debugging
 
   // placeholders atm
-  SetTitle("REFLOW"); // assign titles for each profile zone ?
+  // SetTitle("REFLOW"); // assign titles for each profile zone ?
   
   // timer disp
   // real time, change to use stepping from reflow instead
@@ -1013,11 +1034,105 @@ int getMaxTime(){
   return 330; // max temp plus padding
 }
 
+double getPasteTime(int id,int zone){
+  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
+  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value 
+  return xValues[zone];
+}
+
+// temp structure
+double getPasteTemp(int id,int zone){
+  // const char names[7] = {"start","preheat","ramp","soak","reflow","peak","cooldown"}
+  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
+  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value 
+  double delta[7]   = { 0, 80, 45, 0, 70, 0,  25 }; // value 
+  // double slope[7] = { 0, 1.3, .75, 0, 1.4, 0,  3.9 };
+  return yValues[zone];
+}
+
+// PID
+bool pidrun = false; // flag to run pid on loop
+void doPidRun(){
+  pidrun = true;
+}
+
+void doPidStart(){
+  if(PIDTaskID == -1){
+    pidStart();
+    SSRFan(true);  
+    PIDTaskID = taskManager.scheduleFixedRate(100, doPidRun); // RUN PID 10HZ 
+  }
+}
+
+void doPidStop(){
+  PIDTaskID = cancelTask(PIDTaskID);
+  stop_PID();
+}
+
+// set static temp skip reflow curves
+void setTemp(){
+  // set a temperature;
+  doPidStart();
+  setReflowState(RS_REFLOW);
+}
+
+
+//preheat
+
+// wait for preheat temp reached to start reflow, 
+// this not only eses an shrotens the graph
+// but helps get thermal inertia and line up with curve
+// this way we start the delay start the curve on temp instead of trying to amtch up to curve
+int preheattemp = 50;
+
+void preHeatSetup(){
+  SetTitle("PREHEAT");
+  SetTitleC((String)preheattemp + "`c");
+}
+
+void preHeat(){
+  if(reflowState == RS_IDLE){
+    Serial.println("[START] preheat"); 
+    wantedTemp = preheattemp;
+    preHeatSetup();
+    setReflowState(RS_PREHEAT);
+    stateTimerReset();    
+    doPidStart();
+  }
+  else if(reflowState == 1){
+    if(currentTempAvg > preheattemp){
+      setReflowState(RS_START);
+      // @todo add timeout if sitting in state too long
+    }
+  }
+}
+
+double getZoneRate(){
+  double zoneTempP = getPasteTemp(0,0);
+  double zoneTimeP = getPasteTime(0,0);  
+  double zoneTemp = getPasteTemp(0,1);
+  double zoneTime = getPasteTime(0,1);
+  double zoneSlope = zoneTemp-zoneTempP/zoneTime-zoneTimeP;
+  return zoneSlope; // 1.3
+}
+
+void reflowZoneEnd(){
+    Serial.println("[REFLOW] DONE");
+    // continue cooling, slow graph rate to log ? show some other way
+    reflowStepTaskID = cancelTask(reflowStepTaskID);
+    stop_PID();
+    SetTitleC("0`c");
+    reflowZone = 0;
+    cool(false);
+    SetTitle("COOLDOWN");
+    updateTitle();
+}
+
 void reflowNextZone(){
   Serial.println("ms:" + (String)millis());
   const int numSamples = 7;
   if(reflowZone == numSamples-1){
-    Serial.println("[REFLOW] DONE");
+    reflowZoneEnd();
     // continue cooling, slow graph rate to log ? show some other way
     stop_PID();
   }
@@ -1029,33 +1144,28 @@ void reflowNextZone(){
   SetTitleC((String)(int)round((wantedTemp))+"`c");
 }
 
+int curveLookahead = 15; // seconds
+int curveSamplePeriod = 5; // seconds (64 samples)
+
 void reflowNextRate(){
   Serial.println("ms:" + (String)millis());
   const int numSamples = 7;
-  int lookahead = 0; // seconds
-  if(reflowZone > 260/1 || reflowState==0){
-    Serial.println("[REFLOW] DONE");
-    // continue cooling, slow graph rate to log ? show some other way
-    reflowStepTaskID = cancelTask(reflowStepTaskID);
-    stop_PID();
-    SetTitleC("0`c");
-    reflowZone = 0;
-    cool(false);
-    SetTitle("COOLDOWN");
-    updateTitle();
+  int lookahead = 10; // seconds
+  if(reflowZone > 260/curveSamplePeriod || reflowState==0){
+    reflowZoneEnd();
     return;
   }
-  else Serial.print("[REFLOW] SET ZONE: " + (String)reflowZone);
+  else Serial.println("[REFLOW] SET ZONE: " + (String)reflowZone);
 
   // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
   // double yValues[7] = { 27, 90, 130, 138, 165, 138, 27 }; // value  
   // double xValues[7] = {  0,  60, 120, 160, 210, 260,  330  }; // time
   // double yValues[7] = {  25, 105, 150, 150, 220, 220,  25 }; // value  
   double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  double yValues[7] = { 25, 90, 130, 138, 165, 138, 25 }; // value
+  double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value
   // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
   // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
-  wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*1)+lookahead); 
+  wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*curveSamplePeriod)+curveLookahead); 
   // Serial.println(" " + (String)wantedTemp);
   reflowZone++;
   SetTitleC((String)(int)round((wantedTemp))+"`c");
@@ -1070,7 +1180,7 @@ void doPasteGraph(){
   // double xValues[7] = {  0,  60, 120, 160, 210, 260,  320  }; // time
   // double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value
   double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  double yValues[7] = { 25, 90, 130, 138, 165, 138, 25 }; // value 
+  double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value 
   // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
   // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
 
@@ -1078,20 +1188,24 @@ void doPasteGraph(){
  int maxtemp = getMaxTemp(); // max value + top padding
  int ssize = maxtime;
 
+  double y;
   for(int i=0;i<maxtime;i++){
-    double y;
     y = Interpolation::SmoothStep(xValues, yValues, numSamples, i);
     // Serial.println("y: " + (String)y);
     addPointSet(5,i,y,ssize,maxtemp,0);
-  }  
+  }
+
+  for(int i=0;i<maxtime/curveSamplePeriod;i+=curveSamplePeriod){ 
+    y = Interpolation::SmoothStep(xValues, yValues, numSamples, (i*curveSamplePeriod)+curveLookahead);   
+    addPointSet(1,i*curveSamplePeriod,y,ssize,maxtemp,1);
+  }
 }
 
 void doPasteReflow(){
   resetGraphLines();
   doPasteGraph();
-  reflowGraphCounter = 0;  // reset graph counter for main loop
-  setReflowState(1);
-
+  SetTitle("REFLOW");
+  setReflowState(RS_REFLOW);
   // min sample rate
   // for(int i = 0; i < numSamples; i++){
   //   // Serial.print(Interpolation::CatmullSpline(xValues,yValues, numSamples, i));
@@ -1099,16 +1213,70 @@ void doPasteReflow(){
   //   Serial.println("x2 timer " + (String)((int)round(xValues[i])*1000));
   //   taskManager.scheduleOnce(xValues[i], reflowNextZone,TIME_SECONDS);
   // }
-  reflowStepTaskID = taskManager.scheduleFixedRate(1000, reflowNextRate);
+  reflowStepTaskID = taskManager.scheduleFixedRate(curveSamplePeriod*1000, reflowNextRate);
   Serial.println("[REFLOW] step task created: " + (String)reflowStepTaskID);
+  reflowGraphCounter = 0;
+  // (int)getStateDuration()/1000;  // reset graph counter for main loop
+  // unsigned long preheatendtime = getStateDuration(); calculate forward in slope where temp is at
   stateTimerReset();
+
   // reflowZone = 6;
   // reflowNextZone();
   reflowNextRate();
-  pidStart();
-  SSRFan(true);
+  doPidStart();
 }
 
+// reflowstates
+// 0 - off
+// 1 - preheat/warmup
+// 2 - reflow begin/setup
+// 3 - reflow running
+// 
+// entrypoints
+// preheat()
+// doPasteReflow()
+// doPidStart() - set temp, skip reflow curves
+
+bool coolonabort = true;
+
+
+void process_reflow(){
+  
+  if(reflowState == RS_IDLE) return;
+
+  if(reflowState == RS_ABORT){
+    // stop everything!
+    doPidStop();
+    reflowStepTaskID = cancelTask(reflowStepTaskID); 
+    SetTitle("ABORTED");
+    if(coolonabort) cool(false); // cooldown on abort
+    delay(1000);
+    setReflowState(RS_IDLE); // auto switch back to idle, @todo add acknowlege UI first
+    return;
+  }
+
+  if(reflowState == RS_PREHEAT){
+    preHeat();
+  }
+  if(reflowState == RS_START){
+    doPasteReflow();
+  }
+
+  if(reflowState > RS_IDLE){
+    if(pidrun){
+      pidrun = false;
+      if(!thermalCheck()){
+        doPidStop();
+        // abort_reflow();
+      } else run_PID();
+    }
+
+  }
+}
+
+void startReflow(){
+  preHeat();
+}
 
 // BARGRAPH
 // 
