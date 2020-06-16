@@ -23,9 +23,10 @@
 // da fuq?
 
 uint16_t fullPowerPeriod = 15000; // full power startup pulse period
-bool fullPowerStartup = false;
+bool fullPowerStartup = false; // enable full power period
 
 int long pidTimerStart = 0;
+bool pidRunning        = false; // flag is pid running, used for init start etc.
 
 float wantedTemp     = -1;
 float currentDelta   = 0;
@@ -37,6 +38,8 @@ bool DEBUG_pid       = false;
 
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
+
+float integatorReset = 0.6; // when to reset Ki
 
 // profiling open
 // pulse 100% @ 23C
@@ -97,7 +100,24 @@ double Setpoint, Input, Output;
 
 // double Kp = 4, Ki = 0.5, Kd = 1.5;
 // double Kp = 5, Ki = 0.01, Kd = 20;
-double Kp = 5, Ki = 0.5, Kd = 20;
+// double Kp = 4, Ki = 0.5, Kd = 20;
+
+// double Kp = 3, Ki = 0.5, Kd = 0; // undershoot, try again with proper alignment and lookahead
+double Kp = 4, Ki = 0.5, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
+
+// double Kp = 45, Ki = 0.05, Kd = 20; // overshoot peak wayyy over
+
+// double Kp = 200, Ki = 11.48, Kd = 0; // overshoot, way to much power
+
+// #define KP                 45
+// #define KI                 0.05
+// #define KD                 20
+
+// From tuning run:
+// double kp = 200.0;
+// double ki = 11.48;
+// double kd = 0.0;
+
 
 // window size 5000 bang bang
 // // ***** PID PARAMETERS *****
@@ -124,6 +144,14 @@ PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 // should allow lookaheads to work better and have finer control
 // add calculation for slope
 
+void pid_reset_I(){
+  myPID.SetTunings(Kp, 0, Kd);
+}
+
+void pid_preset_I(){
+  myPID.SetTunings(Kp, Ki, Kd);
+}
+
 void init_PID(){
   // float Kp=97.403, Ki=3.142, Kd=754.9, Hz=10;
   Serial.println("[PID] init");
@@ -137,28 +165,46 @@ void init_PID(){
 
 void pidStart(){
   pidTimerStart = millis();
+  if(fullPowerStartup){
+    myPID.SetMode(MANUAL);
+    Output = 250; // output never returns to normal !!!!
+  }
+  pidRunning = true;
 }
 
 void run_PID(){
+  if(!pidRunning) pidStart();
   // updateTemps(); // this is too close to the PID freq
   // make sure temps are updated before calling run pid, but do not run close to the same frequency
   // this will cause oscillations due to noise induced inthe TC for example
   Setpoint = (double)wantedTemp;
   Input = (double)currentTempAvg;
+
+  // reset integrator at 60% of delta
+  delta = Setpoint-Input;
+  if(delta > delta*integatorReset){
+    pid_reset_I();
+  }
+  else pid_preset_I();
+
   myPID.Compute();
+
+  // why is PID doing effort after setpoint
+  if(Input > Setpoint && (Output > 1)){
+    Serial.println("[PID] WTF PID");
+  }
   // Serial.print("-");
   // Serial.print(Output);
   if(fullPowerStartup){
     if(millis()-pidTimerStart < fullPowerPeriod){
-      // myPID.SetMode(MANUAL);
-      // Output = 250; // output never returns to normal
-      SetRelayFrequency(255);
-      return;
+    }
+    else if(myPID.GetMode() == MANUAL){
+      Output = 0;
+      myPID.SetMode(AUTOMATIC);
     }
   }
-  // else myPID.SetMode(AUTOMATIC);
 
-  SetRelayFrequency(Output);
+  setSSR(Output);
 }
 
 // void MatchTemp_init(int temp){
@@ -169,14 +215,21 @@ void run_PID(){
 // ensure we reset everything and stop pid
 void stop_PID(){
   wantedTemp = 0;
-  SetRelayFrequency(0);
+  setSSR(0);
+  pidRunning = false;
 }
 
 void MatchTemp()
 {
+
+  int lookAhead = 12;
+  int lookAheadWarm = 12;
+  // set.lookAhead = 2;
+  // set.lookAheadWarm = 2;
+
   // Serial.print(".");
-  if(wantedTemp > 0)  run_PID();
-  return;
+  // if(wantedTemp > 0)  run_PID();
+  // return;
   float duty = 0;
   // float wantedTemp = 0;
   float wantedDiff = 0; // rate of change from samples
@@ -262,7 +315,7 @@ if(DEBUG_pid){
   // Serial.println(CurrentGraph().reflowGraphX[1]);
   // if ( set.startFullBlast && (timeX < CurrentGraph().reflowGraphX[1]) ) duty = 256;
   // if ( set.startFullBlast && timeX < CurrentGraph().reflowGraphX[1] && currentTemp < wantedTemp ) duty = 256;
-  SetRelayFrequency( duty );
+  setSSR( duty );
 }
 
 #endif
