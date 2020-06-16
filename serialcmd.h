@@ -190,7 +190,7 @@ void process_command(){
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("REBOOT") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
-    ESP.restart();
+    reboot();
   }
 
   if (strncmp(cmd,"ssr ",4) == 0) {

@@ -108,6 +108,8 @@ String FOOTERC = ""; // opt1
 String FOOTERD = ""; // opt2
 String ERRORSTR = ""; // errors
 
+
+// DEBUGS
 bool DEBUG_POINT = false; // Debug graph point
 
 bool DEBUG_BOX   = false; // debug show box bounds
@@ -124,15 +126,23 @@ int GRAPHWIDTH  = SCREENWIDTH;
 
 int graphInterval = 1000; // graph update rate ms
 
+TFT_eSprite spr = TFT_eSprite(&tft); 
+
+unsigned int ICONACTIVECOLOR = SILVER;
+
 // FANS
-int coolAbortTaskID; // -1 empty
+bool coolonabort = true;
+
 
 // DOOR
 int doorAbortTime = 50000; // time we expect door full operations to take, will disable door motor after this time
 
+
+// TASKMANAGER
 int doorAbortTaskID = -1; // timer task
 int reflowStepTaskID = -1;
 int PIDTaskID = -1;
+int coolAbortTaskID = -1; // -1 empty
 
 
 // REFLOW STATES
@@ -144,6 +154,8 @@ int PIDTaskID = -1;
 #define RS_COOL     5 // do cooldown
 #define RS_ABORT   999 // special mode for abort, stay in abort until reset!
 
+
+// TIMING
 void stateTimerReset(){
   stateStartMS = millis();
 }
@@ -223,6 +235,7 @@ void setERRORSTR(String str){
 
 // alias
 void setTempDisp(){
+  // NI, not using colored temps, using colored footer line instead
   // color code temperature
   // if(currentTemp > hotTemp) tft.setTextColor( RED, BLACK );
   // else if(currentTemp < coolTemp) tft.setTextColor( GREEN, BLACK );
@@ -248,12 +261,14 @@ void doorAbort(){
 void doorOpen(){
   motorDir = 1;
   motorChange = true;
+  doorCancelAbort();
   doorAbortTaskID = taskManager.scheduleOnce(doorAbortTime, doorAbort);  
 }
 
 void doorClose(){
   motorDir = 2;
   motorChange = true;
+  doorCancelAbort();
   doorAbortTaskID = taskManager.scheduleOnce(doorAbortTime, doorAbort);  
 }
 
@@ -319,7 +334,7 @@ void sleep(){
   doorClose();
   fanB(0);
   fanA(0);
-  SSRFan(false); // ssr fan full
+  SSRFan(false); // ssr fan off
 }
 
 void setReflowState(int state){
@@ -333,15 +348,22 @@ void reflow(){
 
 void reflowabort(){
   setReflowState(RS_ABORT);
-  // abort immediate
+  // abort immediate for safety
   setSSR(0);
   SetTitle("ABORTED");
 }
 
 void reboot(){
+  tft.fillscreen(BLACK);
+  tft.setTextSize(2);
+  tft.setTextFont(2);
+  Serial.println("REBOOTING");
+  delay(1000);
   ESP.restart();
 }
 
+
+// some placeholders for menu actions etc
 void cancel(){
 
 }
@@ -382,6 +404,7 @@ void tempIsSafe(){
 
 void restartDetector(){
   // check for spurious restarts
+  // not sure if this is needed other than burn in testing
 }
 
 void userAbort(){
@@ -471,8 +494,6 @@ void updateTitleC(){
     // Serial.println(lpad);
     tft.setTextPadding(0);
 }
-
-TFT_eSprite spr = TFT_eSprite(&tft); 
 
 // temperature C
 // sprite 55fps/67fps varies by font
@@ -591,7 +612,7 @@ void updatefooterBL1(){
 }
 
 void updatefooterBL2(){
-
+ 
 }
 
 void UpdateScroll(){
@@ -638,8 +659,6 @@ void updateFooterD(bool enable){
     tft.setTextDatum(BR_DATUM);
     tft.drawString(str,SCREENWIDTH-2,SCREENHEIGHT,2);    
 }
-
-unsigned int ICONACTIVECOLOR = SILVER;
 
 void updateFPS(){
     fps.push((1000/(millis()-fpsmicros)));
@@ -1237,9 +1256,6 @@ void doPasteReflow(){
 // doPasteReflow()
 // doPidStart() - set temp, skip reflow curves
 
-bool coolonabort = true;
-
-
 void process_reflow(){
   
   if(reflowState == RS_IDLE) return;
@@ -1314,7 +1330,7 @@ void testBargraph(){
   delay(1000);
 
   tft.setCursor(10,10);
-  tft.println("Rebooting...                     ");
+  tft.println("Rebooting...                    ");
 
   for(int i=0;i<100;i++){
       update_bargraph(100-i);
