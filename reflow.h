@@ -1237,8 +1237,7 @@ void doPasteReflow(){
 // doPasteReflow()
 // doPidStart() - set temp, skip reflow curves
 
-bool coolonabort = true;
-
+bool coolOnAbort = true;
 
 void process_reflow(){
   
@@ -1249,7 +1248,7 @@ void process_reflow(){
     doPidStop();
     reflowStepTaskID = cancelTask(reflowStepTaskID); 
     SetTitle("ABORTED");
-    if(coolonabort) cool(false); // cooldown on abort
+    if(coolOnAbort) cool(false); // cooldown on abort
     delay(1000);
     setReflowState(RS_IDLE); // auto switch back to idle, @todo add acknowlege UI first
     return;
