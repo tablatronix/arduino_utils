@@ -22,8 +22,8 @@
 // 1468.5591
 // da fuq?
 
-uint16_t fullPowerPeriod = 15000; // full power startup pulse period
-bool fullPowerStartup = false; // enable full power period
+uint16_t fullPowerPeriod = 10000; // full power startup pulse period
+bool fullPowerStartup = true; // enable full power period
 
 int long pidTimerStart = 0;
 bool pidRunning        = false; // flag is pid running, used for init start etc.
@@ -39,7 +39,7 @@ bool DEBUG_pid       = false;
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
 
-float integatorReset = 0.6; // when to reset Ki
+float integatorReset = 0.8; // when to reset Ki
 
 // profiling open
 // pulse 100% @ 23C
@@ -103,7 +103,12 @@ float integatorReset = 0.6; // when to reset Ki
 // double Kp = 4, Ki = 0.5, Kd = 20;
 
 // double Kp = 3, Ki = 0.5, Kd = 0; // undershoot, try again with proper alignment and lookahead
-double Kp = 4, Ki = 0.5, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
+double KpLite = 4, KiLite = .5, KdLite = 0; // slight undershoot, needs a little more power on ramp and peak
+
+double Kp = 7, Ki = .5, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
+
+// agressive
+double KpAgr = 7, KiAgr = .5, KdAgr = 0; // slight undershoot, needs a little more power on ramp and peak
 
 // double Kp = 45, Ki = 0.05, Kd = 20; // overshoot peak wayyy over
 
@@ -181,7 +186,7 @@ void run_PID(){
   Input = (double)currentTempAvg;
 
   // reset integrator at 60% of delta
-  delta = Setpoint-Input;
+  int delta = Setpoint-Input;
   if(delta > delta*integatorReset){
     pid_reset_I();
   }

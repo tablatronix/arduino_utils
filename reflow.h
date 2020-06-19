@@ -78,15 +78,15 @@ unsigned long stateStartMS = 0; // state start timers
 int reflowState = 0; // @todo add enum state, maybe queue
 int reflowGraphCounter = 0; // counter period for graphing graphInterval
 
-// temperature
+// temperature vars
 int hotTemp  = 70; // C burn temperature for HOT indication, 0=disable
 int coolTemp = 50; // C safe temperature for HOT indication, 0=disable
 int lowTemp  = 30; // C of TC warmed than typical CJ
 int shutDownTemp = 210; // degrees C
+int fanTemp = lowTemp+5; // cooldown complete fan off low temp
 
 bool enableThermalCheck = false;
 
-int fanTemp = lowTemp+5; // cooldown complete fan off low temp
 
 // strings
 // String TITLE = "TITLE";
@@ -131,8 +131,8 @@ TFT_eSprite spr = TFT_eSprite(&tft);
 unsigned int ICONACTIVECOLOR = SILVER;
 
 // FANS
-bool coolonabort = true;
-
+bool coolOnAbort = true; // cool down on abort
+bool coolOnBoot  = true; // cool down on boot
 
 // DOOR
 int doorAbortTime = 50000; // time we expect door full operations to take, will disable door motor after this time
@@ -354,7 +354,7 @@ void reflowabort(){
 }
 
 void reboot(){
-  tft.fillscreen(BLACK);
+  tft.fillScreen(BLACK);
   tft.setTextSize(2);
   tft.setTextFont(2);
   Serial.println("REBOOTING");
@@ -397,7 +397,7 @@ void tempIsSafe(){
 
   // }
   // tc is above max limit
-  // fan failing
+  // fan failing, no way to detect other than cooling state slope not moving or negative..
   // ssr above temp (NTC)
   // cold junction temp above temp
 }
@@ -405,6 +405,8 @@ void tempIsSafe(){
 void restartDetector(){
   // check for spurious restarts
   // not sure if this is needed other than burn in testing
+  // if reset reason was bad, and was in a reflow, use flash to save state ?
+  // resume or warn or just alarm and leave to user.. Allow reflow resume, skip preheat
 }
 
 void userAbort(){
@@ -439,7 +441,9 @@ void SetFanInd(){
  * --------------------------------------
  */
 
-uint8_t TITLETOPPAD = 4;
+uint8_t TITLETOPPAD = 4; // main title top padding
+
+// add getter for colors?
 
 void updateTitle(){
     String str = TITLE;
@@ -477,8 +481,8 @@ void updateTitleB(){
     int lpad = 2;
     tft.setTextPadding(120);
     // drawDatumMarker(120,25);
-    lpad += tft.drawString(str,120,30,4); // 22
-    // Serial.println(lpad);    
+    lpad += tft.drawString(str,140,30,4); // 22
+    // Serial.println(lpad);
     tft.setTextPadding(0);
 }
 
@@ -1126,6 +1130,13 @@ void preHeat(){
   }
 }
 
+double getActualWanted(){
+  const int numSamples = 7; 
+  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value  
+  return Interpolation::SmoothStep(xValues, yValues, numSamples, getStateDuration()/1000);  
+}
+
 double getZoneRate(){
   double zoneTempP = getPasteTemp(0,0);
   double zoneTimeP = getPasteTime(0,0);  
@@ -1163,8 +1174,8 @@ void reflowNextZone(){
   SetTitleC((String)(int)round((wantedTemp))+"`c");
 }
 
-int curveLookahead = 15; // seconds
-int curveSamplePeriod = 5; // seconds (64 samples)
+int curveLookahead = 10; // seconds
+int curveSamplePeriod = 5; // seconds
 
 void reflowNextRate(){
   Serial.println("ms:" + (String)millis());
@@ -1184,11 +1195,13 @@ void reflowNextRate(){
   double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value
   // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
   // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
+  // wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*curveSamplePeriod)+curveLookahead); 
   wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*curveSamplePeriod)+curveLookahead); 
   // Serial.println(" " + (String)wantedTemp);
   reflowZone++;
-  SetTitleC((String)(int)round((wantedTemp))+"`c");
+  SetTitleC((String)(int)round((wantedTemp))+" / " + (String)(int)round(getActualWanted()));
 }
+
 
 void doPasteGraph(){
   Serial.println("[START] doPasteReflow");
@@ -1256,11 +1269,10 @@ void doPasteReflow(){
 // doPasteReflow()
 // doPidStart() - set temp, skip reflow curves
 
-bool coolOnAbort = true;
-
-  
-  if(reflowState == RS_IDLE) return;
-
+void process_reflow(){  
+  if(reflowState == RS_IDLE){
+    return;
+  }
   if(reflowState == RS_ABORT){
     // stop everything!
     doPidStop();
@@ -1292,6 +1304,7 @@ bool coolOnAbort = true;
 }
 
 void startReflow(){
+  fansOff();
   preHeat();
 }
 
