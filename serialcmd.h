@@ -157,7 +157,7 @@ void process_command(){
     uint8_t arg = (uint8_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.println(F("ABORT REFLOW") );
     // if(DEBUG_SERIALCMD) DebugOut.println(arg);
-    reflowabort();
+    reflowAbort();
   }
 
   if (strncmp(cmd,"R",1) == 0) {

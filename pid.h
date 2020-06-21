@@ -39,7 +39,7 @@ bool DEBUG_pid       = false;
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
 
-float integatorReset = 0.8; // when to reset Ki
+float integatorReset = 0.75; // when to reset Ki
 
 // profiling open
 // pulse 100% @ 23C
@@ -105,10 +105,22 @@ float integatorReset = 0.8; // when to reset Ki
 // double Kp = 3, Ki = 0.5, Kd = 0; // undershoot, try again with proper alignment and lookahead
 double KpLite = 4, KiLite = .5, KdLite = 0; // slight undershoot, needs a little more power on ramp and peak
 
-double Kp = 7, Ki = .5, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
+double Kp = 13, Ki = .5, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
 
 // agressive
-double KpAgr = 7, KiAgr = .5, KdAgr = 0; // slight undershoot, needs a little more power on ramp and peak
+double KpAgr = 28, KiAgr = .5, KdAgr = 0; // slight undershoot, needs a little more power on ramp and peak
+
+// previous REFLOW
+// kp a little overshoor on ramp
+// kp a little overshoot on peak
+// cooldown late
+
+// LATEST REFLOW
+// perfect
+// - [ ] test different profiles
+// - [ ] add period tracking, check time above liquidus
+// - [ ] fix peak
+// - [ ] pid peak being called repeatedly, might be reseting pid, fix and test, make run once.
 
 // double Kp = 45, Ki = 0.05, Kd = 20; // overshoot peak wayyy over
 
@@ -155,6 +167,12 @@ void pid_reset_I(){
 
 void pid_preset_I(){
   myPID.SetTunings(Kp, Ki, Kd);
+}
+
+void pid_peak(){
+  Serial.println("[PID] adjust tunings");
+  myPID.SetTunings(KpAgr, KiAgr, KdAgr);
+  // @todo confirm tunings
 }
 
 void init_PID(){

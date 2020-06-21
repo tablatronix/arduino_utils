@@ -1,6 +1,8 @@
 #ifndef reflow_h
 #define reflow_h
 
+// #include <config.h>
+
 #include <log.h>
 #include <buttons.h>
 #include <i2c_fans.h>
@@ -341,12 +343,17 @@ void setReflowState(int state){
   reflowState = state;
 }
 
+int getReflowState(){
+  return reflowState;
+}
+
+
 void reflow(){
   // setPasteId = 0;
   // doPasteReflow();
 }
 
-void reflowabort(){
+void reflowAbort(){
   setReflowState(RS_ABORT);
   // abort immediate for safety
   setSSR(0);
@@ -410,6 +417,9 @@ void restartDetector(){
 }
 
 void userAbort(){
+  if(getReflowState() != RS_IDLE){
+    reflowAbort();
+  }
   // pressing any button during reflow , add stop buttons
   // push encoder
   // spin encoder fast
@@ -481,7 +491,7 @@ void updateTitleB(){
     int lpad = 2;
     tft.setTextPadding(120);
     // drawDatumMarker(120,25);
-    lpad += tft.drawString(str,140,30,4); // 22
+    lpad += tft.drawString(str,130,30,4); // 22
     // Serial.println(lpad);
     tft.setTextPadding(0);
 }
@@ -1047,32 +1057,6 @@ bool thermalCheck(){
   return true;
 }
 
-uint16_t reflowZone = 0;
-
-int getMaxTemp(){
-  return 170; // max temp plus padding
-}
-
-int getMaxTime(){
-  return 330; // max temp plus padding
-}
-
-double getPasteTime(int id,int zone){
-  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
-  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value 
-  return xValues[zone];
-}
-
-// temp structure
-double getPasteTemp(int id,int zone){
-  // const char names[7] = {"start","preheat","ramp","soak","reflow","peak","cooldown"}
-  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
-  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value 
-  double delta[7]   = { 0, 80, 45, 0, 70, 0,  25 }; // value 
-  // double slope[7] = { 0, 1.3, .75, 0, 1.4, 0,  3.9 };
-  return yValues[zone];
-}
-
 // PID
 bool pidrun = false; // flag to run pid on loop
 void doPidRun(){
@@ -1099,14 +1083,13 @@ void setTemp(){
   setReflowState(RS_REFLOW);
 }
 
-
 //preheat
 
 // wait for preheat temp reached to start reflow, 
-// this not only eses an shrotens the graph
+// this not only eases and shortens the graph
 // but helps get thermal inertia and line up with curve
-// this way we start the delay start the curve on temp instead of trying to amtch up to curve
-int preheattemp = 50;
+// this way we delay start the curve on temp instead of trying to match temp up to curve
+int preheattemp = 50; // this has to match first temp, figure a better way to make compatible with all profiles
 
 void preHeatSetup(){
   SetTitle("PREHEAT");
@@ -1126,15 +1109,52 @@ void preHeat(){
     if(currentTempAvg > preheattemp){
       setReflowState(RS_START);
       // @todo add timeout if sitting in state too long
+      // add timeout to stabilize
     }
   }
 }
 
+/**
+ * PASTE
+ ******************************************
+ */
+
+double pasteTime[6] = { 1,   75, 130, 180, 210, 250 }; // time
+double pasteTemp[6] = { 50, 150, 175, 210, 210, 50 }; // temps
+double delta[7]     = { 0, 80, 45, 0, 70, 0,  25 }; // value 
+double slope[7]     = { 0, 1.3, .75, 0, 1.4, 0,  3.9 };
+
+  //  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
+  // double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value   
+const int numZones = 6;
+int maxTime  = pasteTime[numZones-1];
+int maxTemp  = pasteTemp[3];
+int peakTime = pasteTime[3];
+int rampTime = pasteTime[2];
+int extractTime = peakTime-10;
+int coolTime = peakTime+20; // peak duration - 10, how early to start cooling @todo test once using door
+
+uint16_t reflowZone = 0;
+
+int getMaxTemp(){
+  return maxTemp; // max temp plus padding
+}
+
+int getMaxTime(){
+  return maxTime; // max temp plus padding
+}
+
+double getPasteTime(int id,int zone){
+  return pasteTime[zone];
+}
+
+// temp structure
+double getPasteTemp(int id,int zone){
+  return pasteTemp[zone];
+}
+
 double getActualWanted(){
-  const int numSamples = 7; 
-  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value  
-  return Interpolation::SmoothStep(xValues, yValues, numSamples, getStateDuration()/1000);  
+  return Interpolation::SmoothStep(pasteTime, pasteTemp, numZones, getStateDuration()/1000);  
 }
 
 double getZoneRate(){
@@ -1149,54 +1169,65 @@ double getZoneRate(){
 void reflowZoneEnd(){
     Serial.println("[REFLOW] DONE");
     // continue cooling, slow graph rate to log ? show some other way
+    setReflowState(RS_COOL);
     reflowStepTaskID = cancelTask(reflowStepTaskID);
     stop_PID();
-    SetTitleC("0`c");
+    SetTitleC("0`c"); // @todo replace with cooling rate, or estimate time left?
     reflowZone = 0;
     cool(false);
-    SetTitle("COOLDOWN");
+    SetTitle("COOLING");
     updateTitle();
 }
 
 void reflowNextZone(){
   Serial.println("ms:" + (String)millis());
-  const int numSamples = 7;
-  if(reflowZone == numSamples-1){
+  if(reflowZone == numZones-1){
     reflowZoneEnd();
     // continue cooling, slow graph rate to log ? show some other way
     stop_PID();
   }
   else Serial.println("[REFLOW] SET ZONE: " + (String)reflowZone);
-  double xValues[7] = {  1,  60, 120, 160, 210, 260,  310  }; // time
-  double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value  
-  wantedTemp = yValues[reflowZone];
+  wantedTemp = pasteTemp[reflowZone];
   reflowZone++;
   SetTitleC((String)(int)round((wantedTemp))+"`c");
 }
 
-int curveLookahead = 10; // seconds
-int curveSamplePeriod = 5; // seconds
+int curveLookahead = 10; // seconds, start matching setpoint this early // check CRASH divide by 0!
+int curveSamplePeriod = 5; // seconds, period to interpolate by
 
 void reflowNextRate(){
-  Serial.println("ms:" + (String)millis());
-  const int numSamples = 7;
-  int lookahead = 10; // seconds
-  if(reflowZone > 260/curveSamplePeriod || reflowState==0){
+  Serial.println("[REFLOW] ms:" + (String)getStateDuration());
+
+  // reflow done
+  if(reflowZone > (coolTime/curveSamplePeriod) || reflowState == 0){
     reflowZoneEnd();
     return;
   }
-  else Serial.println("[REFLOW] SET ZONE: " + (String)reflowZone);
+  else Serial.println("[REFLOW] SET ZONE: " + (String)reflowZone + " s:" + (String)(reflowZone*curveSamplePeriod));
 
-  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  // double yValues[7] = { 27, 90, 130, 138, 165, 138, 27 }; // value  
-  // double xValues[7] = {  0,  60, 120, 160, 210, 260,  330  }; // time
-  // double yValues[7] = {  25, 105, 150, 150, 220, 220,  25 }; // value  
-  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value
-  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
-  // wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*curveSamplePeriod)+curveLookahead); 
-  wantedTemp = Interpolation::SmoothStep(xValues, yValues, numSamples, (reflowZone*curveSamplePeriod)+curveLookahead); 
+  // skip first temp, no offset
+  if(reflowZone==0){
+    curveLookahead = 1;
+  }
+  // 180-10/5 = 34
+  // @todo if profile does not have peak plateu, will have to ajust peak/2
+  else if(reflowZone >= (rampTime)/curveSamplePeriod){
+      // change pid tunings to agressive for peak
+      Serial.println("[REFLOW] PEAK REFLOW");
+      Serial.println("[REFLOW] *********************************");
+      pid_peak(); // this gets called repeatedly, @fix only run once.
+  }
+  else curveLookahead = 10; // fix to not have to restore, use temp local var
+
+  // get adjusted wanted temp, using lookahead, adjust for sampleperiod
+  // if sample period is too small, or rate changed to fast, pid tunings will not work the same
+  // maybe have to adjust tunings if changing curveSampleRate, which is going to be a problem..
+  // but either way this always interpolates more points than profile array, 
+  // and we cannot change rate faster than 20 seconds of dead time anyway, 5-10s ideal, see how we can adjust , we still have 10% power reserve etc.
+  wantedTemp = Interpolation::SmoothStep(pasteTime, pasteTemp, numZones, (reflowZone*curveSamplePeriod)+curveLookahead); 
+  
+  Serial.println("[REFLOW] " + (String)(int)round((wantedTemp))+" / " + (String)(int)round(getActualWanted()));
+
   // Serial.println(" " + (String)wantedTemp);
   reflowZone++;
   SetTitleC((String)(int)round((wantedTemp))+" / " + (String)(int)round(getActualWanted()));
@@ -1206,30 +1237,40 @@ void reflowNextRate(){
 void doPasteGraph(){
   Serial.println("[START] doPasteReflow");
   reflow_graph();
-  const int numSamples = 7;
-  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  // double yValues[7] = { 27, 90, 130, 138, 165, 138, 27 }; // value   
-  // double xValues[7] = {  0,  60, 120, 160, 210, 260,  320  }; // time
-  // double yValues[7] = { 25, 105, 150, 150, 220, 220,  25 }; // value
-  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value 
-  // double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
-  // double yValues[7] = { 25, 60, 60, 40, 40, 120, 25 }; // value  
 
  int maxtime = getMaxTime(); // max time frame for reflow, or make sure last point is not drawn huh ?
- int maxtemp = getMaxTemp(); // max value + top padding
+ int maxtemp = getMaxTemp(); // max value
  int ssize = maxtime;
+
+ maxtemp+=10; // top margin for overshoot and padding
 
   double y;
   for(int i=0;i<maxtime;i++){
-    y = Interpolation::SmoothStep(xValues, yValues, numSamples, i);
+    y = Interpolation::SmoothStep(pasteTime, pasteTemp, numZones, i);
     // Serial.println("y: " + (String)y);
     addPointSet(5,i,y,ssize,maxtemp,0);
   }
 
-  for(int i=0;i<maxtime/curveSamplePeriod;i+=curveSamplePeriod){ 
-    y = Interpolation::SmoothStep(xValues, yValues, numSamples, (i*curveSamplePeriod)+curveLookahead);   
+  bool drawWantedCurve = false;
+
+  if(drawWantedCurve){
+  // draw actual wanted curve, lead adjust
+  
+  for(int i=0;i<maxtime/curveSamplePeriod;i+=curveSamplePeriod){
+    // line up first temp, no offset
+    if(i==0){
+      curveLookahead = 1;
+    }
+    else if(i > (rampTime)/curveSamplePeriod){
+      // Serial.println("[REFLOW] PEAK REFLOW");
+      // curveSamplePeriod = 2;
+      // curveLookahead = 5;
+    }
+    else curveLookahead = 10;
+
+    y = Interpolation::SmoothStep(pasteTime, pasteTemp, numZones, (i*curveSamplePeriod)+curveLookahead);   
     addPointSet(1,i*curveSamplePeriod,y,ssize,maxtemp,1);
+    }
   }
 }
 
@@ -1239,8 +1280,8 @@ void doPasteReflow(){
   SetTitle("REFLOW");
   setReflowState(RS_REFLOW);
   // min sample rate
-  // for(int i = 0; i < numSamples; i++){
-  //   // Serial.print(Interpolation::CatmullSpline(xValues,yValues, numSamples, i));
+  // for(int i = 0; i < numZones; i++){
+  //   // Serial.print(Interpolation::CatmullSpline(xValues,yValues, numZones, i));
   //   // addPointSet(5,xValues[i],yValues[i],ssize,maxtemp);
   //   Serial.println("x2 timer " + (String)((int)round(xValues[i])*1000));
   //   taskManager.scheduleOnce(xValues[i], reflowNextZone,TIME_SECONDS);
@@ -1291,7 +1332,7 @@ void process_reflow(){
     doPasteReflow();
   }
 
-  if(reflowState > RS_IDLE){
+  if(reflowState > RS_IDLE && reflowState < RS_COOL){
     if(pidrun){
       pidrun = false;
       if(!thermalCheck()){
