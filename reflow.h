@@ -1119,22 +1119,28 @@ void preHeat(){
  ******************************************
  */
 
-double pasteTime[6] = { 1,   75, 130, 180, 210, 250 }; // time
-double pasteTemp[6] = { 50, 150, 175, 210, 210, 50 }; // temps
+double pasteTime[7] = { 1, 90, 180, 210, 240, 270, 330 }; // time
+double pasteTemp[7] = { 50, 90, 130, 138, 165, 138, 27 }; // value
+
+// double pasteTime[6] = { 1,   75, 130, 180, 210, 250 }; // time
+// double pasteTemp[6] = { 50, 150, 175, 210, 210, 50 }; // temps
 double delta[7]     = { 0, 80, 45, 0, 70, 0,  25 }; // value 
 double slope[7]     = { 0, 1.3, .75, 0, 1.4, 0,  3.9 };
 
   //  double xValues[7] = { 1, 90, 180, 210, 240, 270, 300 }; // time
   // double yValues[7] = { 50, 90, 130, 138, 165, 138, 25 }; // value   
-const int numZones = 6;
+const int numZones = 7;
+int peakIDX = 4;
 int maxTime  = pasteTime[numZones-1];
-int maxTemp  = pasteTemp[3];
-int peakTime = pasteTime[3];
-int rampTime = pasteTime[2];
+int maxTemp  = pasteTemp[peakIDX];
+int peakTime = pasteTime[peakIDX];
+int rampTime = pasteTime[peakIDX-1];
 int extractTime = peakTime-10;
 int coolTime = peakTime+20; // peak duration - 10, how early to start cooling @todo test once using door
 
 uint16_t reflowZone = 0;
+bool drawWantedCurve = true;
+
 
 int getMaxTemp(){
   return maxTemp; // max temp plus padding
@@ -1250,8 +1256,6 @@ void doPasteGraph(){
     // Serial.println("y: " + (String)y);
     addPointSet(5,i,y,ssize,maxtemp,0);
   }
-
-  bool drawWantedCurve = false;
 
   if(drawWantedCurve){
   // draw actual wanted curve, lead adjust
@@ -1397,25 +1401,26 @@ void testBargraph(){
   delay(1000);
 }
 
+
 void setupOtaCB(){
   ArduinoOTA.onStart([]() {
-      otastarted = true;
-      // init_bargraph();
-       // Serial.println("\nOTA onStart");
+    tft.fillScreen(RED);
+        // init_bargraph();
+         // Serial.println("\nOTA onStart");
   });
 
-  ArduinoOTA.onEnd([]() {
-        otastarted = false;
-        bar0.setColor(GREEN, BLACK);
-        update_bargraph(100);
-        tft.setTextSize(1);
-        // Serial.println("\nOTA onEnd");
-  });
+  // ArduinoOTA.onEnd([]() {
+  //       otastarted = false;
+  //       bar0.setColor(GREEN, BLACK);
+  //       update_bargraph(100);
+  //       tft.setTextSize(1);
+  //       // Serial.println("\nOTA onEnd");
+  // });
 
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("OTA Progress: %u%%\n", (progress / (total / 100)));
-    update_bargraph((int)(progress / (total / 100)));
-  });
+  // ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+  //   Serial.printf("OTA Progress: %u%%\n", (progress / (total / 100)));
+  //   update_bargraph((int)(progress / (total / 100)));
+  // });
 }
 
 #endif

@@ -56,20 +56,24 @@ void startOTA(){
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    if (progressthrottle>0 && (micros () - lastprogress > progressthrottle || progress <= 1 || progress >=99)){
-      Serial.printf("[OTA] Progress: %u%%\n", (progress / (total / 100)));
+    if (progressthrottle>0){
+      if((((micros() - lastprogress ) < progressthrottle) || progress > 1 || progress <99)){
+        lastprogress = micros();
+        return;
+      }
     }
+    Serial.printf("[OTA] Progress: %u%%\n", (progress / (total / 100)));
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("[OTA] Error[%u]: ", error);
     // @todo set ota fail flag, keep otastarted flag on for a bit so retries succeed
     otastarted = false;
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+         if (error == OTA_AUTH_ERROR)    Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR)   Serial.println("Begin Failed");
     else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
     else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    else if (error == OTA_END_ERROR)     Serial.println("End Failed");
   });
 
    /* setup the OTA server */
