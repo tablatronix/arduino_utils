@@ -15,9 +15,10 @@ int getPinMode(uint8_t pin)
 }
 
 void debugPin(uint8_t pin){
-    Serial.print("pinmode: ");
-    Serial.println(getPinMode(pin),HEX);
-    Serial.println("pinstate: " + (String)digitalRead(pin));  
+    Serial.print("[PIN] " + (String)pin);
+    Serial.print(" pinmode: ");
+    Serial.print(getPinMode(pin),HEX);
+    Serial.println(" pinstate: " + (String)digitalRead(pin));  
 }
 
 void scani2c(){
@@ -67,6 +68,21 @@ void scani2c(){
     Serial.println("[ERROR] No I2C devices found\n");
   else
     Serial.println("[I2C] scan done\n");
+}
+
+void scanPins(){
+  for(int i = 0;i<6;i++){
+    if(i == 1) continue;
+    pinMode(i,INPUT_PULLUP);
+    Serial.print((String)digitalRead(i));
+    // debugPin(i);
+  }
+  for(int i = 12;i<17;i++){
+    pinMode(i,INPUT_PULLUP);
+    // debugPin(i);
+    Serial.print((String)digitalRead(i));
+  }
+  Serial.println("");
 }
 
 #endif
