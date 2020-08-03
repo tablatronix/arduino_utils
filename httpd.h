@@ -18,7 +18,6 @@ void handleRoot() {
     // strip.show();
     // delay(2000);
     server.send(200, "text/plain", "hello from esp8266! ledindex SET");    
-
   }
 
   if(server.hasArg(F("pwm"))){
@@ -30,7 +29,9 @@ void handleRoot() {
     Serial.println("Setting PWM:" + (String)pwmvalue);
     // strip.show();
     // delay(2000);
-    // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM());    
+    // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM()); 
+    // analogWrite(16,pwmvalue.toInt());
+    setPWM(pwmvalue);
   }
 
   // digitalWrite(LED_BUILTIN, 1);

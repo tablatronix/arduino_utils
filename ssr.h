@@ -2,6 +2,8 @@
 #define ssr_h
 #define RELAYPIN  16   // relay control SSR PWM
 
+#include <number_format.h>
+
 #ifdef DEBUG
 bool DEBUG_ssr = true;
 #else
@@ -10,14 +12,6 @@ bool DEBUG_ssr = false;
 
 float currentDuty = 0;
 bool invertDuty = true; // invert logic vcc range
-
-int round_f(float x){
-  return (int)round(x);
-}
-
-float round_f_2(float x){
-  return round(x);
-}
 
 void ssr_init(){
   pinMode( RELAYPIN, OUTPUT );
@@ -38,9 +32,13 @@ void SetSSRFrequency( int duty,int power =1)
   duty = constrain( round_f( duty ), 0, 255); // round and clamp
   duty = abs(duty); // convert to whole
 
-  // Write the clamped duty cycle to the RELAYPIN GPIO    
-  analogWrite( RELAYPIN, invertDuty ? 255-duty : duty );
-  
+  // Write the clamped duty cycle to the RELAYPIN GPIO 
+  int out = invertDuty ? 255-duty : duty;
+  analogWrite( RELAYPIN, out);
+
+  // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
+  // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
+
   if(duty!=currentDuty){
     // if(DEBUG_ssr) Serial.println("[SSR] " + (String)duty);
     if(duty<1 && DEBUG_ssr) Serial.println("[SSR]: OFF");

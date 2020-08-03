@@ -14,9 +14,9 @@ Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET,800000,80000
 
 int fpsmicros = 0;
 
-#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
+// #if (SSD1306_LCDHEIGHT != 64)
+// #error("Height incorrect, please fix Adafruit_SSD1306.h!");
+// #endif
 
 void invertText(){
   lcd.setTextColor(BLACK, WHITE); // 'inverted' text  

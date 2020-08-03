@@ -8,6 +8,7 @@
 // #include <Statistics.h> // https://github.com/provideyourown/statistics
 #include <ntc.h>
 #include <Average.h>
+#include <number_format.h>
 
 // NODEMCU hspi
 // HW scl      D5 14
@@ -86,7 +87,6 @@ uint16_t TCnumErrors     = 0;  // counter for failures
 // Initialise the MAX31855 IC for thermocouple tempterature reading
 // MAX31855 tc(MAXCLK, MAXCS, MAXDO);
 
-
 void averages(){
     int minat = 0;
     int maxat = 0;  
@@ -145,7 +145,7 @@ void ReadCurrentTemp()
     // also check for dev not changing over long periods, could be bad tc, or runaway is heat is being applied
     double readC = tc.readCelsius();
     if(isnan(readC) || readC < 0 || readC > 700){
-      Serial.println("[ERROR] TC OUT OF RANGE, skipping " + (String)readC);
+      // Serial.println("[ERROR] TC OUT OF RANGE, skipping " + (String)readC);
       TCnumErrors++;
       return;
     }
@@ -218,12 +218,12 @@ void setTCInterval(int intv){
 // @todo consolidate into single cleaner functions
 void updateTemps(){
     // if(updateLock) return;
-    digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
+    // digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
     delay(TCinterval); // stabilizes temperatures ????
     internalTemp = tc.readInternal();
     ReadCurrentTemp();
     if(!useAveraging)updateDevVars();
-    Serial.println(currentTemp);
+    // Serial.println(currentTemp);
 }
 
 void resetDev(){
@@ -262,7 +262,8 @@ bool TCSanityCheck(){
     ret = false;
   }
   if(getTcHasError()){
-    Serial.println("[ERROR] TC Status Error");
+    Serial.print("[ERROR] TC Error - ");
+    Serial.println(getTcStatus());
     ret = false;
   }
   if((int)currentTemp > 300 || (int)currentTemp < 0) {

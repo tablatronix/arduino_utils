@@ -23,7 +23,7 @@ void init_WiFi(int timeout = 10000){
     unsigned long start = millis();
     WiFi.begin(SSID,PASS);
     Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
-    while(WiFi.status() != WL_CONNECTED && (millis()-start < timeout)){
+    while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
       Serial.print(".");
       delay(100);
     }

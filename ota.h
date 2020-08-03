@@ -93,7 +93,7 @@ void OTAReboot(bool always = false,int timeout = 10000){
   if(getResetReason() == "Exception" || getResetReason() == "Hardware Watchdog" || getResetReason() == "Software Watchdog" || always){ // @todo add reset reason masks
     // ArduinoOTA.begin();
     Serial.println("[OTA] Emergency OTA, waiting for " + (String)timeout + "s");
-    init_WiFi(5000);
+    if(!wifiIsConnected()) init_WiFi(5000);
     init_ota();
     int timeout = 10000; // how long will esptool wait ?
     int start = millis();
