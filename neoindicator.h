@@ -21,7 +21,7 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	palevioletred	#DB7093	rgb(219,112,147)
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
-uint16_t INDBRIGHTNESS = 180;
+uint16_t INDBRIGHTNESS = 60;
 int INDNUMPIXELS = 1;
 #define INDPIXELSTYPE NEO_GRB + NEO_KHZ800
 
@@ -174,6 +174,26 @@ void accentSetColor(uint32_t c){
       ind.setPixelColor(i, c);
     }
     ind.show();
+}
+
+
+unsigned long IND_lastUpdate = 0 ; // for millis() when last update occoured
+uint32_t IND_ANIMDELAY = 60;
+
+void IND_nb_rainbow() { // modified from Adafruit example to make it a state machine
+  static uint16_t ind_j=0;
+    for(int i=0; i<ind.numPixels(); i++) {
+      ind.setPixelColor(i, Wheel((i+ind_j) & 255));
+      delay(0);
+    }
+    ind.show();
+     ind_j++;
+  if(ind_j >= 256) ind_j=0;
+  IND_lastUpdate = millis(); // time for next change to the display
+}
+
+void IND_nb_animate(){
+  if(millis() - IND_lastUpdate > IND_ANIMDELAY) IND_nb_rainbow();
 }
 
 #endif
