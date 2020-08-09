@@ -7,6 +7,10 @@ bool DEBUG_neohelp = true;
 bool DEBUG_neohelp = false;
 #endif
 
+uint16_t NEOBRIGHTNESS = 100;
+int NEONUMPIXELS = 1;
+#define NEOPIXELSTYPE NEO_GRB + NEO_KHZ800
+
 #include <Adafruit_NeoPixel.h>
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel();
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel(4, -1, NEO_GRB + NEO_KHZ800);
@@ -28,8 +32,15 @@ const uint32_t np_turquoise = strip.Color(0,80,80);
  * collection of helper functions
  */
 
-void init_strip(){
-	strip.begin();
+void init_strip(int pin){
+  strip.setPin(pin);
+  strip.setBrightness(NEOBRIGHTNESS);
+  strip.updateLength(NEONUMPIXELS);
+  strip.updateType(NEO_GRB + NEO_KHZ800);
+  strip.begin();
+  strip.show();
+  strip.show(); // on purpose, ensure its blanked for glitched resets
+  delay(1);
 }
 
 int fadeDuration = 150; // ms fade animation duration
@@ -315,7 +326,24 @@ void flasherSmooth(uint32_t colorA, uint32_t colorB,int waitA, int waitB){
 	delay(waitB);
 }
 
+unsigned long NEO_lastUpdate = 0 ; // for millis() when last update occoured
+uint32_t NEO_ANIMDELAY = 60;
 
+void NEO_nb_rainbow() { // modified from Adafruit example to make it a state machine
+  static uint16_t neo_j=128;
+    for(int i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+neo_j) & 255));
+      delay(0);
+    }
+    strip.show();
+     neo_j++;
+  if(neo_j >= 256) neo_j=0;
+  NEO_lastUpdate = millis(); // time for next change to the display
+}
+
+void NEO_nb_animate(){
+  if(millis() - NEO_lastUpdate > NEO_ANIMDELAY) NEO_nb_rainbow();
+}
 
 void demo(){
   int wait = 5000;
