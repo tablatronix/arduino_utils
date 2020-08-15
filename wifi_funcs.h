@@ -22,8 +22,15 @@ void init_WiFi(int timeout = 10000){
     // WiFi.hostname(hostname);
     unsigned long start = millis();
     WiFi.begin(SSID,PASS);
-    Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
-    while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
+    if(timeout > 0){
+      Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
+      while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
+      Serial.print(".");
+      delay(100);
+    }
+    else {
+      Serial.println("[WIFI] Connecting to wifi, waiting..... ");
+      while(waitForConnectResult() != WL_CONNECTED){
       Serial.print(".");
       delay(100);
     }
@@ -39,6 +46,7 @@ void init_WiFi(int timeout = 10000){
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");
+      Serial.println("[WIFI] waited for " + (String)(millis()-start/1000) + "seconds");
     }
     delay(500);
 }
