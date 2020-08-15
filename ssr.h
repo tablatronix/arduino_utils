@@ -59,7 +59,7 @@ float getSSRDuty(){
 }
 
 float getSSRPower(){
-  return ( currentDuty / 256.0 ) * 100;
+  return ( currentDuty / 255.0 ) * 100;
 }
 
 void ssrTest(){
