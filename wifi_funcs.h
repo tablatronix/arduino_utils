@@ -25,14 +25,16 @@ void init_WiFi(int timeout = 10000){
     if(timeout > 0){
       Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
       while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
-      Serial.print(".");
-      delay(100);
+        Serial.print(".");
+        delay(100);
+      }
     }
     else {
       Serial.println("[WIFI] Connecting to wifi, waiting..... ");
-      while(waitForConnectResult() != WL_CONNECTED){
-      Serial.print(".");
-      delay(100);
+      while(WiFi.waitForConnectResult() != WL_CONNECTED){
+        Serial.print(".");
+        delay(100);
+      }  
     }
 
     Serial.println("");
