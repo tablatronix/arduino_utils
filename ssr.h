@@ -13,15 +13,22 @@ bool DEBUG_ssr = false;
 float currentDuty = 0;
 bool invertDuty = true; // invert logic vcc range
 
-void ssr_init(){
-  pinMode( RELAYPIN, OUTPUT );
-  digitalWrite(RELAYPIN,HIGH);
+int _ssrRelayPin = -1;
+
+void ssr_init(int pin){
+  _ssrRelayPin = pin;
+  pinMode( _ssrRelayPin, OUTPUT );
+  digitalWrite(_ssrRelayPin,HIGH);
 
   #ifdef ESP8266
   analogWriteRange(255); // esp8266 
   // analogWriteFreq(240); // min 100hz
   #elif defined(ESP32)
   #endif 
+}
+
+void ssr_init(){
+  ssr_init(RELAYPIN);
 }
 
 // This is where the SSR is controlled via PWM
@@ -34,7 +41,7 @@ void SetSSRFrequency( int duty,int power =1)
 
   // Write the clamped duty cycle to the RELAYPIN GPIO 
   int out = invertDuty ? 255-duty : duty;
-  analogWrite( RELAYPIN, out);
+  analogWrite( _ssrRelayPin, out);
 
   // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
   // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
