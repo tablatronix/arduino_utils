@@ -10,7 +10,7 @@ bool DEBUG_ssr = true;
 bool DEBUG_ssr = false;
 #endif
 
-float currentDuty = 0;
+float currentDuty = 0; // ssrpower
 bool invertDuty = true; // invert logic vcc range
 
 int _ssrRelayPin = -1;
