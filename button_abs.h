@@ -12,16 +12,16 @@ const int interruptPin = 3; // if motor.h stalldetect, Real interrupt for io exp
 const int encoderSWPin = 0;
 const int encoderAPin  = 1;
 const int encoderBPin  = 2;
-const int maximumEncoderValue = 0; // 128; 0 for non counting mode
+int _maximumEncoderValue = 0; // 128; 0 for non counting mode
 int encoderStale  = 0;
-int encoderLast   = 0;
+int encoderLast   = -1;
 bool encoderHasChange = false;
 bool useInt = false;
 
 volatile bool PCFInterruptFlag = false;
 
 void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
-  if(maximumEncoderValue > 0){
+  if(_maximumEncoderValue > 0){
     Serial.print("[ENCODER] change to ");
     Serial.print(newValue);
     Serial.print(" from ");
@@ -82,7 +82,7 @@ void init_encoder(int encoderAPin, int encoderBPin, int encoderSWPin,uint8_t add
   switches.addSwitch(encoderSWPin, onEncoderSWPressed); // encoder button press
   // encoder
   setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
-  if(maximumEncoderValue > 0) switches.changeEncoderPrecision(maximumEncoderValue, 0);
+  if(_maximumEncoderValue > 0) switches.changeEncoderPrecision(_maximumEncoderValue, 0);
 
   // switches.setEncoder(0, myEncoder);
   // alt encocder setup
@@ -96,6 +96,11 @@ void init_encoder(int encoderAPin, int encoderBPin, int encoderSWPin,uint8_t add
 
   // now we add the switches, we dont want the spinwheel button to repeat, so leave off the last parameter
   // which is the repeat interval (millis / 20 basically) Repeat button does repeat as we can see.
+}
+
+void setEncoderMax(int maximumEncoderValue){
+  if(maximumEncoderValue > 0) switches.changeEncoderPrecision(maximumEncoderValue, 0);
+  _maximumEncoderValue = maximumEncoderValue;
 }
 
   // IoAbstractionRef iodev = switches.getIoAbstraction();
