@@ -150,7 +150,9 @@ void process_command(){
     uint32_t arg = (uint32_t)atoi(cmd + 5);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Set freq to: ") );
     if(DEBUG_SERIALCMD) DebugOut.println(arg);
-    analogWriteFreq(arg); // confirm ?
+      #ifdef ESP8266
+      analogWriteFreq(arg); // confirm ?
+      #endif
   }
 
   if (strncmp(cmd,"A",1) == 0) {
@@ -215,7 +217,9 @@ void process_command(){
     uint32_t arg = (uint32_t)atoi(cmd + 3);
     if(DEBUG_SERIALCMD) DebugOut.print(F("[CMD] [ANALOG] duty:") );
     if(DEBUG_SERIALCMD) DebugOut.println((int)arg);
-    analogWrite(16,(int)(arg));
+    #ifdef ESP8266
+     analogWrite(16,(int)(arg));
+    #endif
   }
 
   if (strncmp(cmd,"debugbox",8) == 0) {

@@ -44,7 +44,7 @@ void init_WiFi(int timeout = 10000){
       Serial.print("[WIFI] IP: ");
       Serial.println(WiFi.localIP());
       Serial.print("[WIFI] HOST: ");
-      Serial.println(WiFi.hostname());
+      Serial.println(WiFi.getHostname());
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");

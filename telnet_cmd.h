@@ -1,7 +1,9 @@
 #ifndef telnet_cmd_h
 #define telnet_cmd_h
 
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
+#endif
 #include <serialcmd.h>
 #include <motor.h>
 

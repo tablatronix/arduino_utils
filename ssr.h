@@ -41,8 +41,9 @@ void SetSSRFrequency( int duty,int power =1)
 
   // Write the clamped duty cycle to the RELAYPIN GPIO 
   int out = invertDuty ? 255-duty : duty;
+  #ifdef ESP8266P
   analogWrite( _ssrRelayPin, out);
-
+  #endif
   // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
   // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
 
