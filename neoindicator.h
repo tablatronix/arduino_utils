@@ -21,7 +21,7 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	palevioletred	#DB7093	rgb(219,112,147)
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
-uint16_t INDBRIGHTNESS = 60;
+uint16_t INDBRIGHTNESS = 30;
 int INDNUMPIXELS = 1;
 #define INDPIXELSTYPE NEO_GRB + NEO_KHZ800
 
@@ -153,10 +153,10 @@ void indClear(){
 
 void indTest(){
     bool quicktest = true;
-    int wait = quicktest ? 5 : 50;
+    int wait = quicktest ? 1 : 50;
     ind.setBrightness(255); // full bright
 
-    for(size_t i=0;i<20;i++){
+    for(size_t i=0;i<10;i++){
         indSetColor(indWheel(random(255)));
         delay(wait);
     }
