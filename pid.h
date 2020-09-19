@@ -160,6 +160,7 @@ PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 // feed pid with rate of change instead of temps
 // should allow lookaheads to work better and have finer control
 // add calculation for slope
+// replace with proper smith predictor at some point to model the radiant slow heatup curve
 
 void pid_reset_I(){
   myPID.SetTunings(Kp, 0, Kd);
