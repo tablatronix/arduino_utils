@@ -39,7 +39,7 @@ BarGraph bar0;
 
 // #define USENTC // use thermistor
 #ifdef USENTC
-  #include <ntc.h>
+  #include <ntc_multi.h>
 #endif
 
 // symbol glyph font for icons
@@ -126,7 +126,7 @@ int SCREENHEIGHT = 240; // TFT_WIDTH
 int GRAPHHEIGHT = SCREENHEIGHT-(FOOTERH); //padding 200px
 int GRAPHWIDTH  = SCREENWIDTH;
 
-int graphInterval = 1000; // graph update rate ms
+int graphInterval = 400; // graph update rate ms
 
 TFT_eSprite spr = TFT_eSprite(&tft); 
 
@@ -146,6 +146,7 @@ int reflowStepTaskID = -1;
 int PIDTaskID = -1;
 int coolAbortTaskID = -1; // -1 empty
 
+uint16_t NTC_TEMP = 0;
 
 // REFLOW STATES
 #define RS_IDLE     0
@@ -888,7 +889,7 @@ void updateIcons(){
 
 void dispReflowStats(){
   String str = "";
-  str = "NTC: "+(String)(int)(round(get_ntc()/10));
+  str = "NTC: "+(String)(int)(round(NTC_TEMP/10));
   str += " CJ: " + (String)(int)(round(internalTemp));
   setFooterBL1(str);
   str = "";
