@@ -49,7 +49,12 @@ double ox_7 = -999, oy_7 = -999; // Force them to be off screen
 double ox_8 = -999, oy_8 = -999; // Force them to be off screen
 double ox_9 = -999, oy_9 = -999; // Force them to be off screen
 
-double _w,_h,_gx,_gy;
+int graphID = 0;
+double _w,_h,_gx,_gy; // global graph coords
+double i1_w,i1_h,i1_gx,i1_gy; // global graph coords
+double i2_w,i2_h,i2_gx,i2_gy; // global graph coords
+double i3_w,i3_h,i3_gx,i3_gy; // global graph coords
+double i4_w,i4_h,i4_gx,i4_gy; // global graph coords
 
 void setGraphLine(int id, double valueX,double valueY);
 double getGraphLine(int id,int param);
@@ -99,6 +104,59 @@ double getGraphLine(int id,int param);
 // add double line generator, above below or center 2/3 pixels thick
 // 
 
+void setGraphInstance(int id){
+  graphID = id;
+  switch(id){
+  case 1:
+    _w = i1_w;
+    _h = i1_h;
+    _gx = i1_gy;
+    _gy = i1_gx;
+    break;
+  case 2:
+    _w = i2_w;
+    _h = i2_h;
+    _gx = i2_gy;
+    _gy = i2_gx;
+    break;
+  case 3:
+    _w = i3_w;
+    _h = i3_h;
+    _gx = i3_gy;
+    _gy = i3_gx;
+    break; 
+  }      
+}
+
+void syncGraphInstance(int id){
+  switch(id){
+  case 1:
+    i1_w  = _w;
+    i1_h  = _h;
+    i1_gx = _gy;
+    i1_gy = _gx;
+    break;
+  case 2:
+    i2_w  = _w;
+    i2_h  = _h;
+    i2_gx = _gy;
+    i2_gy = _gx;
+    break;
+  case 3:
+    i3_w  = _w;
+    i3_h  = _h;
+    i3_gx = _gy;
+    i3_gy = _gx;
+    break; 
+  }  
+}
+
+void setGraph(double h, double w, double x, double y){
+  _h = h;
+  _w = w;
+  _gx = x;
+  _gy = y;
+}
 
 void Graph(RM_tft &tft, double x, double y, byte dp,
                            double gx, double gy, double w, double h,
@@ -111,10 +169,13 @@ void Graph(RM_tft &tft, double x, double y, byte dp,
   double i;
   double temp;
   int rot, newrot;
+
   _h = h;
   _w = w;
   _gx = gx;
   _gy = gy;
+
+  syncGraphInstance(graphID);
 
   bool drawXbaseline = false;
   bool drawYbaseline = false;
@@ -324,6 +385,8 @@ void addPoint(RM_tft &tft, int id, double x,  double y,
     Serial.println(y);
   }
 
+  setGraphInstance(graphID);
+
   double w = _w;
   double h = _h;
   double gx = _gx;
@@ -522,6 +585,10 @@ void resetGraphLines(){
   }
 }
 
+// void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 1){
+  // addPointSet( id,  sample,  value,  numSamples, vsize, size);
+// }
+
 /**
  * [addPointSet description]
  * @param {[type]} int    id         [description]
@@ -531,7 +598,7 @@ void resetGraphLines(){
  * @param {Number} int    vsize      [description]
  * @param {Number} int    size       [description]
  */
-void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 1){
+void addPointSet(int id, int sample, double value, int numSamples,int vsize = 100,int size = 1,int yindexstart = 0){
     // if(id != filteredId && filteredId >= 0) return;
     if(_DEBUG_POINT){
       Serial.println("addPointSet");
@@ -542,7 +609,7 @@ void addPointSet(int id, int sample, double value, int numSamples,int vsize = 10
     int i = sample;
     // int vsize = 100;
     // if(sample=0) addPoint(tft,id, 0, 0 , 0, numSamples, 0, vsize, getLineColor(0,0)); // @FIXME does not show up , must add 0 point
-    int yindexstart = 0; // start Y at non 0 value
+    // int yindexstart = 65; // start Y at non 0 value
     unsigned int c = WHITE;
     if(size==0){
       size = 2;
@@ -617,7 +684,7 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
   // if xpos + width > tft.width
   // if ypos + height > tft.height
   width  -= xPos+1; // reduce width kludge
-  height -= yPos+1;
+  // height -= yPos+1;
 
   Serial.println("[GRAPH] init x:" + (String)width + " y: " + (String)height);
 
@@ -683,7 +750,10 @@ void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
 	// Graph(tft, x, y, 2,  30, 135-8, 240-30, 135-8, 0, 6.5, 1, -1, 1, .25, "x", "y", "", display1, YELLOW);
 }
 
-
+// void init_graph_border(int width = 0, int height = 0, int xPos = 0, int yPos = 0,unsigned int bordercolor){
+//   int padding = 0;
+//   // tft.fillRect((int16_t)xPos,(int16_t)yPos-padding,(int16_t)w,(int16_t)h+(padding*2),bordercolor);
+// }
 
 // test stuff an old 
 
