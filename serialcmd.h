@@ -1,7 +1,7 @@
 #ifndef serialcmd_h
 #define serialcmd_h
 
-#include <reflow.h>
+#include <temp_logger.h>
 #include <motor.h>
 #include <ssr.h>
 #include <pid.h>
@@ -17,7 +17,7 @@ bool debug_serialcmd = true;
 bool debug_serialcmd = true;
 #endif
 
-bool DEBUG_SERIALCMD = debug_serialcmd;
+bool DEBUG_SERIALCMD = true;
 
 // @todo use single stream listener
 // see `readSerial` for serial and telnet etc.
@@ -104,7 +104,7 @@ void process_command(){
     if((int)arg == 1) arg = 500;
     fanAVolts((int)arg);
   }
-\
+
   if (strncmp(cmd,"f2 ",3) == 0) {
     uint32_t arg = (uint32_t)atoi(cmd + 2);
     if(DEBUG_SERIALCMD) DebugOut.print(F("Set B voltage to: ") );
@@ -269,19 +269,34 @@ void process_command(){
     return;    
   }
 
+  inputCmd = "test ind";
+  numargs = 1;
+  cmdLen = String(inputCmd).length();
+  if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
+    String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
+    if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"]");
+    indTest();
+  }
+
   inputCmd = "set ind";
   numargs = 1;
   cmdLen = String(inputCmd).length();
   if (strncmp(cmd,inputCmd.c_str(),cmdLen) == 0) {
     String arg = String(cmd).substring(cmdLen+1,String(cmd).length()); 
     if(DEBUG_SERIALCMD) DebugOut.print("[CMD] ["+inputCmd+"] arg: ");
-    if(DEBUG_SERIALCMD) DebugOut.println(arg);
-         if(arg == "white" || arg == "1") setIndColor(255,255,255);
-    else if(arg == "black" || arg == "0") setIndColor(0,0,0);
-    else if(arg == "red" || arg == "bad") setIndColor(255,0,0);
-    else if(arg == "green" || arg == "good") setIndColor(0,255,0);
-    else if(arg == "blue") setIndColor(0,0,255);
-    else indSetColor(indWheel((byte)atoi(arg.c_str())));
+    if(DEBUG_SERIALCMD) DebugOut.print("'");
+    if(DEBUG_SERIALCMD) DebugOut.print(arg);
+    if(DEBUG_SERIALCMD) DebugOut.println("'");
+         if(arg == "white" || arg == "1") indSetColor(255,255,255);
+    else if(arg == "black" || arg == "0") indSetColor(0,0,0);
+    else if(arg == "red" || arg == "bad") indSetColor(255,0,0);
+    else if(arg == "green" || arg == "good") indSetColor(0,255,0);
+    else if(arg == "blue") indSetColor(0,0,255);
+    else {
+      DebugOut.println("[CMD] set to user input");
+      // indSetColor(indWheel((byte)atoi(arg.c_str())));
+      ind.setPixelColor(0,indWheel((byte)atoi(arg.c_str())));
+    }
   }
 
   inputCmd = "set accent";

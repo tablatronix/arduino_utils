@@ -4,7 +4,7 @@
 #include <neopixel_helper.h>
 
 #ifdef DEBUG
-bool DEBUG_neoind = true;
+bool DEBUG_neoind = false;
 #else
 bool DEBUG_neoind = false;
 #endif
@@ -43,8 +43,16 @@ void init_indicator(uint16_t pin){
   // init_strip();
 }
 
+void debugColor(uint32_t c){
+  Serial.println("Debug color");
+  Serial.println("[RGB] Red: " + (String)red(c));
+  Serial.println("[RGB] Green: " + (String)green(c));
+  Serial.println("[RGB] Blue: " + (String)blue(c));
+}
+
 void indSetColor(uint32_t c){
-  if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);  
+  if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);
+  // debugColor(c);
   ind.setPixelColor( 0, c );
   ind.show();
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset 
@@ -61,10 +69,11 @@ void setIndColor(uint32_t c){
 }
 
 void indSetColor(uint8_t r,uint8_t g,uint8_t b){
-  if(DEBUG_neoind)Serial.println("[IND] set ind color:");    
-  ind.setPixelColor(0,r,g,b);
-	ind.show();
-  delay(1);
+  if(DEBUG_neoind)Serial.println("[IND] set ind color RGB:"+(String) ind.Color(r,g,b));    
+  // debugColor(ind.Color(r,g,b));
+  ind.setPixelColor(0,ind.Color(r,g,b));
+  ind.show();
+  // delay(1);
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
 }
 
@@ -110,6 +119,8 @@ void rainbowInd(int wait) {
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
 uint32_t indWheel(byte WheelPos) {
+  Serial.print("indWheel: ");
+  Serial.print(WheelPos,BIN);
   WheelPos = 255 - WheelPos;
   if(WheelPos < 85) {
     return ind.Color(255 - WheelPos * 3, 0, WheelPos * 3);
@@ -155,6 +166,15 @@ void indTest(){
     bool quicktest = true;
     int wait = quicktest ? 1 : 50;
     ind.setBrightness(255); // full bright
+
+    indSetColor(255,0,0);
+    delay(500);
+    indSetColor(0,255,0);
+    delay(500);
+    indSetColor(0,0,255);
+    delay(500);
+    indSetColor(0,0,0);
+    delay(200);
 
     for(size_t i=0;i<10;i++){
         indSetColor(indWheel(random(255)));
