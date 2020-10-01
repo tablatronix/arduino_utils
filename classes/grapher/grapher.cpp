@@ -1,9 +1,24 @@
-// grapher.cpp
+#include "grapher.h"
 
 
+grapher::~grapher(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
+  _x = xPos;
+  _y = yPos;
+  _w = width;
+  _h = height;
+
+  init_graph();
+}
 
 // candidate for class
-void init_graph(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
+grapher::init_graph(){
+
+  // class vars
+  xPos = _x;
+  yPos = _y;
+  width = _w;
+  height = _h;
+
   double x, y;
 
   // use full size

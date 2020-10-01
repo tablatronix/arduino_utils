@@ -6,6 +6,7 @@ class grapher{
 	public:
 
 	grapher();
+	grapher(int width = 0, int height = 0, int xPos = 0, int yPos = 0){
 
 	int _id; // graph instance id
 
