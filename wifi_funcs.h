@@ -3,8 +3,16 @@
 
 #include <creds.h>
 
-// const char* hostname   = "esp8266REFLOW";
+#ifdef ESP8266
+  #include <ESP8266WiFi.h>
+  #include <ESP8266mDNS.h>
+#elif defined(ESP32)
+    #include <WiFi.h>
+    #include <esp_wifi.h>  
+#endif
 
+
+// const char* hostname   = "esp8266REFLOW";
 
 // enable wifi sta
 // disable sleep
@@ -44,13 +52,21 @@ void init_WiFi(int timeout = 10000){
       Serial.print("[WIFI] IP: ");
       Serial.println(WiFi.localIP());
       Serial.print("[WIFI] HOST: ");
-      Serial.println(WiFi.getHostname());
+      #ifdef ESP32
+      Serial.println(WiFi.getHostname()); // getHostName
+      #else
+      Serial.println(WiFi.hostname()); // getHostName
+      #endif
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");
       Serial.println("[WIFI] waited for " + (String)(millis()-start/1000) + "seconds");
     }
     delay(500);
+}
+
+void init_wifi(){
+  init_WiFi();
 }
 
 int getRSSIasQuality() {
@@ -89,6 +105,10 @@ void enableWiFi(){
 
 void disableWiFi(){
   WiFi.mode(WIFI_OFF);
+  #ifdef ESP32
+  WiFi.mode( WIFI_MODE_NULL );
+  btStop();
+  #endif
 }
 
 // uint32_t ResetReason(void)
