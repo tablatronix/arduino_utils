@@ -16,14 +16,17 @@
 
 const char* otahost		= "esp8266OTA"; // esp8266-[ChipID]
 bool otastarted = false;
-int lastprogress = 0; // micros timestamp
-int progressthrottle = 0;// progress serial throttle, should make ota faster
+uint lastprogress = 0; // micros timestamp
+uint progressthrottle = 0;// progress serial throttle, should make ota faster
 
 void handleOTA(){
   // MDNS.update(); // handled by ota, not required
   ArduinoOTA.handle();
 }
 
+void processOTA(){
+  handleOTA();
+}
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);
 
