@@ -12,7 +12,7 @@ void handleRoot() {
     Serial.println("has arg ledindex");
     String pixel = server.arg(F("ledindex"));
     // ledIndex = pixel;
-    setPixel(pixel.toInt());
+    // setHTTPValue(pixel.toInt());
     // strip.setPixelColor(pixel.toInt(),strip.Color(255,0,0));
     Serial.println("Setting pixel:" + (String)pixel);
     // strip.show();
@@ -31,7 +31,7 @@ void handleRoot() {
     // delay(2000);
     // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM()); 
     // analogWrite(16,pwmvalue.toInt());
-    setPWM(pwmvalue);
+    // setHTTPValue(pwmvalue);
   }
 
   // digitalWrite(LED_BUILTIN, 1);
