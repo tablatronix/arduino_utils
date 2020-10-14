@@ -4,7 +4,7 @@
 #include <neopixel_helper.h>
 
 #ifdef DEBUG
-bool DEBUG_neoind = false;
+bool DEBUG_neoind = true;
 #else
 bool DEBUG_neoind = false;
 #endif
@@ -28,6 +28,8 @@ int INDNUMPIXELS = 1;
 bool INDPINRESET = false;
 uint8_t neoIndTaskID; // timer task
 
+uint32_t indColor;
+
 void init_indicator(uint16_t pin){
 // Adafruit_NeoPixel 
   // strip = ind;
@@ -39,8 +41,11 @@ void init_indicator(uint16_t pin){
   ind.show();
   ind.show(); // on purpose, ensure its blanked for glitched resets
 	delay(1);
-	if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
   // init_strip();
+}
+
+void indSetNextColor(uint32_t c){
+  indColor = c;
 }
 
 void debugColor(uint32_t c){
@@ -54,8 +59,11 @@ void indSetColor(uint32_t c){
   if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);
   // debugColor(c);
   ind.setPixelColor( 0, c );
-  ind.show();
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset 
+  portDISABLE_INTERRUPTS();     // the other workaround
+  strip.show();
+  portENABLE_INTERRUPTS();
+  indSetNextColor(ind.getPixelColor(0));
 }
 
 // alias
@@ -75,6 +83,7 @@ void indSetColor(uint8_t r,uint8_t g,uint8_t b){
   ind.show();
   // delay(1);
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
+  // indSetNextColor(ind.getPixelColor(0));
 }
 
 void setIndColor(uint8_t r,uint8_t g,uint8_t b){
@@ -88,6 +97,13 @@ void stop_indicator(){
   }  
 	ind.show();
   // @todo unset object
+}
+
+void updateIndColor(){
+  if(indColor != ind.getPixelColor(0)){
+    ind.setPixelColor(0,indColor);
+    ind.show();
+   }
 }
 
 // Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
@@ -188,6 +204,13 @@ void indTest(){
     Serial.println("[IND] indtest complete");
 }
 
+void indTest2(){
+    ind.setBrightness(255); // full bright
+
+    indSetColor(255,0,0);
+    delay(500);
+}
+
 void accentSetColor(uint32_t c){
   if(DEBUG_neoind)Serial.println("[IND] set accent color");   
     for(size_t i=1; i<ind.numPixels(); i++) {
@@ -198,7 +221,7 @@ void accentSetColor(uint32_t c){
 
 
 unsigned long IND_lastUpdate = 0 ; // for millis() when last update occoured
-uint32_t IND_ANIMDELAY = 60;
+uint32_t IND_ANIMDELAY = 30;
 
 void IND_nb_rainbow() { // modified from Adafruit example to make it a state machine
   static uint16_t ind_j=0;
