@@ -32,7 +32,11 @@ BarGraph bar0;
 
 #define USENEOIND // use neopixel indicator
 #ifdef USENEOIND
+  #ifdef ESP32
+  #define NEOINDPIN 19
+  #else
   #define NEOINDPIN 2
+  #endif
   #include <neoindicator.h>
   #include <neo_ind_accent.h>
 #endif

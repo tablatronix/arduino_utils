@@ -14,6 +14,14 @@
 
 // const char* hostname   = "esp8266REFLOW";
 
+void setWiFiHostname(const char* hostname){
+  #ifdef ESP32
+  WiFi.setHostname(hostname);
+  #else
+  WiFi.hostname(hostname);
+  #endif
+}
+
 // enable wifi sta
 // disable sleep
 // timeout connect
@@ -231,6 +239,8 @@ String getResetReason(){
         // {
         // }
       }
+      #else 
+      return "";
     #endif
 }
 
