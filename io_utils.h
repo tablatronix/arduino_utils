@@ -1,6 +1,8 @@
 #ifndef io_utils_h
 #define io_utils_h
 
+bool swap = false;
+
 int getPinMode(uint8_t pin)
 {
   if (pin >= NUM_DIGITAL_PINS) return (-1);
@@ -21,13 +23,16 @@ void debugPin(uint8_t pin){
     Serial.println(" pinstate: " + (String)digitalRead(pin));  
 }
 
-void scani2c(){
+
+void scani2c(bool pinswap = false){
+  swap = pinswap;
   byte error, address;
   int nDevices;
-  Wire.begin();
+  if(!swap)Wire.begin();
+  else Wire.begin(SCL,SDA);  // begin(sda, scl) SWAP!
   Serial.print("[I2C] SDA:"+(String) SDA);
   Serial.print(" SCL:"+(String) SCL);
-  Serial.println("");
+  Serial.println(swap ? " \nSWAPPED" : "");
   Serial.println("[I2C] Scanning ... ");
 
   nDevices = 0;
