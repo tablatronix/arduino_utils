@@ -9,6 +9,26 @@ bool DEBUG_neoind = true;
 bool DEBUG_neoind = false;
 #endif
 
+#ifdef ESP32
+bool showTwice = true;
+bool noInterrupts = true;
+#else
+bool showTwice = false;
+bool noInterrupts = false;
+#endif
+
+// // these are const, so they don't eat RAM
+// const uint32_t np_white     = ind.Color(255,255,255);
+// const uint32_t np_black     = ind.Color(0  ,0,0);
+// const uint32_t np_red       = ind.Color(255,0,0);
+// const uint32_t np_orange    = ind.Color(255,128,0);
+// const uint32_t np_yellow    = ind.Color(255,100,0); // 255,100,0
+// const uint32_t np_green     = ind.Color(0  ,255,0);
+// const uint32_t np_cyan      = ind.Color(0  ,255,128);
+// const uint32_t np_blue      = ind.Color(0  ,0,255);
+// const uint32_t np_purple    = ind.Color(128,0,255);
+// const uint32_t np_turquoise = ind.Color(0,80,80);
+
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel ind = Adafruit_NeoPixel();
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, PIN, NEO_GRB + NEO_KHZ800);
@@ -21,7 +41,7 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	palevioletred	#DB7093	rgb(219,112,147)
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
-uint16_t INDBRIGHTNESS = 30;
+uint16_t INDBRIGHTNESS = 60;
 int INDNUMPIXELS = 1;
 #define INDPIXELSTYPE NEO_GRB + NEO_KHZ800
 
@@ -59,10 +79,12 @@ void indSetColor(uint32_t c){
   if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);
   // debugColor(c);
   ind.setPixelColor( 0, c );
-  if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset 
-  portDISABLE_INTERRUPTS();     // the other workaround
-  strip.show();
-  portENABLE_INTERRUPTS();
+  if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
+  if(noInterrupts) portDISABLE_INTERRUPTS();
+  ind.show();
+  if(showTwice) ind.show();
+  if(noInterrupts) portENABLE_INTERRUPTS();
+  // #endif
   indSetNextColor(ind.getPixelColor(0));
 }
 
@@ -79,11 +101,7 @@ void setIndColor(uint32_t c){
 void indSetColor(uint8_t r,uint8_t g,uint8_t b){
   if(DEBUG_neoind)Serial.println("[IND] set ind color RGB:"+(String) ind.Color(r,g,b));    
   // debugColor(ind.Color(r,g,b));
-  ind.setPixelColor(0,ind.Color(r,g,b));
-  ind.show();
-  // delay(1);
-  if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
-  // indSetNextColor(ind.getPixelColor(0));
+  indSetColor(ind.Color(r,g,b));
 }
 
 void setIndColor(uint8_t r,uint8_t g,uint8_t b){
