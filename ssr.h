@@ -11,14 +11,24 @@ bool DEBUG_ssr = false;
 #endif
 
 float currentDuty = 0; // ssrpower
-bool invertDuty = true; // invert logic vcc range
+bool invertDuty = false; // invert logic vcc range
+bool invertLOW = false;
 
 int _ssrRelayPin = -1;
+
+void ssr_off(){
+  digitalWrite(_ssrRelayPin,invertLOW ? HIGH : LOW);
+}
+
+void ssr_on(){
+  digitalWrite(_ssrRelayPin,invertLOW ? LOW : HIGH);
+}
 
 void ssr_init(int pin){
   _ssrRelayPin = pin;
   pinMode( _ssrRelayPin, OUTPUT );
-  digitalWrite(_ssrRelayPin,HIGH);
+  delay(600);
+  ssr_off();
 
   #ifdef ESP8266
   analogWriteRange(255); // esp8266 
@@ -41,7 +51,7 @@ void SetSSRFrequency( int duty,int power =1)
 
   // Write the clamped duty cycle to the RELAYPIN GPIO 
   int out = invertDuty ? 255-duty : duty;
-  #ifdef ESP8266P
+  #ifdef ESP8266
   analogWrite( _ssrRelayPin, out);
   #endif
   // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
@@ -71,6 +81,16 @@ float getSSRPower(){
 }
 
 void ssrTest(){
+
+  ssr_on();
+  delay(1000);
+  ssr_off();
+  delay(1000);
+  ssr_on();
+  delay(1000);
+  ssr_off();
+  delay(1000);
+
   // Turn off the SSR - duty cycle of 0
   SetSSRFrequency( 255 ); // test pulse
   delay(1000);
@@ -79,6 +99,7 @@ void ssrTest(){
   SetSSRFrequency( 255 ); // test pulse
   delay(1000);
   SetSSRFrequency( 0 );
+  ssr_off();
 }
 
 #endif
