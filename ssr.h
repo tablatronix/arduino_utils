@@ -32,7 +32,7 @@ void ssr_init(int pin){
 
   #ifdef ESP8266
   analogWriteRange(255); // esp8266 
-  // analogWriteFreq(240); // min 100hz
+  // analogWriteFreq(120); // min 100hz
   #elif defined(ESP32)
   #endif 
 }
@@ -53,6 +53,8 @@ void SetSSRFrequency( int duty,int power =1)
   int out = invertDuty ? 255-duty : duty;
   #ifdef ESP8266
   analogWrite( _ssrRelayPin, out);
+  #elif defined(ESP32)
+  dacWrite(_ssrRelayPin,out);
   #endif
   // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
   // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
@@ -89,7 +91,7 @@ void ssrTest(){
   ssr_on();
   delay(1000);
   ssr_off();
-  delay(1000);
+  delay(2000);
 
   // Turn off the SSR - duty cycle of 0
   SetSSRFrequency( 255 ); // test pulse
@@ -99,6 +101,17 @@ void ssrTest(){
   SetSSRFrequency( 255 ); // test pulse
   delay(1000);
   SetSSRFrequency( 0 );
+
+  for(int i=0;i<255;i++){
+    SetSSRFrequency( i );
+    delay(100);
+  }
+
+  for(int i=0;i<255;i++){
+    SetSSRFrequency( 255-i );
+    delay(100);
+  }
+
   ssr_off();
 }
 
