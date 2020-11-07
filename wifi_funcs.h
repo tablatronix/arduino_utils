@@ -8,9 +8,9 @@
   #include <ESP8266mDNS.h>
 #elif defined(ESP32)
     #include <WiFi.h>
-    #include <esp_wifi.h>  
+    #include <esp_wifi.h>
+    #include <ESPmDNS.h>
 #endif
-
 
 // const char* hostname   = "esp8266REFLOW";
 
