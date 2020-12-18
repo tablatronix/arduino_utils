@@ -80,10 +80,14 @@ void indSetColor(uint32_t c){
   // debugColor(c);
   ind.setPixelColor( 0, c );
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
+  #ifdef ESP32
   if(noInterrupts) portDISABLE_INTERRUPTS();
+  #endif
   ind.show();
   if(showTwice) ind.show();
+  #ifdef ESP32
   if(noInterrupts) portENABLE_INTERRUPTS();
+  #endif
   // #endif
   indSetNextColor(ind.getPixelColor(0));
 }

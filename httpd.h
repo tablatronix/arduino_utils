@@ -1,8 +1,14 @@
 #include "wifi_funcs.h"
 #include <WiFiClient.h>
-#include <ESP8266WebServer.h>
 
+#ifdef ESP8266
+#include <ESP8266WebServer.h>
 ESP8266WebServer server(80);
+#elif defined ESP32
+#include <WebServer.h>
+WebServer server(80);
+#endif
+
 
 void handleRoot() {
 
@@ -30,7 +36,7 @@ void handleRoot() {
     // delay(2000);
     // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM()); 
     // analogWrite(16,pwmvalue.toInt());
-    // setHTTPValue(pwmvalue);
+    setHTTPValue(pwmvalue);
   }
 
   // digitalWrite(LED_BUILTIN, 1);
@@ -90,5 +96,7 @@ void httpd_init(){
 
 void httpd_process(void) {
   server.handleClient();
+  #ifdef ESP8266
   MDNS.update();
+  #endif
 }
