@@ -2,6 +2,9 @@
 #define temp_logger_h
 
 // #include <config.h>
+#ifdef ESP32
+#include <analogWrite.h>
+#endif
 
 #include <log.h>
 #include <buttons.h>
@@ -11,9 +14,9 @@
 // #include <telnet_cmd.h>
 #include <ota.h>
 #include <wifi_funcs.h>
-#include <motor.h>
+// #include <motor.h>
 #include <ssr.h>
-#include <max31855.h>
+// #include <max31855.h>
 
 // #include <adafruit_tft.h>
 #include <tft_spi_shared.h>
@@ -41,7 +44,7 @@ BarGraph bar0;
   #include <neo_ind_accent.h>
 #endif
 
-// #define USENTC // use thermistor
+#define USENTC // use thermistor
 #ifdef USENTC
   #include <ntc_multi.h>
 #endif
@@ -68,7 +71,7 @@ BarGraph bar0;
 #define GFXX18pt &FreeSans18pt7b
 // #define GFXX18pt &FreeMono18pt7b
 
-bool USEWIFI = true; // enabled wifi
+bool USEWIFI = true; // enabled wifi, NOT connect wifi
 
 Average<float> fps(10); // init stats for avg (samples)
 
@@ -133,7 +136,7 @@ int SCREENHEIGHT = 240; // TFT_WIDTH
 int GRAPHHEIGHT = SCREENHEIGHT-(FOOTERH); //padding 200px
 int GRAPHWIDTH  = SCREENWIDTH;
 
-int graphInterval = 1000; // graph update rate ms
+int graphInterval = 60000; // graph update rate ms
 
 TFT_eSprite spr = TFT_eSprite(&tft); 
 
@@ -499,17 +502,21 @@ uint8_t TITLETOPPAD = 4; // main title top padding
 
 // add getter for colors?
 
+  // 7 magenta
+  // 8 cyan
+  // 4 greenyellow
+  // 
 void updateTempA(){
     String str = TEMPA;
     // Serial.println("footer val1: " + str);
     if(DEBUG_BOX) tft.setTextColor(WHITE,DEBUG_HC1);
-    else tft.setTextColor(WHITE,HC1);
+    else tft.setTextColor(getLineColor(7,0),HC1);
     tft.setTextDatum(TL_DATUM);
     int lpad = 2;
     tft.setTextPadding(115);
     // drawDatumMarker(2,2);
     // tft.setFreeFont(AA_FONT_MED);    // Must load the font first    
-    lpad += tft.drawString(str,lpad,TITLETOPPAD,4);
+    lpad += tft.drawString(str+"`",lpad,TITLETOPPAD,4);
     // Serial.println(lpad);
     tft.setTextPadding(0);
 }
@@ -518,13 +525,13 @@ void updateTempB(){
     String str = TEMPB;
     // Serial.println("footer val1: " + str);
     if(DEBUG_BOX) tft.setTextColor(WHITE,DEBUG_HC1);
-    else tft.setTextColor(WHITE,HC1);
+    else tft.setTextColor(getLineColor(8,0),HC1);
     tft.setTextDatum(TL_DATUM);
     int lpad = 120;
     tft.setTextPadding(115);
     // drawDatumMarker(2,2);
     // tft.setFreeFont(AA_FONT_MED);    // Must load the font first    
-    lpad += tft.drawString(str,lpad,TITLETOPPAD,4);
+    lpad += tft.drawString(str+"`",lpad,TITLETOPPAD,4);
     // Serial.println(lpad);
     tft.setTextPadding(0);
 }
@@ -533,13 +540,13 @@ void updateTempC(){
     String str = TEMPC;
     // Serial.println("footer val1: " + str);
     if(DEBUG_BOX) tft.setTextColor(WHITE,DEBUG_HC1);
-    else tft.setTextColor(WHITE,HC1);
-    tft.setTextDatum(TL_DATUM);
+    else tft.setTextColor(getLineColor(4,0),HC1);
+    tft.setTextDatum(TR_DATUM);
     int rpad = 5;
     tft.setTextPadding(115);
     // drawDatumMarker(2,2);
     // tft.setFreeFont(AA_FONT_MED);    // Must load the font first    
-    rpad += tft.drawString(str,SCREENWIDTH-rpad,TITLETOPPAD,4);
+    rpad += tft.drawString(str+"`",SCREENWIDTH-rpad,TITLETOPPAD,4);
     // Serial.println(lpad);
     tft.setTextPadding(0);
 }
@@ -547,7 +554,7 @@ void updateTitle(){
     String str = TITLE;
     // Serial.println("footer val1: " + str);
     if(DEBUG_BOX) tft.setTextColor(WHITE,DEBUG_HC1);
-    else tft.setTextColor(WHITE,HC1);
+    else tft.setTextColor(getLineColor(4,0),HC1);
     tft.setTextDatum(TL_DATUM);
     int lpad = 2;
     tft.setTextPadding(115);
