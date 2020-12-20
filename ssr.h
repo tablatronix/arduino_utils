@@ -1,8 +1,12 @@
 #ifndef ssr_h
 #define ssr_h
-#define RELAYPIN  16   // relay control SSR PWM
+#define RELAYPIN  3   // relay control SSR PWM
 
 #include <number_format.h>
+
+#ifdef ESP32
+#include <analogWrite.h>
+#endif
 
 #ifdef DEBUG
 bool DEBUG_ssr = true;
@@ -12,19 +16,19 @@ bool DEBUG_ssr = false;
 
 float currentDuty = 0; // ssrpower
 bool invertDuty = false; // invert logic vcc range
-bool invertLOW = false;
+bool invertLOW  = false;
 
 int _ssrRelayPin = -1;
 
 void ssr_off(){
-  digitalWrite(_ssrRelayPin,invertLOW ? HIGH : LOW);
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? HIGH : LOW);
 }
 
 void ssr_on(){
-  digitalWrite(_ssrRelayPin,invertLOW ? LOW : HIGH);
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? LOW : HIGH);
 }
 
-void ssr_init(int pin){
+void ssr_init(uint16_t pin){
   _ssrRelayPin = pin;
   pinMode( _ssrRelayPin, OUTPUT );
   delay(600);
@@ -54,7 +58,8 @@ void SetSSRFrequency( int duty,int power =1)
   #ifdef ESP8266
   analogWrite( _ssrRelayPin, out);
   #elif defined(ESP32)
-  dacWrite(_ssrRelayPin,out);
+  analogWrite( _ssrRelayPin, out);
+  // dacWrite(_ssrRelayPin,out);
   #endif
   // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
   // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
@@ -74,6 +79,12 @@ void setSSR(int duty){
   SetSSRFrequency(duty);
 }
 
+void setSSRFreq(int duty){
+  #ifdef ESP8266
+  analogWriteFreq(duty); // min 100hz
+  #endif
+}
+
 float getSSRDuty(){
   return currentDuty;
 }
@@ -82,7 +93,7 @@ float getSSRPower(){
   return ( currentDuty / 255.0 ) * 100;
 }
 
-void ssrTest(){
+void ssrTest(int speed){
 
   ssr_on();
   delay(1000);
