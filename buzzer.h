@@ -1,6 +1,7 @@
 #ifndef buzzer_h
 #define buzzer_h
 
+#ifdef ESP8266
 #include <ESP8266_Tones.h>
 #include <Tone_Pitches.h>
 ESP8266_Tones BUZZER_TONE(BUZ_PIN);
@@ -124,4 +125,5 @@ void playBlurpA(){
     delay(50);
 }
 
+#endif
 #endif
