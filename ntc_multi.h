@@ -35,12 +35,13 @@ int rt = 330000/V - 320000;
 //                       10000);         // Value of the series resistor
 
 uint16_t resist = 100000;
+uint16_t ntcnominal = 100000;
 uint16_t betaco = 3950;
 bool lowside = true;
 
-THERMISTOR ntc(NTC_PIN,resist,betaco,resist,lowside);
-THERMISTOR ntcB(NTC_BPIN,resist,betaco,resist,!lowside);
-THERMISTOR ntcC(NTC_CPIN,resist,betaco,resist,lowside);
+THERMISTOR ntc(NTC_PIN,ntcnominal,betaco,resist,lowside);
+THERMISTOR ntcB(NTC_BPIN,ntcnominal,betaco,resist,!lowside);
+THERMISTOR ntcC(NTC_CPIN,ntcnominal,betaco,resist,lowside);
 
 // Global temperature reading
 float ntc_temp;
