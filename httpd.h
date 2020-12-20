@@ -39,6 +39,20 @@ void handleRoot() {
     setHTTPValue(pwmvalue);
   }
 
+  if(server.hasArg(F("freq"))){
+    Serial.println("has arg FREQ");
+    String pwmvalue = server.arg(F("freq"));
+    // ledIndex = pixel;
+    // setPWM(pwmvalue.toInt());
+    // strip.setPixelColor(pixel.toInt(),strip.Color(255,0,0));
+    Serial.println("Setting FREQ:" + (String)pwmvalue);
+    // strip.show();
+    // delay(2000);
+    // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM()); 
+    // analogWrite(16,pwmvalue.toInt());
+    setHTTPValueB(pwmvalue);
+  }
+
   // digitalWrite(LED_BUILTIN, 1);
   server.send(200, "text/plain", "hello from esp8266!");
   // digitalWrite(LED_BUILTIN, 0);  
