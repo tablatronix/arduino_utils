@@ -67,18 +67,19 @@ void whiteText(){
 void print_oled(String str,uint8_t size,bool flush){
   lcd.clearBuffer();         // clear the internal memory
   lcd.setFont(u8g2_font_ncenB08_tr);
-  lcd.drawStr(0,10,String(micros()).c_str());  // write something to the internal memory
+  // lcd.drawStr(0,10,String(micros()).c_str());  // write something to the internal memory
   lcd.setFont(u8g2_font_inb30_mn);
   lcd.drawStr(0,60,str.c_str()); 
   // lcd.drawStr(0,10,micros().c_str();  // write something to the internal memory
   if(flush)lcd.sendBuffer();          // transfer internal memory to the display
 }
 
+// @todo add pinswap
 void init_oled(bool preamble){
   Serial.println("\nInitializing SSD1106 OLED");
   Serial.println("SDA: "+(String)SDA);
   Serial.println("SCL: "+(String)SCL);
-  Wire.begin(5,4);  // begin(sda, scl) SWAP!
+  // Wire.begin(5,4);  // begin(sda, scl) SWAP!
   // Wire.begin();  // begin(sda, scl) SWAP!
   Wire.setClock(400000L);
   // lcd.setDisplayRotation(U8G2_R2);
