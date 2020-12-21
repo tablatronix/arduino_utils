@@ -75,16 +75,16 @@ void print_oled(String str,uint8_t size,bool flush){
 }
 
 // @todo add pinswap
-void init_oled(bool preamble){
+void init_oled(bool preamble,bool pinswap = false){
   Serial.println("\nInitializing SSD1106 OLED");
   Serial.println("SDA: "+(String)SDA);
   Serial.println("SCL: "+(String)SCL);
-  // Wire.begin(5,4);  // begin(sda, scl) SWAP!
+  if(pinswap) Wire.begin(5,4);  // begin(sda, scl) SWAP!
   // Wire.begin();  // begin(sda, scl) SWAP!
-  Wire.setClock(400000L);
+  // Wire.setClock(400000L);
   // lcd.setDisplayRotation(U8G2_R2);
   lcd.begin();
-  // lcd.setI2CAddress(0x07a);
+  lcd.setI2CAddress(0x7A);
   // if(!lcd.begin()) { // Address 0x3C for 128x32
     // Serial.println(F("SSD1106 begin failed"));
   // }
