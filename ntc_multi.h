@@ -39,9 +39,15 @@ uint16_t ntcnominal = 100000;
 uint16_t betaco = 3950;
 bool lowside = true;
 
+#ifdef local_thermistor_h
 THERMISTOR ntc(NTC_PIN,ntcnominal,betaco,resist,lowside);
 THERMISTOR ntcB(NTC_BPIN,ntcnominal,betaco,resist,!lowside);
 THERMISTOR ntcC(NTC_CPIN,ntcnominal,betaco,resist,lowside);
+#else
+THERMISTOR ntc(NTC_PIN,ntcnominal,betaco,resist);
+THERMISTOR ntcB(NTC_BPIN,ntcnominal,betaco,resist);
+THERMISTOR ntcC(NTC_CPIN,ntcnominal,betaco,resist);
+#endif
 
 // Global temperature reading
 float ntc_temp;
