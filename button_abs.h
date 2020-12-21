@@ -12,13 +12,25 @@ const int interruptPin = 3; // if motor.h stalldetect, Real interrupt for io exp
 const int encoderSWPin = 0;
 const int encoderAPin  = 1;
 const int encoderBPin  = 2;
+
 int _maximumEncoderValue = 0; // 128; 0 for non counting mode
-int encoderStale  = 0;
-int encoderLast   = -1;
-bool encoderHasChange = false;
-bool useInt = false;
+
+int encoderStale  = 0; // prev stale value
+int encoderLast   = -1; // prev value
+
+bool encoderHasChange = false; // flag enc change
+bool useInt = false; // use interrupts, via interruptPin
+
+bool encoderHasPress     = false;
+bool encoderHasHold      = false;
 
 volatile bool PCFInterruptFlag = false;
+
+void encoderClear(){
+  encoderHasPress = false;
+  encoderHasHold  = false;
+  encoderHasChange = false;
+}
 
 void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
   if(_maximumEncoderValue > 0){
@@ -55,7 +67,11 @@ void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
 void ICACHE_RAM_ATTR onEncoderSWPressed(uint8_t pin, bool heldDown) {
   Serial.print("[ENCODER] Button ");
   Serial.println(heldDown ? "Held" : "Pressed");
+  encoderHasPress = true;
+  encoderHasHold = heldDown;
 }
+
+
 // adjust the encoder acceleraton
 // HWACCEL_FAST
 // HWACCEL_SLOWER
@@ -101,6 +117,15 @@ void init_encoder(int encoderAPin, int encoderBPin, int encoderSWPin,uint8_t add
 void setEncoderMax(int maximumEncoderValue){
   if(maximumEncoderValue > 0) switches.changeEncoderPrecision(maximumEncoderValue, 0);
   _maximumEncoderValue = maximumEncoderValue;
+}
+
+void checkAnalogSW(uint8_t pin, uint16_t value){
+  // adc range / value 1024/500 = 2 states+ etc
+  if(analogRead(pin) < value){
+    encoderHasPress = true;
+    delay(50);
+    if(analogRead(pin) < value) encoderHasHold = true;
+  }
 }
 
   // IoAbstractionRef iodev = switches.getIoAbstraction();

@@ -14,18 +14,19 @@ bool DEBUG_ssr = true;
 bool DEBUG_ssr = false;
 #endif
 
+bool ssrDisabled = false;
 float currentDuty = 0; // ssrpower
-bool invertDuty = false; // invert logic vcc range
-bool invertLOW  = false;
+bool invertDuty = true; // invert logic vcc range
+bool invertLOW  = false;  // Drive SSR with VCC
 
 int _ssrRelayPin = -1;
 
 void ssr_off(){
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? HIGH : LOW);
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? LOW : HIGH);
 }
 
 void ssr_on(){
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? LOW : HIGH);
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? HIGH : LOW);
 }
 
 void ssr_init(uint16_t pin){
@@ -45,6 +46,14 @@ void ssr_init(){
   ssr_init(RELAYPIN);
 }
 
+void disableSSR(bool disabled = true){
+  ssrDisabled = disabled;
+}
+
+void toggleSSR(bool disabled = true){
+  ssrDisabled != ssrDisabled;
+}
+
 // This is where the SSR is controlled via PWM
 void SetSSRFrequency( int duty,int power =1)
 {
@@ -55,14 +64,17 @@ void SetSSRFrequency( int duty,int power =1)
 
   // Write the clamped duty cycle to the RELAYPIN GPIO 
   int out = invertDuty ? 255-duty : duty;
-  #ifdef ESP8266
-  analogWrite( _ssrRelayPin, out);
-  #elif defined(ESP32)
-  analogWrite( _ssrRelayPin, out);
-  // dacWrite(_ssrRelayPin,out);
-  #endif
-  // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
-  // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
+
+  if(!ssrDisabled){
+    #ifdef ESP8266
+    analogWrite( _ssrRelayPin, out);
+    #elif defined(ESP32)
+    analogWrite( _ssrRelayPin, out);
+    // dacWrite(_ssrRelayPin,out);
+    #endif
+    // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
+    // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
+  }
 
   if(duty!=currentDuty){
     // if(DEBUG_ssr) Serial.println("[SSR] " + (String)duty);
