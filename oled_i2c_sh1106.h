@@ -142,7 +142,7 @@ int printInverted(const char* str,uint16_t posx,uint16_t posy){
   int padx = (lcd.getStrWidth("OFF")-lcd.getStrWidth("ON"))/2; // w padding
   // int pady = 2; // h padding
   int pady = 1; // h padding
-  Serial.println(padx);
+  // Serial.println(padx);
   lcd.setDrawColor(1);
   uint16_t strw = lcd.drawStr(posx+padx, posy, str); // x,y(NEGATIVE GOING!)
 
