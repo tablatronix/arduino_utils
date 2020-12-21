@@ -1,0 +1,7 @@
+dependancies
+
+panstamp/thermistor
+MajenkoLibraries/Average
+ug82
+jackw01/PIDAutotuner
+luisllamasbinaburo/Arduino-Interpolation
