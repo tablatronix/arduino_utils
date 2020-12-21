@@ -21,12 +21,13 @@ bool invertLOW  = false;  // Drive SSR with VCC
 
 int _ssrRelayPin = -1;
 
+
 void ssr_off(){
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? LOW : HIGH);
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,!invertLOW ? HIGH : LOW);
 }
 
 void ssr_on(){
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,invertLOW ? HIGH : LOW);
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,!invertLOW ? LOW : HIGH);
 }
 
 void ssr_init(uint16_t pin){
@@ -44,14 +45,6 @@ void ssr_init(uint16_t pin){
 
 void ssr_init(){
   ssr_init(RELAYPIN);
-}
-
-void disableSSR(bool disabled = true){
-  ssrDisabled = disabled;
-}
-
-void toggleSSR(bool disabled = true){
-  ssrDisabled != ssrDisabled;
 }
 
 // This is where the SSR is controlled via PWM
@@ -72,8 +65,8 @@ void SetSSRFrequency( int duty,int power =1)
     analogWrite( _ssrRelayPin, out);
     // dacWrite(_ssrRelayPin,out);
     #endif
-    // if(duty == 0)digitalWrite(RELAYPIN,invertDuty ? LOW:HIGH);
-    // if(duty == 255)digitalWrite(RELAYPIN,!invertDuty ? LOW:HIGH);
+    // if(duty == 0)ssr_off();
+    // if(duty == 255)ssr_on();
   }
 
   if(duty!=currentDuty){
@@ -103,6 +96,20 @@ float getSSRDuty(){
 
 float getSSRPower(){
   return ( currentDuty / 255.0 ) * 100;
+}
+
+void ssr_resume(){
+  if(_ssrRelayPin > 0) setSSR(currentDuty);
+}
+
+void disableSSR(bool disabled = true){
+  ssrDisabled = disabled;
+}
+
+void toggleSSR(){
+  ssrDisabled = !ssrDisabled;
+  if(!ssrDisabled) ssr_resume();
+  else ssr_off();
 }
 
 void ssrTest(int speed){
