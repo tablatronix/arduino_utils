@@ -49,7 +49,7 @@ void init_pidtune(){
     // tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot);
 
     // This must be called immediately before the tuning loop
-    tuner.startTuningLoop();
+    tuner.startTuningLoop(micros());
 
     // Run a loop until tuner.isFinished() returns true
     long microseconds;
@@ -63,7 +63,7 @@ void init_pidtune(){
         float input = doSomethingToGetInput();
 
         // Call tunePID() with the input value
-        float output = tuner.tunePID(input);
+        float output = tuner.tunePID(input,micros());
 
         // Set the output - tunePid() will return values within the range configured
         // by setOutputRange(). Don't change the value or the tuning results will be
