@@ -119,11 +119,11 @@ void setEncoderMax(int maximumEncoderValue){
   _maximumEncoderValue = maximumEncoderValue;
 }
 
-void checkAnalogSW(uint8_t pin, uint16_t value){
+void checkAnalogSW(uint8_t pin, uint16_t value,uint32_t hold){
   // adc range / value 1024/500 = 2 states+ etc
   if(analogRead(pin) < value){
     encoderHasPress = true;
-    delay(50);
+    delay(hold);
     if(analogRead(pin) < value) encoderHasHold = true;
   }
 }
