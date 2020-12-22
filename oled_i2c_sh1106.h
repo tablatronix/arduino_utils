@@ -84,7 +84,7 @@ void init_oled(bool preamble,bool pinswap = false){
   // Wire.setClock(400000L);
   // lcd.setDisplayRotation(U8G2_R2);
   lcd.begin();
-  lcd.setI2CAddress(0x7A);
+  // lcd.setI2CAddress(0x7A);
   // if(!lcd.begin()) { // Address 0x3C for 128x32
     // Serial.println(F("SSD1106 begin failed"));
   // }
