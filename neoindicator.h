@@ -157,8 +157,8 @@ void rainbowInd(int wait) {
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
 uint32_t indWheel(byte WheelPos) {
-  Serial.print("indWheel: ");
-  Serial.print(WheelPos,BIN);
+  // Serial.print("indWheel: ");
+  // Serial.print(WheelPos,BIN);
   WheelPos = 255 - WheelPos;
   if(WheelPos < 85) {
     return ind.Color(255 - WheelPos * 3, 0, WheelPos * 3);
