@@ -22,6 +22,14 @@ void setWiFiHostname(const char* hostname){
   #endif
 }
 
+String getHostname(){
+  #ifdef ESP32
+  return WiFi.getHostname(); // getHostName
+  #else
+  return WiFi.hostname(); // getHostName
+  #endif
+}
+
 // enable wifi sta
 // disable sleep
 // timeout connect
