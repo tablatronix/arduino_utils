@@ -67,7 +67,7 @@ float internalTemp   = 0;  // cold junction
 float currentTempCorr = 0; // linearized k type
 float lastTemp       = -1; // used in pid.h
 
-int TCinterval = 200; // temp reading interval
+int TCinterval = 0; // temp reading interval
 
 // TC WARN
 // options
