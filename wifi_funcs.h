@@ -6,13 +6,25 @@
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
   #include <ESP8266mDNS.h>
+  #define WIFI_getChipId() ESP.getChipId()
 #elif defined(ESP32)
     #include <WiFi.h>
     #include <esp_wifi.h>
     #include <ESPmDNS.h>
+    #define WIFI_getChipId() (uint32_t)ESP.getEfuseMac()
 #endif
 
 // const char* hostname   = "esp8266REFLOW";
+
+
+String getDeviecID(){
+  String _wifissidprefix = "ESP";
+  String hostString = String(WIFI_getChipId(),HEX);
+  hostString.toUpperCase();
+  // char hostString[16] = {0};
+  // sprintf(hostString, "%06X", ESP.getChipId());  
+  return _wifissidprefix + "_" + hostString;
+}
 
 void setWiFiHostname(const char* hostname){
   #ifdef ESP32
@@ -107,6 +119,7 @@ void checkWifi(){
     Serial.println("[WIFI] WiFi Disconnected");
     WiFi.reconnect();
   } else {
+    Serial.println("[WIFI] WiFi CONNECTED");
     Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
     #ifdef USENEOIND
       indSetColor(0,255,0);
