@@ -1,11 +1,278 @@
 #ifndef sensors_h
 #define sensors_h
 
+// BUGS
+// sensors do not reinit is they drop out
+// co2 voc, resubmits the same value over and over if device is lost
+// use real temp and humidity to compensate other sensors
+
 #include <Wire.h>
 
-#define USESHT31
-// #define USESHT21
-#define USEBMP280
+// I2C
+// #define USESHT31 // SHT31  Temp/Humidity
+// #define USESHT21 // SHT21 / HTU21D Temp/Humidity
+#define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
+/*
+Vin: 3 to 5VDC
+Logic: 3 to 5V compliant
+Pressure sensing range: 300-1100 hPa (9000m to -500m above sea level)
+Up to 0.03hPa / 0.25m resolution
+-40 to +85°C operational range, +-2°C temperature accuracy
+This board/chip uses I2C 7-bit address 0x77.
+*/
+
+#define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade to BMP085/BMP180/BMP183)
+#define USECS811  // CCS811 Temp/CO2/VOC
+#define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
+#define APDS9960  // Proximity, Light, RGB, and Gesture Sensor
+
+#define BH1750    // Light Sensor
+
+#define TSL2561   // Luminosity/Lux/Light Address = 0x39 //Slave addr also 0x29 or 0x49
+/*
+TSL2561
+Approximates Human eye Response
+Precisely Measures Illuminance in Diverse Lighting Conditions
+Temperature range: -30 to 80 *C
+Dynamic range (Lux): 0.1 to 40,000 Lux
+Voltage range: 2.7-3.6V
+Interface: I2C
+
+TSL2591 ++
+Approximates Human eye Response
+Extremely wide dynamic range 1 to 600,000,000 Counts
+Lux Range: 188 uLux sensitivity, up to 88,000 Lux input measurements.
+Temperature range: -30 to 80 *C
+Voltage range: 3.3-5V into onboard regulator
+Interface: I2C
+*/
+
+// [I2C] Device found - ADDR: 0x23 // BH1750
+// [I2C] Device found - ADDR: 0x39 // APDS9960 / TSL2561
+// [I2C] Device found - ADDR: 0x5A // 
+// [I2C] Device found - ADDR: 0x76 // 
+
+/*
+#ifdef ENV_TEMPLATE
+#include <Genv_asset.h>
+
+void init_env(){
+}
+
+void print_env(){
+}
+
+float get_env(uint8_t channel = 0){
+  // print_env();
+  if(channel == 0) return ;
+  if(channel == 1) return ;
+  if(channel == 2) return ;
+
+#endif
+*/
+
+/*
+#ifdef ENV_TEMPLATE
+#include <Genv_asset.h>
+
+bool init_env(){
+}
+
+void print_env(){
+}
+
+float get_env(uint8_t channel = 0){
+  // print_env();
+  if(channel == 0) return ;
+  if(channel == 1) return ;
+  if(channel == 2) return ;
+
+#endif
+*/
+
+#ifdef BH1750
+#include <hp_BH1750.h>  //inlude the library
+hp_BH1750 env_BH1750;
+
+// BH1750Address addr = BH1750_TO_VCC;
+// BH1750Address BH1750addr = BH1750_TO_GROUND;
+// 0x23/0x5A , or 0X5C
+// BH1750_TO_GROUND = 0x23,
+// BH1750_TO_VCC = 0x5C
+
+bool init_bh1750(){
+  Serial.println("[ENV] hp_BH175 init");
+  bool status = env_BH1750.begin(BH1750_TO_GROUND);   // will be false no sensor found
+                                            // use BH1750_TO_GROUND or BH1750_TO_VCC depending how you wired the address pin of the sensor.
+  
+  // BH1750.calibrateTiming();  //uncomment this line if you want to speed up your sensor
+  env_BH1750.start();
+  // BH1750.start(BH1750_QUALITY_HIGH2, mtreg);
+  // BH1750.setQuality(mode);
+  
+  if(!status) Serial.println("[ERROR] failed to initialize device! Please check your wiring.");
+  else Serial.println("[ENV] Device initialized!");  
+  return status;
+}
+
+void print_bh1750(){
+   if (env_BH1750.hasValue() == true) {    // non blocking reading
+    float lux = env_BH1750.getLux();
+    Serial.println(lux);
+    env_BH1750.start();
+  } 
+}
+
+float get_bh1750(uint8_t channel = 0){
+  float lux;
+  if(channel == 0){
+    if (env_BH1750.hasValue() == true) {    // non blocking reading
+     lux = env_BH1750.getLux();
+     env_BH1750.start();
+     Serial.println(lux);
+    }
+  }
+  else{
+    env_BH1750.start();   //starts a measurement
+    lux=env_BH1750.getLux();
+    Serial.println(lux);
+  }
+  return lux;
+}
+#endif
+
+
+#ifdef APDS9960
+
+#include "Adafruit_APDS9960.h"
+Adafruit_APDS9960 apds;
+uint8_t apds_int_pin = -1;
+
+bool init_apds(){
+  bool ret = false;
+  ret = apds.begin();
+  if(!ret){
+    Serial.println("[ERROR] APDS9960 init failed");
+  }
+  else Serial.println("[ENV] APDS9960 initialized!");
+  if(apds_int_pin > 0)  pinMode(apds_int_pin, INPUT_PULLUP);
+  return ret;
+}
+
+void init_apds_color(){
+  //enable color sensign mode
+  apds.enableColor(true);  
+}
+
+void init_apds_proximity(){
+  if(apds_int_pin > 0)  pinMode(apds_int_pin, INPUT_PULLUP);
+  //enable proximity mode
+  apds.enableProximity(true);
+  //set the interrupt threshold to fire when proximity reading goes above 175
+  apds.setProximityInterruptThreshold(0, 175);
+  //enable the proximity interrupt
+  apds.enableProximityInterrupt();
+}
+
+void init_apds_gesture(){
+  apds.enableProximity(true);
+  apds.enableGesture(true);  
+}
+
+// NOT interrupt
+String get_apds_proximity(){
+  if(!digitalRead(apds_int_pin)){
+    Serial.println(apds.readProximity());
+
+    //clear the interrupt
+    apds.clearInterrupt();
+  }
+}
+
+String get_apds_gesture(){
+    uint8_t gesture = apds.readGesture();
+    if(gesture == APDS9960_DOWN) Serial.println("v");
+    if(gesture == APDS9960_UP) Serial.println("^");
+    if(gesture == APDS9960_LEFT) Serial.println("<");
+    if(gesture == APDS9960_RIGHT) Serial.println(">");
+    return "";
+}
+
+void print_apds_color(){
+  uint16_t r, g, b, c;
+  
+  //wait for color data to be ready
+  while(!apds.colorDataReady()){
+    delay(5);
+  }
+
+  //get the data and print the different channels
+  apds.getColorData(&r, &g, &b, &c);
+  Serial.print("red: ");
+  Serial.print(r);
+  
+  Serial.print(" green: ");
+  Serial.print(g);
+  
+  Serial.print(" blue: ");
+  Serial.print(b);
+  
+  Serial.print(" clear: ");
+  Serial.println(c);
+  Serial.println(); 
+}
+
+float get_apds_color(uint8_t channel = 0){
+  // print_apds_color();
+  uint16_t r, g, b, c;
+  if(!apds.colorDataReady()) return 0;
+  apds.getColorData(&r, &g, &b, &c);
+  if(channel == 0) return r;
+  if(channel == 1) return g;
+  if(channel == 2) return b;
+  if(channel == 3) return c;
+  return 0;
+}
+
+#endif
+
+
+#ifdef USEGP2Y
+#include <GP2YDustSensor.h>
+const uint8_t SHARP_LED_PIN = 27;   // Sharp Dust/particle sensor Led Pin
+const uint8_t SHARP_VO_PIN = 33;    // Sharp Dust/particle analog out pin used for reading 
+GP2YDustSensor dustSensor(GP2YDustSensorType::GP2Y1014AU0F, SHARP_LED_PIN, SHARP_VO_PIN,5);
+#endif
+
+#ifdef USEGP2Y
+void init_gp2y(){
+  dustSensor.setBaseline(0.1); // set no dust voltage according to your own experiments
+  //dustSensor.setCalibrationFactor(1.1); // calibrate against precision instrument
+  dustSensor.begin();
+  // dustSensor.setSensitivity();
+  // getBaselineCandidate();
+  // setBaseline();
+}
+
+float get_gp2y(uint8_t channel = 0){
+  // print_bmp280();
+  if(channel == 0) return dustSensor.getDustDensity(10);
+  if(channel == 1) return dustSensor.getRunningAverage();
+  if(channel == 2) return analogRead(SHARP_VO_PIN);
+}
+
+String print_gp2y(){
+  // Serial.print("Dust density: ");
+  Serial.print(dustSensor.getDustDensity(10));
+  // Serial.print(" ug/m3; Running average: ");
+  Serial.print("\t");
+  Serial.print(dustSensor.getRunningAverage());
+  // Serial.println(" ug/m3");
+  Serial.print("\t");
+  Serial.print(analogRead(SHARP_VO_PIN));
+  Serial.println("");
+}
+#endif
 
 #ifdef USELM75
 #include <LM75A.h>
@@ -15,16 +282,19 @@ LM75A lm75(true,  //A0 LM75A pin state
                    true); //A2 LM75A pin state
 #endif
 
+// SHT21 / HTU21D Temp/Humidity
 #ifdef USESHT21
 #include <HTU21D.h>
 HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14);
 #endif
 
+// SHT31  Temp/Humidity
 #ifdef USESHT31
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 #endif
 
+// BMP280 Temp/Pressure/Altitude
 #ifdef USEBMP280
 #include <Adafruit_BMP280.h>
 Adafruit_BMP280 bmp; // I2C
@@ -33,8 +303,9 @@ Adafruit_BMP280 bmp; // I2C
 #ifdef USEBMP280
 void init_bmp280(){
    if (!bmp.begin(BMP280_ADDRESS_ALT)) {
-    Serial.println(F("Could not find a valid BMP280 sensor, check wiring!"));
+    Serial.println(F("[ERROR] Could not find a valid BMP280 sensor, check wiring!"));
   }
+  else Serial.println(F("[ENV] BMP280 sensor is active")); 
 
   /* Default settings from datasheet. */
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -45,6 +316,8 @@ void init_bmp280(){
 }
 
 void print_bmp280(){
+    Serial.print(F("Status"));
+    Serial.println((String)bmp.getStatus());
     Serial.print(F("Temperature = "));
     Serial.print(bmp.readTemperature());
     Serial.println(" *C");
@@ -59,7 +332,16 @@ void print_bmp280(){
 
     Serial.println();  
 }
-#endif
+
+// BUGGY returns bad values not null, or noint
+float get_bmp280(uint8_t channel = 0){
+  // print_bmp280();
+  if(channel == 0) return bmp.readTemperature();
+  if(channel == 1) return bmp.readPressure();
+  if(channel == 2) return bmp.readAltitude(1013.25);
+}
+
+#endif  
 
 
 #ifdef USESHT31
@@ -69,7 +351,7 @@ uint8_t loopCnt = 0;
 void init_sht31(){
   bool init = sht31.begin(0x44);
   if(init){
-      Serial.println(F("SHT31 sensor is active")); 
+      Serial.println(F("[ENV] SHT31 sensor is active")); 
   }
   else
   {
@@ -202,5 +484,77 @@ void print_LM75(){
 }
 #endif
 
+// *************************************************************
+// CCS811 Temp/CO2/VOC
+#ifdef USECS811
+#include "Adafruit_CCS811.h"
+Adafruit_CCS811 ccs;
+
+void init_cs811(){
+  Serial.println("[ENV] cs811 init");
+  if(!ccs.begin()){
+    Serial.println("[ERROR] CS811 Begin Failed");
+  }
+  else {
+    //calibrate temperature sensor
+      while(!ccs.available() && millis() < 30000);
+      float temp = ccs.calculateTemperature();
+      Serial.println("[ENV] CS811 set offset " + String(temp-25.0));
+      ccs.setTempOffset(temp - 25.0);
+  }
+  // ccs.setDriveMode(uint8_t mode);
+  ccs.readData();
+}
+
+void print_cs811(){
+  if(ccs.available()){
+    float temp = ccs.calculateTemperature();
+    if(!ccs.readData()){
+      Serial.print("CO2: ");
+      Serial.print(ccs.geteCO2());
+      Serial.print("ppm, TVOC: ");
+      Serial.print(ccs.getTVOC());
+      Serial.print("ppb   Temp:");
+      Serial.println(temp);
+    }
+  }
+  else{
+    Serial.println("[ERROR] cs811 not available");
+  }  
+}
+
+// first call usually fails?
+float get_cs811(uint8_t channel = 0){
+  // print_cs811();
+  // if(!ccs.available()) return 0;
+  // if(ccs.readData()) return 0;
+  // @todo detect failures, or else func return old values
+  if(!ccs.available()) Serial.println("[ERROR] cs811 not available"); // always false?
+  if(ccs.checkError()) Serial.println("[ERROR] Assert cs811 check error"); // always false?
+  uint8_t err = ccs.readData();
+  float ret;
+  if(err != 0) Serial.println("[ERROR] cs811 readData " + (String)err);
+  if(channel == 0) ret =  ccs.calculateTemperature();
+  if(channel == 1) ret =  ccs.geteCO2();
+  if(channel == 2) ret =  ccs.getTVOC();
+  if(channel == 3) ret =  ccs.getCurrentSelected();
+  return ret;
+}
+#endif
+
+
+/**
+ * [filterSensor description]
+ * @param  {[type]} float n             [description]
+ * @param  {[type]} a     low limit
+ * @param  {[type]} b     high limit
+ * @param  {String} c     replace
+ * @return {[type]}       [description]
+ */
+String filterSensor( float n, float a,float b,String c = ""){
+  if(n <= a ) return c;
+  if(n >= b ) return c;
+  return (String)n;
+}
 
 #endif
