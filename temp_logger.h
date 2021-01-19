@@ -2,9 +2,9 @@
 #define temp_logger_h
 
 // #include <config.h>
-#ifdef ESP32
-#include <analogWrite.h>
-#endif
+// #ifdef ESP32
+// #include <analogWrite.h>
+// #endif
 
 #include <log.h>
 #include <buttons.h>
@@ -136,7 +136,7 @@ int SCREENHEIGHT = 240; // TFT_WIDTH
 int GRAPHHEIGHT = SCREENHEIGHT-(FOOTERH); //padding 200px
 int GRAPHWIDTH  = SCREENWIDTH;
 
-int graphInterval = 60000; // graph update rate ms
+int graphInterval = 15000; // graph update rate ms
 
 TFT_eSprite spr = TFT_eSprite(&tft); 
 
@@ -843,7 +843,7 @@ void wifiIcon(bool enabled = true,bool connected = false){
 #define ICON_CHR_WIFI_OVERB "*"
 #define ICON_CHR_FANA "\""
 #define ICON_CHR_FANB "#"
-#define ICON_CHR_FANOVERA"$"
+#define ICON_CHR_FANOVERA "$"
 #define ICON_CHR_FANOVERB "%"
 #define ICON_CHR_HEAT "&"
 
