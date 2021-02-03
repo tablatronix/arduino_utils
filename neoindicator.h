@@ -4,7 +4,7 @@
 #include <neopixel_helper.h>
 
 #ifdef DEBUG
-bool DEBUG_neoind = true;
+bool DEBUG_neoind = false;
 #else
 bool DEBUG_neoind = false;
 #endif
