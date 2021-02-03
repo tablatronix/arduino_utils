@@ -9,9 +9,9 @@
 #include <Wire.h>
 
 // I2C
-// #define USESHT31 // SHT31  Temp/Humidity
+#define USESHT31 // SHT31  Temp/Humidity
 // #define USESHT21 // SHT21 / HTU21D Temp/Humidity
-#define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
+// #define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
 /*
 Vin: 3 to 5VDC
 Logic: 3 to 5V compliant
@@ -22,6 +22,9 @@ This board/chip uses I2C 7-bit address 0x77.
 */
 
 #define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade to BMP085/BMP180/BMP183)
+// #define USEBME280 // BME280 Humidity/Pressure/Altitude
+// Pressure: 300...1100 hPa
+
 #define USECS811  // CCS811 Temp/CO2/VOC
 #define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
 #define APDS9960  // Proximity, Light, RGB, and Gesture Sensor
@@ -110,8 +113,8 @@ bool init_bh1750(){
   // BH1750.start(BH1750_QUALITY_HIGH2, mtreg);
   // BH1750.setQuality(mode);
   
-  if(!status) Serial.println("[ERROR] failed to initialize device! Please check your wiring.");
-  else Serial.println("[ENV] Device initialized!");  
+  if(!status) Serial.println("[ERROR] bh1750 failed to initialize device! Please check your wiring.");
+  else Serial.println("[ENV] bh1750 Device initialized!");  
   return status;
 }
 
@@ -241,7 +244,12 @@ float get_apds_color(uint8_t channel = 0){
 #include <GP2YDustSensor.h>
 const uint8_t SHARP_LED_PIN = 27;   // Sharp Dust/particle sensor Led Pin
 const uint8_t SHARP_VO_PIN = 33;    // Sharp Dust/particle analog out pin used for reading 
-GP2YDustSensor dustSensor(GP2YDustSensorType::GP2Y1014AU0F, SHARP_LED_PIN, SHARP_VO_PIN,5);
+uint16_t gp2y_avgnumsamples = 10;   // running average samples
+uint16_t gp2y_numsamples    = 5;    // num samples to return
+
+// GP2Y1010AU0F
+// GP2Y1014AU0F
+GP2YDustSensor dustSensor(GP2YDustSensorType::GP2Y1014AU0F, SHARP_LED_PIN, SHARP_VO_PIN, gp2y_avgnumsamples);
 #endif
 
 #ifdef USEGP2Y
@@ -249,21 +257,27 @@ void init_gp2y(){
   dustSensor.setBaseline(0.1); // set no dust voltage according to your own experiments
   //dustSensor.setCalibrationFactor(1.1); // calibrate against precision instrument
   dustSensor.begin();
+
+   // * Set sensitivity in volts/100ug/m3
+   // * Typical sensitivity is 0.5V, set by default
+   // * GP2Y1010AU0F sensitivity: min/typ/max: 0.425 / 0.5 / 0.75
+   // * GP2Y1014AU0F sensitivity: min/typ/max: 0.35 / 0.5 / 0.65 
   // dustSensor.setSensitivity();
+  
   // getBaselineCandidate();
   // setBaseline();
 }
 
 float get_gp2y(uint8_t channel = 0){
   // print_bmp280();
-  if(channel == 0) return dustSensor.getDustDensity(10);
+  if(channel == 0) return dustSensor.getDustDensity(gp2y_numsamples);
   if(channel == 1) return dustSensor.getRunningAverage();
   if(channel == 2) return analogRead(SHARP_VO_PIN);
 }
 
 String print_gp2y(){
   // Serial.print("Dust density: ");
-  Serial.print(dustSensor.getDustDensity(10));
+  Serial.print(dustSensor.getDustDensity(gp2y_numsamples));
   // Serial.print(" ug/m3; Running average: ");
   Serial.print("\t");
   Serial.print(dustSensor.getRunningAverage());
@@ -285,7 +299,14 @@ LM75A lm75(true,  //A0 LM75A pin state
 // SHT21 / HTU21D Temp/Humidity
 #ifdef USESHT21
 #include <HTU21D.h>
-HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14);
+/*
+resolution:
+HTU21D_RES_RH12_TEMP14 - RH: 12Bit, Temperature: 14Bit, by default
+HTU21D_RES_RH8_TEMP12  - RH: 8Bit,  Temperature: 12Bit
+HTU21D_RES_RH10_TEMP13 - RH: 10Bit, Temperature: 13Bit
+HTU21D_RES_RH11_TEMP11 - RH: 11Bit, Temperature: 11Bit
+*/
+HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14); // 0x40
 #endif
 
 // SHT31  Temp/Humidity
@@ -343,7 +364,6 @@ float get_bmp280(uint8_t channel = 0){
 
 #endif  
 
-
 #ifdef USESHT31
 bool enableHeater = false;
 uint8_t loopCnt = 0;
@@ -355,12 +375,12 @@ void init_sht31(){
   }
   else
   {
-      Serial.println(F("SHT31 sensor is faild or not connected")); //(F()) saves string to flash & keeps dynamic memory free
+      Serial.println(F("[ERROR] SHT31 init failed")); 
   }
 
   Serial.print("Heater Enabled State: ");
   if (sht31.isHeaterEnabled())  Serial.println("ENABLED");
-  else  Serial.println("DISABLED");
+  else Serial.println("DISABLED");
 }
 
 String getSHT31Temperature(){
@@ -413,12 +433,15 @@ void sht31_process(){
 void init_sht21(){
   bool init = myHTU21D.begin();
   if(init){
-      Serial.println(F("HTU21D, SHT21 sensor is active")); 
+      Serial.println(F("[ENV] HTU21D, SHT21 sensor initialized")); 
   }
   else
   {
-      Serial.println(F("HTU21D, SHT21 sensor is faild or not connected")); //(F()) saves string to flash & keeps dynamic memory free
+      Serial.println(F("[ERROR] HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
   }
+
+  delay(1000);
+  init = myHTU21D.begin();
   // while (myHTU21D.begin(SCL,SDA) != true)
   // {
   //   Serial.println(F("HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
@@ -427,12 +450,11 @@ void init_sht21(){
   // Serial.println(F("HTU21D, SHT21 sensor is active")); 
 }
 
-String getSHT21(){
-  return (String)myHTU21D.readCompensatedHumidity() 
+String getSHT21Humidity(){
+  return (String)myHTU21D.readCompensatedHumidity();
 }
 
 void print_sht21(){
-  #ifdef USESHT21
     /* DEMO - 1 */
   Serial.println(F("DEMO 1: 12-Bit Resolution"));
   Serial.print(F("Humidity............: ")); Serial.print(myHTU21D.readHumidity());            Serial.println(F(" +-2%"));
@@ -471,7 +493,6 @@ void print_sht21(){
   /* back to lib. default resolution */
   myHTU21D.softReset();
   myHTU21D.setResolution(HTU21D_RES_RH12_TEMP14);
-  #endif
 }
 #endif
 
@@ -556,5 +577,20 @@ String filterSensor( float n, float a,float b,String c = ""){
   if(n >= b ) return c;
   return (String)n;
 }
+
+
+// #define USEINTVCC
+#ifdef USEINTVCC
+#ifdef ESP32
+  extern "C" int rom_phy_get_vdd33();
+#endif
+
+float getVoltage(){
+  #ifdef ESP32
+    float voltage = ((float)rom_phy_get_vdd33()) / 1000;
+    return voltage;
+  #endif  
+}
+#endif
 
 #endif
