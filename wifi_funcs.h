@@ -16,6 +16,10 @@
 
 // const char* hostname   = "esp8266REFLOW";
 
+bool debug_wifi = false;
+
+long downtimeRestart = 300000;
+long downtime        = 0;
 
 String getDeviecID(){
   String _wifissidprefix = "ESP";
@@ -113,14 +117,18 @@ int getRSSIasQuality() {
 
 void checkWifi(){
   if(WiFi.status() != WL_CONNECTED  ){
+    if(downtime == 0) downtime = millis();
+    if(millis() > downtime + downtimeRestart) ESP.restart();
     #ifdef USENEOIND
       indSetColor(255,0,0);
     #endif
-    Serial.println("[WIFI] WiFi Disconnected");
+    Serial.println("[WIFI] WiFi is Disconnected");
     WiFi.reconnect();
   } else {
-    Serial.println("[WIFI] WiFi CONNECTED");
-    Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
+    if(debug_wifi){
+      Serial.println("[WIFI] WiFi is CONNECTED");
+      Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
+    }  
     #ifdef USENEOIND
       indSetColor(0,255,0);
     #endif
