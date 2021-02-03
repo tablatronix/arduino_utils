@@ -18,7 +18,7 @@
 */
 
 // Analog pin used to read the NTC
-#define NTC_PIN               A0
+#define NTC_PIN               32
 // #define VERBOSE_SENSOR_ENABLED 1
 
 // 100000 / (320000 +RT) * 3.3 
@@ -27,9 +27,9 @@ int rt = 330000/V - 320000;
 
 // Thermistor object
 THERMISTOR thermistor(NTC_PIN,        // Analog pin
-                      100000,          // Nominal resistance at 25 ºC
+                      10000,          // Nominal resistance at 25 ºC
                       3950,           // thermistor's beta coefficient
-                      100000);         // Value of the series resistor
+                      10000);         // Value of the series resistor
 
 // Global temperature reading
 float ntc_temp;
