@@ -1,12 +1,21 @@
 #ifndef mqtt_h
 #define mqtt_h
 
+#define USEJSON
+#ifdef USEJSON
+#include <ArduinoJson.h>
+StaticJsonDocument<500> payload;
+// payload["sensor"] = "gps";
+// payload["time"] = 1351824120;
+#endif
+
 #include <PubSubClient.h>
 
 WiFiClient espClient;
 
 PubSubClient client(espClient);
 
+bool debug_mqtt = false;
 String clientID = "";
 
 void MQTTreconnect() {
@@ -149,7 +158,37 @@ void init_MQTT(){
   process_MQTT(); 
 }
 
+#ifdef USEJSON
+void MQTT_pub(String topic, String sensor, String value){
+    Serial.print("[MQTT] Publish: ");
+    Serial.print(sensor);
+    Serial.print("\t");
+    Serial.println(value);
+    if(value == "") {
+      Serial.println("[ERROR] MQTT value is empty");
+      return;
+    }
+    // JsonArray data = payload.createNestedArray(topic);
+    payload["topic"] = topic;
+    payload["clientid"] = clientID;
+    payload["type"] = sensor;
+    payload["value"] = value.toFloat();
+    // payload["unit"] = "";
+    if(debug_mqtt) serializeJson(payload, Serial);
+    // serializeJsonPretty(payload, Serial);
+    
+    String output;
+    serializeJson(payload,output);
+    client.publish(topic.c_str(),("["+output+"\n]").c_str()); // must be object?
+    // close ?
+}
 
+void MQTT_pub_send(){
+  // client.publish("sensor",serializeJson(payload));
+  serializeJsonPretty(payload, Serial);
+}
+
+#else
 void MQTT_pub(String topic, String msg){
     Serial.print("[MQTT] Publish message: ");
     Serial.print("topic: ");
@@ -171,5 +210,6 @@ void MQTT_pub(String topic, String sensor, String value){
     }
     client.publish((topic+"/"+clientID+"/"+sensor).c_str(), value.c_str());
 }
+#endif
 
 #endif
