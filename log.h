@@ -29,9 +29,13 @@ void sendToSyslog(String msg){
     // Serial.println("newline found at: " + (String)logData.indexOf("\n"));
     // syslog.log(LOG_INFO,msg);
   // }
-  Serial.print("[RAW] ");
-  Serial.println(String(newbuffer).substring(0,newbufferidx));
-  syslog.log(LOG_INFO,String(newbuffer).substring(0,newbufferidx-2));
+  // Serial.print("[RAW] ");
+  // Serial.println(String(newbuffer).substring(0,newbufferidx));
+  msg = String(newbuffer).substring(0,newbufferidx-2);
+  String msgb = msg;
+  msgb.toLowerCase();
+  if(msgb.indexOf("error") != -1)  syslog.log(LOG_ERR,msg);
+  else syslog.log(LOG_INFO,msg);
   // todo clean up string, remove whitespace such as CR LF \t
   // logData = "";
   // newbuffer = 0;
@@ -73,7 +77,7 @@ public:
 };
 
 MySerial dummySerial;
-Stream &_Logger = Serial1;
+Stream &_Logger = Serial;
 
 // using Print::write;
 // #if ARDUINO >= 100
