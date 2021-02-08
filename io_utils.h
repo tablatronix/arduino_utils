@@ -1,6 +1,8 @@
 #ifndef io_utils_h
 #define io_utils_h
 
+#include <log.h>
+
 bool swap = false;
 
 int getPinMode(uint8_t pin)
@@ -17,12 +19,11 @@ int getPinMode(uint8_t pin)
 }
 
 void debugPin(uint8_t pin){
-    Serial.print("[PIN] " + (String)pin);
-    Serial.print(" pinmode: ");
-    Serial.print(getPinMode(pin),HEX);
-    Serial.println(" pinstate: " + (String)digitalRead(pin));  
+    Logger.print("[PIN] " + (String)pin);
+    Logger.print(" pinmode: ");
+    Logger.print(getPinMode(pin),HEX);
+    Logger.println(" pinstate: " + (String)digitalRead(pin));  
 }
-
 
 void scani2c(bool pinswap = false){
   swap = pinswap;
@@ -30,10 +31,10 @@ void scani2c(bool pinswap = false){
   int nDevices;
   if(!swap)Wire.begin();
   else Wire.begin(SCL,SDA);  // begin(sda, scl) SWAP!
-  Serial.print("[I2C] SDA:"+(String) SDA);
-  Serial.print(" SCL:"+(String) SCL);
-  Serial.println(swap ? " \nSWAPPED" : "");
-  Serial.println("[I2C] Scanning ... ");
+  Logger.print("[I2C] SDA:"+(String) SDA);
+  Logger.print(" SCL:"+(String) SCL);
+  Logger.println(swap ? " \nSWAPPED" : "");
+  Logger.println("[I2C] Scanning ... ");
 
   nDevices = 0;
   for(address = 1; address < 127; address++ )
@@ -52,42 +53,42 @@ void scani2c(bool pinswap = false){
  
     if (res == 0)
     {
-      Serial.print("[I2C] Device found - ADDR: 0x");
+      Logger.print("[I2C] Device found - ADDR: 0x");
       if (address<16)
-        Serial.print("0");
-        Serial.print(address,HEX);
-        Serial.println("");
+        Logger.print("0");
+        Logger.print(address,HEX);
+        Logger.println("");
         nDevices++;
     }
     else if(res!=2)
     {
-      Serial.println("[ERROR]:" + (String)res);
-      Serial.print("Unknown error ADDR: 0x");
+      Logger.println("[ERROR]:" + (String)res);
+      Logger.print("Unknown error ADDR: 0x");
       if (address<16)
-        Serial.print("0");
-        Serial.print(address,HEX);
-        Serial.println("");
+        Logger.print("0");
+        Logger.print(address,HEX);
+        Logger.println("");
     }
   }
   if (nDevices == 0)
-    Serial.println("[ERROR] No I2C devices found\n");
+    Logger.println("[ERROR] No I2C devices found\n");
   else
-    Serial.println("[I2C] scan done\n");
+    Logger.println("[I2C] scan done\n");
 }
 
 void scanPins(){
   for(int i = 0;i<6;i++){
     if(i == 1) continue;
     pinMode(i,INPUT_PULLUP);
-    Serial.print((String)digitalRead(i));
+    Logger.print((String)digitalRead(i));
     // debugPin(i);
   }
   for(int i = 12;i<17;i++){
     pinMode(i,INPUT_PULLUP);
     // debugPin(i);
-    Serial.print((String)digitalRead(i));
+    Logger.print((String)digitalRead(i));
   }
-  Serial.println("");
+  Logger.println("");
 }
 
 #ifdef ESP32
@@ -115,8 +116,8 @@ void restoreADC() {
 WRITE_PERI_REG(SENS_SAR_READ_CTRL2_REG, reg_b);
 //VERY IMPORTANT: DO THIS TO NOT HAVE INVERTED VALUES!
 SET_PERI_REG_MASK(SENS_SAR_READ_CTRL2_REG, SENS_SAR2_DATA_INV);
-Serial.println(analogRead(4));
-Serial.println(analogRead(33));
+Logger.println(analogRead(4));
+Logger.println(analogRead(33));
 }
 #endif
 
