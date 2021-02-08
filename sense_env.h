@@ -1,6 +1,20 @@
 #ifndef sensors_h
 #define sensors_h
 
+
+// supported sensors
+// SHT31
+// SHT21
+// HTU21D
+// 
+// BMP280
+// BME280
+// CS811
+// GP2Y
+// TSL2561
+// BH1750
+// 
+
 // BUGS
 // sensors do not reinit is they drop out
 // co2 voc, resubmits the same value over and over if device is lost
@@ -22,7 +36,7 @@ Up to 0.03hPa / 0.25m resolution
 This board/chip uses I2C 7-bit address 0x77.
 */
 
-#define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade to BMP085/BMP180/BMP183)
+#define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade for BMP085/BMP180/BMP183)
 // #define USEBME280 // BME280 Humidity/Pressure/Altitude
 // Pressure: 300...1100 hPa
 

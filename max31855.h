@@ -27,7 +27,7 @@ Adafruit_MAX31855 tc(14,15,12);
 Adafruit_MAX31855 tcB(1);
 #endif
 
-bool updateLock = false;
+bool updateLock = false; // lockout updating temps
 
 // Averaging
 // options
