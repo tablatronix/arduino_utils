@@ -243,7 +243,7 @@ float get_apds_color(uint8_t channel = 0){
 #ifdef USEGP2Y
 #include <GP2YDustSensor.h>
 const uint8_t SHARP_LED_PIN = 27;   // Sharp Dust/particle sensor Led Pin
-const uint8_t SHARP_VO_PIN = 33;    // Sharp Dust/particle analog out pin used for reading 
+const uint8_t SHARP_VO_PIN  = 33;    // Sharp Dust/particle analog out pin used for reading 
 uint16_t gp2y_avgnumsamples = 10;   // running average samples
 uint16_t gp2y_numsamples    = 5;    // num samples to return
 

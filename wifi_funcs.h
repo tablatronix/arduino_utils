@@ -84,11 +84,7 @@ void init_WiFi(int timeout = 10000){
       Serial.print("[WIFI] IP: ");
       Serial.println(WiFi.localIP());
       Serial.print("[WIFI] HOST: ");
-      #ifdef ESP32
-      Serial.println(WiFi.getHostname()); // getHostName
-      #else
-      Serial.println(WiFi.hostname()); // getHostName
-      #endif
+      getHostname();
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");
