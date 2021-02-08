@@ -24,7 +24,7 @@ void MQTTreconnect() {
   // this is blocking
   while (!client.connected()) {
 
-    Serial.print("Attempting MQTT connection...");
+    Logger.print("Attempting MQTT connection...");
 
     // Create a random client ID
 
@@ -36,7 +36,7 @@ void MQTTreconnect() {
 
     if (client.connect(clientId.c_str())) {
 
-      Serial.println("connected");
+      Logger.println("connected");
 
       // Once connected, publish an announcement...
 
@@ -48,11 +48,11 @@ void MQTTreconnect() {
 
     } else {
 
-      Serial.print("failed, rc=");
+      Logger.print("failed, rc=");
 
-      Serial.print(client.state());
+      Logger.print(client.state());
 
-      Serial.println(" try again in 5 seconds");
+      Logger.println(" try again in 5 seconds");
 
       // Wait 5 seconds before retrying
 
@@ -70,19 +70,19 @@ void MQTTreconnect() {
 
 void MQTTcallback(char* topic, byte* payload, unsigned int length) {
 
-  Serial.print("Message arrived [");
+  Logger.print("Message arrived [");
 
-  Serial.print(topic);
+  Logger.print(topic);
 
-  Serial.print("] ");
+  Logger.print("] ");
 
   for (int i = 0; i < length; i++) {
 
-    Serial.print((char)payload[i]);
+    Logger.print((char)payload[i]);
 
   }
 
-  Serial.println();
+  Logger.println();
 
 
 
@@ -147,25 +147,25 @@ void process_MQTT(){
 
 void init_MQTT(String clientid){
   clientID = clientid;
-  client.setServer(mqtt_server_ip, 1883);
+  client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
   process_MQTT();
 }
 
 void init_MQTT(){
-  client.setServer(mqtt_server_ip, 1883);
+  client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
   process_MQTT(); 
 }
 
 #ifdef USEJSON
 void MQTT_pub(String topic, String sensor, String value){
-    Serial.print("[MQTT] Publish: ");
-    Serial.print(sensor);
-    Serial.print("\t");
-    Serial.println(value);
+    Logger.print("[MQTT] Publish: ");
+    Logger.print(sensor);
+    Logger.print(" ");
+    Logger.println(value);
     if(value == "") {
-      Serial.println("[ERROR] MQTT value is empty");
+      Logger.println("[ERROR] MQTT value is empty");
       return;
     }
     // JsonArray data = payload.createNestedArray(topic);
@@ -190,22 +190,22 @@ void MQTT_pub_send(){
 
 #else
 void MQTT_pub(String topic, String msg){
-    Serial.print("[MQTT] Publish message: ");
-    Serial.print("topic: ");
-    Serial.print(topic);
-    Serial.print(" mesg: ");
-    Serial.println(msg);
+    Logger.print("[MQTT] Publish message: ");
+    Logger.print("topic: ");
+    Logger.print(topic);
+    Logger.print(" mesg: ");
+    Logger.println(msg);
     client.publish(topic.c_str(), msg.c_str());
 }
 
 void MQTT_pub(String topic, String sensor, String value){
-    Serial.print("[MQTT] Publish message: ");
-    Serial.print("topic: ");
-    Serial.print(topic+"/"+clientID+"/"+sensor);
-    Serial.print("\t\tvalue: ");
-    Serial.println(value);
+    Logger.print("[MQTT] Publish message: ");
+    Logger.print("topic: ");
+    Logger.print(topic+"/"+clientID+"/"+sensor);
+    Logger.print("\t\tvalue: ");
+    Logger.println(value);
     if(value == "") {
-      Serial.println("[ERROR] MQTT value is empty");
+      Logger.println("[ERROR] MQTT value is empty");
       return;
     }
     client.publish((topic+"/"+clientID+"/"+sensor).c_str(), value.c_str());
