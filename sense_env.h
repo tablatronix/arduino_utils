@@ -7,6 +7,7 @@
 // use real temp and humidity to compensate other sensors
 
 #include <Wire.h>
+#include <log.h>
 
 // I2C
 #define USESHT31 // SHT31  Temp/Humidity
@@ -104,7 +105,7 @@ hp_BH1750 env_BH1750;
 // BH1750_TO_VCC = 0x5C
 
 bool init_bh1750(){
-  Serial.println("[ENV] hp_BH175 init");
+  Logger.println("[ENV] hp_BH175 init");
   bool status = env_BH1750.begin(BH1750_TO_GROUND);   // will be false no sensor found
                                             // use BH1750_TO_GROUND or BH1750_TO_VCC depending how you wired the address pin of the sensor.
   
@@ -113,15 +114,15 @@ bool init_bh1750(){
   // BH1750.start(BH1750_QUALITY_HIGH2, mtreg);
   // BH1750.setQuality(mode);
   
-  if(!status) Serial.println("[ERROR] bh1750 failed to initialize device! Please check your wiring.");
-  else Serial.println("[ENV] bh1750 Device initialized!");  
+  if(!status) Logger.println("[ERROR] bh1750 failed to initialize device! Please check your wiring.");
+  else Logger.println("[ENV] bh1750 Device initialized!");  
   return status;
 }
 
 void print_bh1750(){
    if (env_BH1750.hasValue() == true) {    // non blocking reading
     float lux = env_BH1750.getLux();
-    Serial.println(lux);
+    Logger.println(lux);
     env_BH1750.start();
   } 
 }
@@ -132,13 +133,13 @@ float get_bh1750(uint8_t channel = 0){
     if (env_BH1750.hasValue() == true) {    // non blocking reading
      lux = env_BH1750.getLux();
      env_BH1750.start();
-     Serial.println(lux);
+     Logger.println(lux);
     }
   }
   else{
     env_BH1750.start();   //starts a measurement
     lux=env_BH1750.getLux();
-    Serial.println(lux);
+    Logger.println(lux);
   }
   return lux;
 }
@@ -155,9 +156,9 @@ bool init_apds(){
   bool ret = false;
   ret = apds.begin();
   if(!ret){
-    Serial.println("[ERROR] APDS9960 init failed");
+    Logger.println("[ERROR] APDS9960 init failed");
   }
-  else Serial.println("[ENV] APDS9960 initialized!");
+  else Logger.println("[ENV] APDS9960 initialized!");
   if(apds_int_pin > 0)  pinMode(apds_int_pin, INPUT_PULLUP);
   return ret;
 }
@@ -185,7 +186,7 @@ void init_apds_gesture(){
 // NOT interrupt
 String get_apds_proximity(){
   if(!digitalRead(apds_int_pin)){
-    Serial.println(apds.readProximity());
+    Logger.println(apds.readProximity());
 
     //clear the interrupt
     apds.clearInterrupt();
@@ -194,10 +195,10 @@ String get_apds_proximity(){
 
 String get_apds_gesture(){
     uint8_t gesture = apds.readGesture();
-    if(gesture == APDS9960_DOWN) Serial.println("v");
-    if(gesture == APDS9960_UP) Serial.println("^");
-    if(gesture == APDS9960_LEFT) Serial.println("<");
-    if(gesture == APDS9960_RIGHT) Serial.println(">");
+    if(gesture == APDS9960_DOWN) Logger.println("v");
+    if(gesture == APDS9960_UP) Logger.println("^");
+    if(gesture == APDS9960_LEFT) Logger.println("<");
+    if(gesture == APDS9960_RIGHT) Logger.println(">");
     return "";
 }
 
@@ -211,18 +212,18 @@ void print_apds_color(){
 
   //get the data and print the different channels
   apds.getColorData(&r, &g, &b, &c);
-  Serial.print("red: ");
-  Serial.print(r);
+  Logger.print("red: ");
+  Logger.print(r);
   
-  Serial.print(" green: ");
-  Serial.print(g);
+  Logger.print(" green: ");
+  Logger.print(g);
   
-  Serial.print(" blue: ");
-  Serial.print(b);
+  Logger.print(" blue: ");
+  Logger.print(b);
   
-  Serial.print(" clear: ");
-  Serial.println(c);
-  Serial.println(); 
+  Logger.print(" clear: ");
+  Logger.println(c);
+  Logger.println(); 
 }
 
 float get_apds_color(uint8_t channel = 0){
@@ -276,15 +277,15 @@ float get_gp2y(uint8_t channel = 0){
 }
 
 String print_gp2y(){
-  // Serial.print("Dust density: ");
-  Serial.print(dustSensor.getDustDensity(gp2y_numsamples));
-  // Serial.print(" ug/m3; Running average: ");
-  Serial.print("\t");
-  Serial.print(dustSensor.getRunningAverage());
-  // Serial.println(" ug/m3");
-  Serial.print("\t");
-  Serial.print(analogRead(SHARP_VO_PIN));
-  Serial.println("");
+  // Logger.print("Dust density: ");
+  Logger.print(dustSensor.getDustDensity(gp2y_numsamples));
+  // Logger.print(" ug/m3; Running average: ");
+  Logger.print("\t");
+  Logger.print(dustSensor.getRunningAverage());
+  // Logger.println(" ug/m3");
+  Logger.print("\t");
+  Logger.print(analogRead(SHARP_VO_PIN));
+  Logger.println("");
 }
 #endif
 
@@ -324,9 +325,9 @@ Adafruit_BMP280 bmp; // I2C
 #ifdef USEBMP280
 void init_bmp280(){
    if (!bmp.begin(BMP280_ADDRESS_ALT)) {
-    Serial.println(F("[ERROR] Could not find a valid BMP280 sensor, check wiring!"));
+    Logger.println(F("[ERROR] Could not find a valid BMP280 sensor, check wiring!"));
   }
-  else Serial.println(F("[ENV] BMP280 sensor is active")); 
+  else Logger.println(F("[ENV] BMP280 sensor is active")); 
 
   /* Default settings from datasheet. */
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -337,21 +338,21 @@ void init_bmp280(){
 }
 
 void print_bmp280(){
-    Serial.print(F("Status"));
-    Serial.println((String)bmp.getStatus());
-    Serial.print(F("Temperature = "));
-    Serial.print(bmp.readTemperature());
-    Serial.println(" *C");
+    Logger.print(F("Status"));
+    Logger.println((String)bmp.getStatus());
+    Logger.print(F("Temperature = "));
+    Logger.print(bmp.readTemperature());
+    Logger.println(" *C");
 
-    Serial.print(F("Pressure = "));
-    Serial.print(bmp.readPressure());
-    Serial.println(" Pa");
+    Logger.print(F("Pressure = "));
+    Logger.print(bmp.readPressure());
+    Logger.println(" Pa");
 
-    Serial.print(F("Approx altitude = "));
-    Serial.print(bmp.readAltitude(1013.25)); /* Adjusted to local forecast! */
-    Serial.println(" m");
+    Logger.print(F("Approx altitude = "));
+    Logger.print(bmp.readAltitude(1013.25)); /* Adjusted to local forecast! */
+    Logger.println(" m");
 
-    Serial.println();  
+    Logger.println();  
 }
 
 // BUGGY returns bad values not null, or noint
@@ -371,16 +372,16 @@ uint8_t loopCnt = 0;
 void init_sht31(){
   bool init = sht31.begin(0x44);
   if(init){
-      Serial.println(F("[ENV] SHT31 sensor is active")); 
+      Logger.println(F("[ENV] SHT31 sensor is active")); 
   }
   else
   {
-      Serial.println(F("[ERROR] SHT31 init failed")); 
+      Logger.println(F("[ERROR] SHT31 init failed")); 
   }
 
-  Serial.print("Heater Enabled State: ");
-  if (sht31.isHeaterEnabled())  Serial.println("ENABLED");
-  else Serial.println("DISABLED");
+  Logger.print("Heater Enabled State: ");
+  if (sht31.isHeaterEnabled())  Logger.println("ENABLED");
+  else Logger.println("DISABLED");
 }
 
 String getSHT31Temperature(){
@@ -400,15 +401,15 @@ void print_sht31(){
   float h = sht31.readHumidity();
 
   if (! isnan(t)) {  // check if 'is not a number'
-    Serial.print("Temp *C = "); Serial.print(t); Serial.print("\t\t");
+    Logger.print("Temp *C = "); Logger.print(t); Logger.print("\t\t");
   } else { 
-    Serial.println("Failed to read temperature");
+    Logger.println("Failed to read temperature");
   }
   
   if (! isnan(h)) {  // check if 'is not a number'
-    Serial.print("Hum. % = "); Serial.println(h);
+    Logger.print("Hum. % = "); Logger.println(h);
   } else { 
-    Serial.println("Failed to read humidity");
+    Logger.println("Failed to read humidity");
   }
 }
 
@@ -418,11 +419,11 @@ void sht31_process(){
   if (++loopCnt == 30) {
     enableHeater = !enableHeater;
     sht31.heater(enableHeater);
-    Serial.print("Heater Enabled State: ");
+    Logger.print("Heater Enabled State: ");
     if (sht31.isHeaterEnabled())
-      Serial.println("ENABLED");
+      Logger.println("ENABLED");
     else
-      Serial.println("DISABLED");
+      Logger.println("DISABLED");
 
     loopCnt = 0;
   }
@@ -433,21 +434,21 @@ void sht31_process(){
 void init_sht21(){
   bool init = myHTU21D.begin();
   if(init){
-      Serial.println(F("[ENV] HTU21D, SHT21 sensor initialized")); 
+      Logger.println(F("[ENV] HTU21D, SHT21 sensor initialized")); 
   }
   else
   {
-      Serial.println(F("[ERROR] HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
+      Logger.println(F("[ERROR] HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
   }
 
   delay(1000);
   init = myHTU21D.begin();
   // while (myHTU21D.begin(SCL,SDA) != true)
   // {
-  //   Serial.println(F("HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
+  //   Logger.println(F("HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
   //   delay(5000);
   // }
-  // Serial.println(F("HTU21D, SHT21 sensor is active")); 
+  // Logger.println(F("HTU21D, SHT21 sensor is active")); 
 }
 
 String getSHT21Humidity(){
@@ -456,38 +457,38 @@ String getSHT21Humidity(){
 
 void print_sht21(){
     /* DEMO - 1 */
-  Serial.println(F("DEMO 1: 12-Bit Resolution"));
-  Serial.print(F("Humidity............: ")); Serial.print(myHTU21D.readHumidity());            Serial.println(F(" +-2%"));
-  Serial.print(F("Compensated Humidity: ")); Serial.print(myHTU21D.readCompensatedHumidity()); Serial.println(F(" +-2%"));
+  Logger.println(F("DEMO 1: 12-Bit Resolution"));
+  Logger.print(F("Humidity............: ")); Logger.print(myHTU21D.readHumidity());            Logger.println(F(" +-2%"));
+  Logger.print(F("Compensated Humidity: ")); Logger.print(myHTU21D.readCompensatedHumidity()); Logger.println(F(" +-2%"));
 
-  Serial.println(F("DEMO 1: 14-Bit Resolution")); 
-  Serial.print(F("Temperature.........: ")); Serial.print(myHTU21D.readTemperature()); Serial.println(F(" +-0.3C"));
+  Logger.println(F("DEMO 1: 14-Bit Resolution")); 
+  Logger.print(F("Temperature.........: ")); Logger.print(myHTU21D.readTemperature()); Logger.println(F(" +-0.3C"));
 
  
   /* DEMO - 2 */
-  Serial.println(F("DEMO 2: 11-Bit Resolution"));
+  Logger.println(F("DEMO 2: 11-Bit Resolution"));
   myHTU21D.setResolution(HTU21D_RES_RH11_TEMP11);
-  Serial.print(F("Humidity............: ")); Serial.print(myHTU21D.readHumidity());            Serial.println(F(" +-2%"));
-  Serial.print(F("Compensated Humidity: ")); Serial.print(myHTU21D.readCompensatedHumidity()); Serial.println(F(" +-2%"));
+  Logger.print(F("Humidity............: ")); Logger.print(myHTU21D.readHumidity());            Logger.println(F(" +-2%"));
+  Logger.print(F("Compensated Humidity: ")); Logger.print(myHTU21D.readCompensatedHumidity()); Logger.println(F(" +-2%"));
 
-  Serial.println(F("DEMO 2: 11-Bit Resolution"));
-  Serial.print(F("Temperature.........: ")); Serial.print(myHTU21D.readTemperature()); Serial.println(F(" +-0.3C"));
+  Logger.println(F("DEMO 2: 11-Bit Resolution"));
+  Logger.print(F("Temperature.........: ")); Logger.print(myHTU21D.readTemperature()); Logger.println(F(" +-0.3C"));
 
 
   /* DEMO - 3 */
-  Serial.println(F("DEMO 3: Battery Status"));
-  if   (myHTU21D.batteryStatus() == true) Serial.println(F("Battery.............: OK.  Level > 2.25v"));
-  else                                    Serial.println(F("Battery.............: LOW. Level < 2.25v"));
+  Logger.println(F("DEMO 3: Battery Status"));
+  if   (myHTU21D.batteryStatus() == true) Logger.println(F("Battery.............: OK.  Level > 2.25v"));
+  else                                    Logger.println(F("Battery.............: LOW. Level < 2.25v"));
 
 
   /* DEMO - 4 */
-  Serial.println(F("DEMO 4:"));
-  Serial.print(F("Firmware version....: ")); Serial.println(myHTU21D.readFirmwareVersion());
+  Logger.println(F("DEMO 4:"));
+  Logger.print(F("Firmware version....: ")); Logger.println(myHTU21D.readFirmwareVersion());
 
 
   /* DEMO - 5 */
-  Serial.println(F("DEMO 5:"));
-  Serial.print(F("Sensor's ID.........: ")); Serial.println(myHTU21D.readDeviceID());
+  Logger.println(F("DEMO 5:"));
+  Logger.print(F("Sensor's ID.........: ")); Logger.println(myHTU21D.readDeviceID());
 
 
   /* back to lib. default resolution */
@@ -501,7 +502,7 @@ void init_LM75(){
 }
 
 void print_LM75(){
-     Serial.println((String)lm75.getTemperatureInFahrenheit() + " F"); 
+     Logger.println((String)lm75.getTemperatureInFahrenheit() + " F"); 
 }
 #endif
 
@@ -512,15 +513,15 @@ void print_LM75(){
 Adafruit_CCS811 ccs;
 
 void init_cs811(){
-  Serial.println("[ENV] cs811 init");
+  Logger.println("[ENV] cs811 init");
   if(!ccs.begin()){
-    Serial.println("[ERROR] CS811 Begin Failed");
+    Logger.println("[ERROR] CS811 Begin Failed");
   }
   else {
     //calibrate temperature sensor
       while(!ccs.available() && millis() < 30000);
       float temp = ccs.calculateTemperature();
-      Serial.println("[ENV] CS811 set offset " + String(temp-25.0));
+      Logger.println("[ENV] CS811 set offset " + String(temp-25.0));
       ccs.setTempOffset(temp - 25.0);
   }
   // ccs.setDriveMode(uint8_t mode);
@@ -531,16 +532,16 @@ void print_cs811(){
   if(ccs.available()){
     float temp = ccs.calculateTemperature();
     if(!ccs.readData()){
-      Serial.print("CO2: ");
-      Serial.print(ccs.geteCO2());
-      Serial.print("ppm, TVOC: ");
-      Serial.print(ccs.getTVOC());
-      Serial.print("ppb   Temp:");
-      Serial.println(temp);
+      Logger.print("CO2: ");
+      Logger.print(ccs.geteCO2());
+      Logger.print("ppm, TVOC: ");
+      Logger.print(ccs.getTVOC());
+      Logger.print("ppb   Temp:");
+      Logger.println(temp);
     }
   }
   else{
-    Serial.println("[ERROR] cs811 not available");
+    Logger.println("[ERROR] cs811 not available");
   }  
 }
 
@@ -550,11 +551,11 @@ float get_cs811(uint8_t channel = 0){
   // if(!ccs.available()) return 0;
   // if(ccs.readData()) return 0;
   // @todo detect failures, or else func return old values
-  if(!ccs.available()) Serial.println("[ERROR] cs811 not available"); // always false?
-  if(ccs.checkError()) Serial.println("[ERROR] Assert cs811 check error"); // always false?
+  if(!ccs.available()) Logger.println("[ERROR] cs811 not available"); // always false?
+  if(ccs.checkError()) Logger.println("[ERROR] Assert cs811 check error"); // always false?
   uint8_t err = ccs.readData();
   float ret;
-  if(err != 0) Serial.println("[ERROR] cs811 readData " + (String)err);
+  if(err != 0) Logger.println("[ERROR] cs811 readData " + (String)err);
   if(channel == 0) ret =  ccs.calculateTemperature();
   if(channel == 1) ret =  ccs.geteCO2();
   if(channel == 2) ret =  ccs.getTVOC();
