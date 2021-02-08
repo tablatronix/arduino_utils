@@ -1,6 +1,94 @@
 #ifndef log_h
 #define log_h
 
+#define USESYSLOG
+#ifdef USESYSLOG
+#include <log_syslog.h>
+#endif
+
+// https://github.com/Chris--A/PrintEx
+
+
+// char logData[32]; // Allocate some space for the string, cmd buffer
+// char logChar= 0; // Where to store the character read
+String logData = "";
+
+// void emptyLogBuffer(){
+//     // clear buffer
+//     logData = 0;
+//     logData[0] = (char)0;
+//     inputString = "";
+// }
+
+char newbuffer[256];
+int  newbufferidx = 0;
+
+void sendToSyslog(String msg){
+  // Serial.println("newline not found at: " + (String)((logData.trim()).indexOf("\n")));
+  // if(logData.indexOf("\n") >= 0){
+    // Serial.println("newline found at: " + (String)logData.indexOf("\n"));
+    // syslog.log(LOG_INFO,msg);
+  // }
+  Serial.print("[RAW] ");
+  Serial.println(String(newbuffer).substring(0,newbufferidx));
+  syslog.log(LOG_INFO,String(newbuffer).substring(0,newbufferidx-2));
+  // todo clean up string, remove whitespace such as CR LF \t
+  // logData = "";
+  // newbuffer = 0;
+  newbuffer[0] = (char)0;
+  newbufferidx = 0;
+}
+
+class MySerial : public Stream {
+public:
+  virtual int available() { return (0); }
+  virtual int read() { return (0); }
+  virtual int peek() { return (0); }
+  virtual void flush() {}
+  void begin(unsigned long, uint8_t) {}
+  void end() {}
+
+  virtual size_t write(uint8_t newchar) {
+    if(newbufferidx>256) newbufferidx = 0;
+    newbuffer[newbufferidx] = newchar;
+    newbufferidx++;
+    if(newchar == 0x0a) sendToSyslog("");
+    return (1);
+  }
+
+  virtual size_t write(const uint8_t *buffer, size_t size)
+  {
+      size_t n = 0;
+      while(size--) {
+          // newbuffer[newbufferidx] = char(*buffer);
+          // newbufferidx++;
+          n += write(*buffer++);
+      }
+      // Serial.print("[BUFF] ");
+      // Serial.println((String)newbuffer);
+      // logData = String(newbuffer);
+      // sendToSyslog("");
+      return n;
+  }
+};
+
+MySerial dummySerial;
+Stream &_Logger = Serial1;
+
+// using Print::write;
+// #if ARDUINO >= 100
+//   virtual size_t write(uint8_t);
+// #else
+//   virtual void write(uint8_t);
+// #endif
+
+#include <StreamUtils.h>
+LoggingStream Logger(dummySerial, _Logger);
+// String result = LoggingStream.str();
+// WriteLoggingStream loggingClient(client, Serial);
+// loggingClient.println("GET / HTTP/1.1");
+// loggingClient.println("User-Agent: Arduino");
+
 #include <memory>
 
 #ifdef ESP8266
