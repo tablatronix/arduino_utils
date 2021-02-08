@@ -9,74 +9,65 @@
 // https://github.com/Chris--A/PrintEx
 
 
-// char logData[32]; // Allocate some space for the string, cmd buffer
-// char logChar= 0; // Where to store the character read
-String logData = "";
-
-// void emptyLogBuffer(){
-//     // clear buffer
-//     logData = 0;
-//     logData[0] = (char)0;
-//     inputString = "";
-// }
-
-char newbuffer[256];
-int  newbufferidx = 0;
+char logbuffer[256];
+int  logbufferidx = 0; // end char
+// might need a ring buffer here, so we can keep logging mutiple messages and send delayed
 
 void sendToSyslog(String msg){
-  // Serial.println("newline not found at: " + (String)((logData.trim()).indexOf("\n")));
   // if(logData.indexOf("\n") >= 0){
     // Serial.println("newline found at: " + (String)logData.indexOf("\n"));
     // syslog.log(LOG_INFO,msg);
   // }
   // Serial.print("[RAW] ");
-  // Serial.println(String(newbuffer).substring(0,newbufferidx));
-  msg = String(newbuffer).substring(0,newbufferidx-2);
+  // Serial.println(String(logbuffer).substring(0,logbufferidx));
+  msg = String(logbuffer).substring(0,logbufferidx-2);
   String msgb = msg;
-  msgb.toLowerCase();
-  if(msgb.indexOf("error") != -1)  syslog.log(LOG_ERR,msg);
-  else syslog.log(LOG_INFO,msg);
+  msgb.toLowerCase(); // lowercase for string match levels
+  msgb.trim(); // remove cr lf
+
+  uint16_t level = LOG_INFO;
+  if(msgb.indexOf("notice")  != -1)  level = LOG_NOTICE;
+  if(msgb.indexOf("error")   != -1)  level = LOG_ERR;
+  if(msgb.indexOf("warning") != -1)  level = LOG_WARNING;
+  if(msgb.indexOf("fatal")   != -1)  level = LOG_CRIT;
+
+  syslog.log(level,msg);
   // todo clean up string, remove whitespace such as CR LF \t
-  // logData = "";
-  // newbuffer = 0;
-  newbuffer[0] = (char)0;
-  newbufferidx = 0;
+  // reset buffer
+  logbuffer[0] = (char)0;
+  logbufferidx = 0;
 }
 
-class MySerial : public Stream {
+class print2syslog : public Stream {
 public:
-  virtual int available() { return (0); }
+  bool begun = false;
+  virtual int available() { return (begun); }
   virtual int read() { return (0); }
   virtual int peek() { return (0); }
   virtual void flush() {}
-  void begin(unsigned long, uint8_t) {}
-  void end() {}
+  void begin(unsigned long, uint8_t) {begun = true;}
+  void end() {begun=false;}
 
   virtual size_t write(uint8_t newchar) {
-    if(newbufferidx>256) newbufferidx = 0;
-    newbuffer[newbufferidx] = newchar;
+    if(!begun) return;
+    newbuffer[logbufferidx] = newchar;
     newbufferidx++;
-    if(newchar == 0x0a) sendToSyslog("");
+    if(newbufferidx>256 || newchar == 0x0a) sendToSyslog(""); // buffer full or newline, @todo if no newline at max buffer drop it, use flag for delayed write
     return (1);
   }
 
   virtual size_t write(const uint8_t *buffer, size_t size)
   {
+      if(!begun) return;
       size_t n = 0;
       while(size--) {
-          // newbuffer[newbufferidx] = char(*buffer);
-          // newbufferidx++;
           n += write(*buffer++);
       }
-      // Serial.print("[BUFF] ");
-      // Serial.println((String)newbuffer);
-      // logData = String(newbuffer);
-      // sendToSyslog("");
       return n;
   }
 };
 
-MySerial dummySerial;
+print2syslog syslogger;
 Stream &_Logger = Serial;
 
 // using Print::write;
@@ -87,7 +78,7 @@ Stream &_Logger = Serial;
 // #endif
 
 #include <StreamUtils.h>
-LoggingStream Logger(dummySerial, _Logger);
+LoggingStream Logger(syslogger, _Logger);
 // String result = LoggingStream.str();
 // WriteLoggingStream loggingClient(client, Serial);
 // loggingClient.println("GET / HTTP/1.1");
