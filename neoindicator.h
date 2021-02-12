@@ -11,7 +11,7 @@ bool DEBUG_neoind = false;
 
 #ifdef ESP32
 bool showTwice = true;
-bool noInterrupts = true;
+bool noInterrupts = false; // causes crashes, sometimes ?
 #else
 bool showTwice = false;
 bool noInterrupts = false;

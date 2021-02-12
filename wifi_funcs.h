@@ -88,7 +88,7 @@ void init_WiFi(int timeout = 10000){
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");
-      Serial.println("[WIFI] waited for " + (String)(millis()-start/1000) + "seconds");
+      Serial.println("[WIFI] waited for " + (String)(millis()-start/1000) + " seconds");
     }
     delay(500);
 }

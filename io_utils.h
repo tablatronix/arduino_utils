@@ -2,6 +2,7 @@
 #define io_utils_h
 
 #include <log.h>
+#include <Wire.h>
 
 bool swap = false;
 

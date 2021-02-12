@@ -2,19 +2,20 @@
 #ifndef log_h
 #define log_h
 
-#define USESYSLOG
+// #define USESYSLOG
 #ifdef USESYSLOG
 #include <log_syslog.h>
 #endif
 
 // https://github.com/Chris--A/PrintEx
-
+// StreamUtils
 
 char logbuffer[256];
 int  logbufferidx = 0; // end char
 // might need a ring buffer here, so we can keep logging mutiple messages and send delayed
 
 void sendToSyslog(String msg){
+  #ifdef USESYSLOG
   // if(logData.indexOf("\n") >= 0){
     // Serial.println("newline found at: " + (String)logData.indexOf("\n"));
     // syslog.log(LOG_INFO,msg);
@@ -37,6 +38,7 @@ void sendToSyslog(String msg){
   // reset buffer
   logbuffer[0] = (char)0;
   logbufferidx = 0;
+  #endif
 }
 
 class print2syslog : public Stream {
