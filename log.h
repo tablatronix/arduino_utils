@@ -120,35 +120,35 @@ LoggingStream Logger(syslogger, _Logger);
     #endif
 
     template <typename Generic>
-    void        DEBUG_WM(Generic text);
+    void        DEBUGGER(Generic text);
 
     template <typename Generic>
-    void        DEBUG_WM(debuglevel_t level,Generic text);
+    void        DEBUGGER(debuglevel_t level,Generic text);
     template <typename Generic, typename Genericb>
-    void        DEBUG_WM(Generic text,Genericb textb);
+    void        DEBUGGER(Generic text,Genericb textb);
     template <typename Generic, typename Genericb>
-    void        DEBUG_WM(debuglevel_t level, Generic text,Genericb textb);
+    void        DEBUGGER(debuglevel_t level, Generic text,Genericb textb);
 
 
 // DEBUG
-// @todo fix DEBUG_WM(0,0);
+// @todo fix DEBUGGER(0,0);
 template <typename Generic>
-void DEBUG_WM(Generic text) {
-  DEBUG_WM(DEBUG_NOTIFY,text,"");
+void DEBUGGER(Generic text) {
+  DEBUGGER(DEBUG_NOTIFY,text,"");
 }
 
 template <typename Generic>
-void DEBUG_WM(debuglevel_t level,Generic text) {
-  if(_debugLevel >= level) DEBUG_WM(level,text,"");
+void DEBUGGER(debuglevel_t level,Generic text) {
+  if(_debugLevel >= level) DEBUGGER(level,text,"");
 }
 
 template <typename Generic, typename Genericb>
-void DEBUG_WM(Generic text,Genericb textb) {
-  DEBUG_WM(DEBUG_NOTIFY,text,textb);
+void DEBUGGER(Generic text,Genericb textb) {
+  DEBUGGER(DEBUG_NOTIFY,text,textb);
 }
 
 template <typename Generic, typename Genericb>
-void DEBUG_WM(debuglevel_t level,Generic text,Genericb textb) {
+void DEBUGGER(debuglevel_t level,Generic text,Genericb textb) {
   if(!_debug || _debugLevel < level) return;
 
   if(_debugLevel >= DEBUG_MAX){
@@ -193,14 +193,14 @@ void DEBUG_WM(debuglevel_t level,Generic text,Genericb textb) {
 void debugPlatformInfo(){
   #ifdef ESP8266
     system_print_meminfo();
-    DEBUG_WM(F("getCoreVersion():         "),ESP.getCoreVersion());
-    DEBUG_WM(F("system_get_sdk_version(): "),system_get_sdk_version());
-    DEBUG_WM(F("system_get_boot_version():"),system_get_boot_version());
-    DEBUG_WM(F("getFreeHeap():            "),(String)ESP.getFreeHeap());
+    DEBUGGER(F("getCoreVersion():         "),ESP.getCoreVersion());
+    DEBUGGER(F("system_get_sdk_version(): "),system_get_sdk_version());
+    DEBUGGER(F("system_get_boot_version():"),system_get_boot_version());
+    DEBUGGER(F("getFreeHeap():            "),(String)ESP.getFreeHeap());
   #elif defined(ESP32)
     size_t freeHeap = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    DEBUG_WM("Free heap:       ", freeHeap);
-    DEBUG_WM("ESP-IDF version: ", esp_get_idf_version());
+    DEBUGGER("Free heap:       ", freeHeap);
+    DEBUGGER("ESP-IDF version: ", esp_get_idf_version());
   #endif
 }
 
