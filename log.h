@@ -1,3 +1,4 @@
+
 #ifndef log_h
 #define log_h
 
@@ -49,16 +50,16 @@ public:
   void end() {begun=false;}
 
   virtual size_t write(uint8_t newchar) {
-    if(!begun) return;
-    newbuffer[logbufferidx] = newchar;
-    newbufferidx++;
-    if(newbufferidx>256 || newchar == 0x0a) sendToSyslog(""); // buffer full or newline, @todo if no newline at max buffer drop it, use flag for delayed write
+    if(!begun) return 0;
+    logbuffer[logbufferidx] = newchar;
+    logbufferidx++;
+    if(logbufferidx>256 || newchar == 0x0a) sendToSyslog(""); // buffer full or newline, @todo if no newline at max buffer drop it, use flag for delayed write
     return (1);
   }
 
   virtual size_t write(const uint8_t *buffer, size_t size)
   {
-      if(!begun) return;
+      if(!begun) return 0;
       size_t n = 0;
       while(size--) {
           n += write(*buffer++);
@@ -70,6 +71,8 @@ public:
 print2syslog syslogger;
 Stream &_Logger = Serial;
 
+Stream &Logger = Serial;
+
 // using Print::write;
 // #if ARDUINO >= 100
 //   virtual size_t write(uint8_t);
@@ -78,7 +81,7 @@ Stream &_Logger = Serial;
 // #endif
 
 #include <StreamUtils.h>
-LoggingStream Logger(syslogger, _Logger);
+// LoggingStream Logger(syslogger, _Logger);
 // String result = LoggingStream.str();
 // WriteLoggingStream loggingClient(client, Serial);
 // loggingClient.println("GET / HTTP/1.1");
