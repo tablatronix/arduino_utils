@@ -2,7 +2,7 @@
 #ifndef log_h
 #define log_h
 
-// #define USESYSLOG
+#define USESYSLOG
 #ifdef USESYSLOG
 #include <log_syslog.h>
 #endif
@@ -43,7 +43,7 @@ void sendToSyslog(String msg){
 
 class print2syslog : public Stream {
 public:
-  bool begun = false;
+  bool begun = true; // allow muting via availability
   virtual int available() { return (begun); }
   virtual int read() { return (0); }
   virtual int peek() { return (0); }
@@ -71,20 +71,22 @@ public:
 };
 
 print2syslog syslogger;
-Stream &_Logger = Serial;
-
-Stream &Logger = Serial;
-
-// using Print::write;
-// #if ARDUINO >= 100
-//   virtual size_t write(uint8_t);
-// #else
-//   virtual void write(uint8_t);
-// #endif
+// syslogger.begin();
 
 #include <StreamUtils.h>
+
+Stream &_Logger = Serial;
+LoggingStream Logger(syslogger, _Logger);
+// Stream &Logger = Serial; // BYPASS lOGGER
+
+// #ifdef USESYSLOG
 // LoggingStream Logger(syslogger, _Logger);
-// String result = LoggingStream.str();
+// #else
+  // Stream &Logger = Serial; // BYPASS lOGGER
+// #endif
+
+// logging streams options
+// String result = LoggingStream.str(); 
 // WriteLoggingStream loggingClient(client, Serial);
 // loggingClient.println("GET / HTTP/1.1");
 // loggingClient.println("User-Agent: Arduino");
