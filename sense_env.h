@@ -1,6 +1,9 @@
 #ifndef sensors_h
 #define sensors_h
 
+#include <Average.h>
+
+Average<float> avg_a(10);
 
 // supported sensors
 // SHT31
@@ -555,7 +558,7 @@ void print_cs811(){
     }
   }
   else{
-    Logger.println("[ERROR] cs811 not available");
+    Logger.println("[ERROR] cs811 not available"); //
   }  
 }
 
@@ -565,7 +568,7 @@ float get_cs811(uint8_t channel = 0){
   // if(!ccs.available()) return 0;
   // if(ccs.readData()) return 0;
   // @todo detect failures, or else func return old values
-  if(!ccs.available()) Logger.println("[ERROR] cs811 not available"); // always false?
+  // if(!ccs.available()) Logger.println("[ERROR] cs811 not available"); // always false?
   if(ccs.checkError()) Logger.println("[ERROR] Assert cs811 check error"); // always false?
   uint8_t err = ccs.readData();
   float ret;
