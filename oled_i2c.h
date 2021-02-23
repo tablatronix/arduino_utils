@@ -1,4 +1,6 @@
 /*oled_i2c*/
+#ifndef oled_i2c_h
+#define oled_i2c_h
 
 #include <Wire.h>
 #include <Adafruit_I2CDevice.h>
@@ -14,7 +16,7 @@
 Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT);
 // Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET,800000,800000);
 
-int fpsmicros = 0;
+int oledfpsmicros = 0;
 
 void invertText(){
   lcd.setTextColor(BLACK, WHITE); // 'inverted' text  
@@ -101,20 +103,30 @@ void init_oled(bool preamble){
   lcd.display();
 }
 
-void oled_test(){
-  print_oled_line("Line One",0);  
-  print_oled_line("Line Two",1);  
-  print_oled_line("Line Three",2);
-  lcd.display();
-  delay(1000);
-  lcd.clearDisplay();
-  print_oled_line("Line One",0,2);  
-  print_oled_line("Line Two",2);  
-  lcd.display();  
+void oled_test(uint8_t num = 0){
+  // print_oled_line(msg, line, size);
+  for(uint8_t i=0;i<num;i++){
+    lcd.clearDisplay();
+    print_oled_line("millis",0);
+    print_oled_line((String)millis(),1);
+    lcd.display();
+    delay(1000);
+    print_oled_line("Line One",0);
+    print_oled_line("Line Two",1);
+    print_oled_line("Line Three",2);
+    lcd.display();
+    delay(1000);
+    lcd.clearDisplay();
+    print_oled_line("Line One",0,2);  
+    print_oled_line("Line Two",2);  
+    lcd.display();
+  }
 }
 
 void displayFPS(){
     lcd.print((String)(1000000/((micros()-fpsmicros)/2)));
     // println(" FPS");
-    fpsmicros = micros();
+    oledfpsmicros = micros();
 }
+
+#endif
