@@ -1149,27 +1149,27 @@ void tft_footer_val1(){
     tft_set_footer_val2();    
 }
 
-int fpsmicros = millis();
-char buffer [32];
+// int fpsmicros = millis();
+// char buffer [32];
 
-void displayFPS(){
-    // tft_footer_val1();
-    return;
-    tft.setTextSize(2);
-    tft.setTextColor(WHITE,HC2);
-    tft.setCursor(TFT_WIDTH,TFT_HEIGHT-100);
-    // frames / sec = 1 / (sec / frame)
-    // tft.println((String)(1000/((micros()-fpsmicros))));
-    // tft.println((String)(1000000/((micros()-fpsmicros))));
-    // tft.print("     ");
-    sprintf (buffer, "%03u",(int)(1000/((millis()-fpsmicros)))); 
-    // Serial.println((String)(1000/((millis()-fpsmicros))));
-    // tft.println((String)(1000/(millis()-fpsmicros)));
-    tft.println(buffer);
-    // Serial.println(buffer);
-    // println(" FPS");
-    fpsmicros = millis();
-}
+// void displayFPS(){
+//     // tft_footer_val1();
+//     return;
+//     tft.setTextSize(2);
+//     tft.setTextColor(WHITE,HC2);
+//     tft.setCursor(TFT_WIDTH,TFT_HEIGHT-100);
+//     // frames / sec = 1 / (sec / frame)
+//     // tft.println((String)(1000/((micros()-fpsmicros))));
+//     // tft.println((String)(1000000/((micros()-fpsmicros))));
+//     // tft.print("     ");
+//     sprintf (buffer, "%03u",(int)(1000/((millis()-fpsmicros)))); 
+//     // Serial.println((String)(1000/((millis()-fpsmicros))));
+//     // tft.println((String)(1000/(millis()-fpsmicros)));
+//     tft.println(buffer);
+//     // Serial.println(buffer);
+//     // println(" FPS");
+//     fpsmicros = millis();
+// }
 
 // what is this note? lol
 // float smoothing = 0.9; // larger=more smoothing
