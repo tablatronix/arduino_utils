@@ -30,7 +30,7 @@
 
 U8G2_SH1106_128X64_NONAME_F_HW_I2C lcd(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
-int fpsmicros = 0;
+int oledfpsmicros = 0;
 
 // #if (SSD1306_LCDHEIGHT != 64)
 // #error("Height incorrect, please fix Adafruit_SSD1306.h!");
@@ -63,6 +63,21 @@ void whiteText(){
 //   display.setCursor(0,0);             // Start at top-left corner
 //   display.display();
 // }
+
+/**
+ * print oled lines
+ * @param str  string to print
+ * @param no   line 0-3
+ * @param size text size 1-2
+ */
+void print_oled_line(String str,uint16_t no = 1,uint16_t size = 1){
+  uint16_t y = 0;
+  if(size == 1) y = 9*no;
+  if(size == 2) y = 18*no;
+  lcd.setCursor(0,y);
+  // lcd.setTextSize(size);  
+  lcd.println(str);
+}
 
 void print_oled(String str,uint8_t size,bool flush){
   lcd.clearBuffer();         // clear the internal memory
@@ -119,9 +134,9 @@ void init_oled(bool preamble,bool pinswap = false){
 }
 
 void displayFPS(){
-    lcd.print((String)(1000000/((micros()-fpsmicros)/2)));
+    lcd.print((String)(1000000/((micros()-oledfpsmicros)/2)));
     // println(" FPS");
-    fpsmicros = micros();
+    oledfpsmicros = micros();
 }
 
 // void printInverted(const char* str){
@@ -163,6 +178,27 @@ int printValuePair(const char* str,String strb,int x,int y){
     lcd.print(strb.c_str());
     return xoff; // get new cursor?
 }
+
+void oled_test(uint8_t num = 0){
+  // print_oled_line(msg, line, size);
+  for(uint8_t i=0;i<num;i++){
+    lcd.clearDisplay();
+    print_oled_line("millis",0);
+    print_oled_line((String)millis(),1);
+    lcd.display();
+    delay(1000);
+    print_oled_line("Line One",0);
+    print_oled_line("Line Two",1);
+    print_oled_line("Line Three",2);
+    lcd.display();
+    delay(1000);
+    lcd.clearDisplay();
+    print_oled_line("Line One",0,2);  
+    print_oled_line("Line Two",2);  
+    lcd.display();
+  }
+}
+
 
   // lcd.setDrawColor(1);
   // uint16_t strw = lcd.drawStr(posx+padx, posy, str); // x,y(NEGATIVE GOING!)
