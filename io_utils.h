@@ -56,8 +56,10 @@ void scani2c(bool pinswap = false){
     {
       Logger.print("[I2C] Device found - ADDR: 0x");
       if (address<16)
-        Logger.print("0");
-        Logger.print(address,HEX);
+        Logger.print("0x");
+        Logger.print(address,HEX); // 7 bit
+        Logger.print(" 0x");
+        Logger.print(2*address,HEX); // 8bit
         Logger.println("");
         nDevices++;
     }
@@ -74,7 +76,8 @@ void scani2c(bool pinswap = false){
   if (nDevices == 0)
     Logger.println("[ERROR] No I2C devices found\n");
   else
-    Logger.println("[I2C] scan done\n");
+    Logger.print("[I2C] scan done found ");
+    Logger.println(nDevices);
 }
 
 void scanPins(){
@@ -92,7 +95,25 @@ void scanPins(){
   Logger.println("");
 }
 
+void pinregister(){
+  // maintain a store of pins we are using before passing them to functions
+  // better than a simple define, as we can 
+  // register a pin for use, to avoid using a pin twice
+  // even if this is a preocompiler structure, it would stil be able to warn
+  // also can let you set the use as a flag so you know if you are using it as adc or input
+  // and on esp32 etc set the pins desired specs and avoid conflicts with multiple adc reads
+}
+
 #ifdef ESP32
+
+#define ADC_1 36
+#define ADC_2 38 // missing from some boards?
+#define ADC_3 39
+#define ADC_4 32
+#define ADC_5 33
+#define ADC_6 34
+#define ADC_7 37
+
 // ADC2 restoring procedure
 // This is a Workaround to use ADC2 Pins on ESP32 when Wifi or Bluetooth is on.
 // (usually only ADC1 Pins are usable for analogRead() when Wifi or Bluetooth is on.)
