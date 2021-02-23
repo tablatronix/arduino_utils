@@ -71,6 +71,8 @@ BarGraph bar0;
 #define GFXX18pt &FreeSans18pt7b
 // #define GFXX18pt &FreeMono18pt7b
 
+int fpsmicros = 0;
+
 bool USEWIFI = true; // enabled wifi, NOT connect wifi
 
 Average<float> fps(10); // init stats for avg (samples)

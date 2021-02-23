@@ -43,7 +43,7 @@ void init_syslog(){
 }
 
 void sendLogTest(){
-  String startmsg = "Started";
+  String startmsg = "[BOOT] Device Started";
   syslog.log(LOG_INFO, startmsg);
   return;
   // Log message can be formated like with printf function.
@@ -52,8 +52,7 @@ void sendLogTest(){
 
   // You can force set facility in pri parameter for this log message. More 
   // facilities in syslog.h or in Linux syslog documentation.
-  syslog.logf(LOG_DAEMON | LOG_INFO, "This is daemon info message no. %d", 
-    iteration);
+  syslog.logf(LOG_DAEMON | LOG_INFO, "This is daemon info message no. %d", iteration);
 
   // You can set default facility and severity level and use it for all log
   // messages (beware defaultPriority is stored permanently!)
