@@ -2,6 +2,7 @@
 #define wifi_funcs_h
 
 #include <creds.h>
+#include <log.h> // @BUG error: 'Logger' was not declared in this scope, makes no sense
 
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
@@ -20,6 +21,10 @@ bool debug_wifi = false;
 
 long downtimeRestart = 300000;
 long downtime        = 0;
+
+bool wifiIsConnected(){
+  return WiFi.status() == WL_CONNECTED;
+}
 
 String getDeviecID(){
   String _wifissidprefix = "ESP";
@@ -46,11 +51,25 @@ String getHostname(){
   #endif
 }
 
+void WiFi_print_sta(){
+    if(wifiIsConnected()){
+      Serial.println("[WIFI] CONNECTED");
+      Serial.print("[WIFI] IP: ");
+      Serial.println(WiFi.localIP());
+      Serial.print("[WIFI] HOST: ");
+      getHostname();
+    }
+}
+
 // enable wifi sta
 // disable sleep
 // timeout connect
 // set hostname ?
 void init_WiFi(int timeout = 10000){
+    if(wifiIsConnected()){
+      WiFi_print_sta();
+      return;
+    }
     WiFi.mode(WIFI_STA);
     #ifdef ESP8266
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
@@ -79,12 +98,8 @@ void init_WiFi(int timeout = 10000){
 
     Serial.println("");
 
-    if(WiFi.status() == WL_CONNECTED){
-      Serial.println("[WIFI] CONNECTED");
-      Serial.print("[WIFI] IP: ");
-      Serial.println(WiFi.localIP());
-      Serial.print("[WIFI] HOST: ");
-      getHostname();
+    if(wifiIsConnected()){
+      WiFi_print_sta();
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");
@@ -255,9 +270,6 @@ void disableWiFi(){
 //   if (SW_RESET == reason) { return REASON_EXT_SYS_RST; }
 // }
 
-bool wifiIsConnected(){
-  return WiFi.status() == WL_CONNECTED;
-}
 
 String WiFi_SSID(bool persistent) {
 
