@@ -1,6 +1,6 @@
 /*oled_i2c*/
-// DOESNT WORK
 
+#include <log.h>
 #include <Wire.h>
 // #include <Adafruit_GFX.h>
 // #include <Adafruit_SSD1306.h>
@@ -15,6 +15,21 @@
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
 #endif
+
+// https://github.com/olikraus/u8g2/wiki/fntlistall#24-pixel-height
+// U8g2 Font names
+// <prefix> '_' <name> '_' <purpose> <char set>
+// <purpose> Description
+// t Transparent font, Do not use a background color.
+// h All glyphs have common height.
+// m All glyphs have common height and width (monospace).
+// 8 All glyphs fit into a 8x8 pixel box.
+// <char set>  Description
+// f The font includes up to 256 glyphs.
+// r Only glyphs on the range of the ASCII codes 32 to 127 are included in the font.
+// u Only glyphs on the range of the ASCII codes 32 to 95 (uppercase chars) are included in the font.
+// n Only numbers and extra glyphs for writing date and time strings are included in the font.
+// ... Other custom character list.
 
 // #define WHITE SH110X_WHITE
 // #define BLACK SH110X_BLACK
@@ -89,16 +104,22 @@ void print_oled(String str,uint8_t size,bool flush){
   if(flush)lcd.sendBuffer();          // transfer internal memory to the display
 }
 
-// @todo add pinswap
 void init_oled(bool preamble,bool pinswap = false){
-  Serial.println("\nInitializing SSD1106 OLED");
-  Serial.println("SDA: "+(String)SDA);
-  Serial.println("SCL: "+(String)SCL);
-  if(pinswap) Wire.begin(5,4);  // begin(sda, scl) SWAP!
+  Logger.println("[OLED] Initializing SSD1106 OLED");
+  Logger.println("[I2C] SDA: "+(String)SDA);
+  Logger.println("[I2C] SCL: "+(String)SCL);
+  if(pinswap){
+    Wire.begin(5,4);  // begin(sda, scl) SWAP!
+    Logger.println("[I2C] pinswapped");
+    Logger.println("[I2C] SDA: "+(String)SDA);
+    Logger.println("[I2C] SCL: "+(String)SCL);
+  }
   // Wire.setClock(400000L);
-  lcd.setDisplayRotation(U8G2_R2);
+  #ifdef ROT
+    lcd.setDisplayRotation(U8G2_R2);
+  #endif  
   lcd.begin();
-  // lcd.setI2CAddress(0x7A);
+  // lcd.setI2CAddress(0x78);
   // if(!lcd.begin()) { // Address 0x3C for 128x32
     // Serial.println(F("SSD1106 begin failed"));
   // }

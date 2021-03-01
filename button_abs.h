@@ -33,30 +33,38 @@ void encoderClear(){
 }
 
 void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
+  // @todo always a false trigger on start
+  // if(encoderLast < 0){
+  //   Logger.println("[ENC] init fired");
+  //   encoderLast = newValue;
+  //   encoderClear();
+  //   return; // init
+  // }
+
   if(_maximumEncoderValue > 0){
-    Serial.print("[ENCODER] change to ");
-    Serial.print(newValue);
-    Serial.print(" from ");
-    Serial.print(encoderLast);
+    Logger.print("[ENCODER] change to ");
+    Logger.print(newValue);
+    Logger.print(" from ");
+    Logger.print(encoderLast);
     if(encoderLast == newValue){
-      Serial.println("\n");
+      Logger.println("\n");
       return;
     }
     bool dir = (encoderLast > newValue);
-    Serial.println(" dir: " + String(dir ? "CC" : "CW"));
+    Logger.println(" dir: " + String(dir ? "CC" : "CW"));
     encoderStale = encoderLast;
     encoderLast  = newValue;
     encoderHasChange = true;
   }
   else{
     if(newValue == 0){
-      Serial.print("[ENCODER] no change");
+      Logger.print("[ENCODER] no change");
       return;
     }
-    Serial.print("[ENCODER] change by ");
-    Serial.print(newValue);
+    Logger.print("[ENCODER] change by ");
+    Logger.print(newValue);
     bool dir = (newValue == 1);
-    Serial.println(" dir: " + String(dir ? "CW" : "CC")); // for plotting use 10,20 etc
+    Logger.println(" dir: " + String(dir ? "CW" : "CC")); // for plotting use 10,20 etc
     
     encoderStale = encoderLast;
     encoderLast  = newValue;
@@ -65,8 +73,8 @@ void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
 }
 
 void ICACHE_RAM_ATTR onEncoderSWPressed(uint8_t pin, bool heldDown) {
-  Serial.print("[ENCODER] Button ");
-  Serial.println(heldDown ? "Held" : "Pressed");
+  Logger.print("[ENCODER] Button ");
+  Logger.println(heldDown ? "Held" : "Pressed");
   encoderHasPress = true;
   encoderHasHold = heldDown;
 }
@@ -95,7 +103,10 @@ void init_encoder(int encoderAPin, int encoderBPin, int encoderSWPin,uint8_t add
   }
 
   // encoder sw
+  #ifndef ENC_SW_ANALOG
   switches.addSwitch(encoderSWPin, onEncoderSWPressed); // encoder button press
+  #endif
+
   // encoder
   setupRotaryEncoderWithInterrupt(encoderAPin, encoderBPin, onEncoderChange);
   if(_maximumEncoderValue > 0) switches.changeEncoderPrecision(_maximumEncoderValue, 0);
@@ -131,10 +142,10 @@ void checkAnalogSW(uint8_t pin, uint16_t value,uint32_t hold){
   // IoAbstractionRef iodev = switches.getIoAbstraction();
   // iodev->pinDirection(7,OUTPUT);
   // bool res = iodev->runLoop();
-  // if(res!=1) Serial.println("devsync: " + (String)res);
+  // if(res!=1) Logger.println("devsync: " + (String)res);
   // taskManager.runLoop();
   // if(!res){
-  //   Serial.println("error");
+  //   Logger.println("error");
   //   delay(500);
   // }
 #endif

@@ -14,24 +14,24 @@ void handleRoot() {
 
 
   if(server.hasArg(F("ledindex"))){
-    Serial.println("has arg ledindex");
+    Logger.println("has arg ledindex");
     String pixel = server.arg(F("ledindex"));
     // ledIndex = pixel;
     // setHTTPValue(pixel.toInt());
     // strip.setPixelColor(pixel.toInt(),strip.Color(255,0,0));
-    Serial.println("Setting pixel:" + (String)pixel);
+    Logger.println("Setting pixel:" + (String)pixel);
     // strip.show();
     // delay(2000);
     server.send(200, "text/plain", "hello from esp8266! ledindex SET");    
   }
 
   if(server.hasArg(F("pwm"))){
-    Serial.println("has arg PWM");
+    Logger.println("has arg PWM");
     String pwmvalue = server.arg(F("pwm"));
     // ledIndex = pixel;
     // setPWM(pwmvalue.toInt());
     // strip.setPixelColor(pixel.toInt(),strip.Color(255,0,0));
-    Serial.println("Setting PWM:" + (String)pwmvalue);
+    Logger.println("Setting PWM:" + (String)pwmvalue);
     // strip.show();
     // delay(2000);
     // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM()); 
@@ -40,12 +40,12 @@ void handleRoot() {
   }
 
   if(server.hasArg(F("freq"))){
-    Serial.println("has arg FREQ");
+    Logger.println("has arg FREQ");
     String pwmvalue = server.arg(F("freq"));
     // ledIndex = pixel;
     // setPWM(pwmvalue.toInt());
     // strip.setPixelColor(pixel.toInt(),strip.Color(255,0,0));
-    Serial.println("Setting FREQ:" + (String)pwmvalue);
+    Logger.println("Setting FREQ:" + (String)pwmvalue);
     // strip.show();
     // delay(2000);
     // server.send(200, "text/plain", "hello from esp8266! PWM set:" + (String)getPWM()); 
@@ -78,7 +78,7 @@ void handleNotFound() {
 
 void httpd_init(){
   if (MDNS.begin("esp8266")) {
-    Serial.println("MDNS responder started");
+    Logger.println("[MDNS] responder started");
   }
 
   server.on("/", handleRoot);
@@ -106,7 +106,7 @@ void httpd_init(){
 	  });
 
   server.begin();
-  Serial.println("HTTP server started");
+  Logger.println("[HTTP] server started");
 }
 
 void httpd_process(void) {
