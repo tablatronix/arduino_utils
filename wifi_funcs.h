@@ -2,7 +2,6 @@
 #define wifi_funcs_h
 
 #include <creds.h>
-#include <log.h> // @BUG error: 'Logger' was not declared in this scope, makes no sense
 
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
@@ -21,6 +20,76 @@ bool debug_wifi = false;
 
 long downtimeRestart = 300000;
 long downtime        = 0;
+
+
+/** IP to String? */
+String toStringIp(IPAddress ip) {
+  String res = "";
+  for (int i = 0; i < 3; i++) {
+    res += String((ip >> (8 * i)) & 0xFF) + ".";
+  }
+  res += String(((ip >> 8 * 3)) & 0xFF);
+  return res;
+}
+
+String WiFi_SSID(bool persistent) {
+    persistent = true;
+    #ifdef ESP8266
+    struct station_config conf;
+    if(persistent) wifi_station_get_config_default(&conf);
+    else wifi_station_get_config(&conf);
+
+    char tmp[33]; //ssid can be up to 32chars, => plus null term
+    memcpy(tmp, conf.ssid, sizeof(conf.ssid));
+    tmp[32] = 0; //nullterm in case of 32 char ssid
+    return String(reinterpret_cast<char*>(tmp));
+    
+    #elif defined(ESP32)
+    if(persistent){
+      wifi_config_t conf;
+      esp_wifi_get_config(WIFI_IF_STA, &conf);
+      return String(reinterpret_cast<const char*>(conf.sta.ssid));
+    }
+    else {
+      if(WiFiGenericClass::getMode() == WIFI_MODE_NULL){
+          return String();
+      }
+      wifi_ap_record_t info;
+      if(!esp_wifi_sta_get_ap_info(&info)) {
+          return String(reinterpret_cast<char*>(info.ssid));
+      }
+      return String();
+    }
+    #endif
+}
+
+String WiFi_psk(bool persistent)  {
+    persistent = true;
+    #ifdef ESP8266
+    struct station_config conf;
+
+    if(persistent) wifi_station_get_config_default(&conf);
+    else wifi_station_get_config(&conf);
+
+    char tmp[65]; //psk is 64 bytes hex => plus null term
+    memcpy(tmp, conf.password, sizeof(conf.password));
+    tmp[64] = 0; //null term in case of 64 byte psk
+    return String(reinterpret_cast<char*>(tmp));
+    
+    #elif defined(ESP32)
+    // only if wifi is init
+    if(WiFiGenericClass::getMode() == WIFI_MODE_NULL){
+      return String();
+    }
+    wifi_config_t conf;
+    esp_wifi_get_config(WIFI_IF_STA, &conf);
+    return String(reinterpret_cast<char*>(conf.sta.password));
+    #endif
+}
+
+bool wifiIsAutoConnect(){
+  return WiFi_SSID(true) != "";  
+}
 
 bool wifiIsConnected(){
   return WiFi.status() == WL_CONNECTED;
@@ -45,7 +114,7 @@ void setWiFiHostname(const char* hostname){
 
 String getHostname(){
   #ifdef ESP32
-  return WiFi.getHostname(); // getHostName
+  return WiFi.getHostname(); // getHostName ( @todo return string of c.str?)
   #else
   return WiFi.hostname(); // getHostName
   #endif
@@ -65,11 +134,11 @@ void WiFi_print_sta(){
 // disable sleep
 // timeout connect
 // set hostname ?
-void init_WiFi(int timeout = 10000){
-    if(wifiIsConnected()){
-      WiFi_print_sta();
-      return;
-    }
+void init_WiFi(int timeout){
+    // if(wifiIsConnected()){
+    //   WiFi_print_sta();
+    //   return;
+    // }
     WiFi.mode(WIFI_STA);
     #ifdef ESP8266
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
@@ -80,7 +149,8 @@ void init_WiFi(int timeout = 10000){
 
     // WiFi.hostname(hostname);
     unsigned long start = millis();
-    WiFi.begin(SSID,PASS);
+    if(wifiIsAutoConnect)  WiFi.begin();
+    else WiFi.begin(SSID,PASS);
     if(timeout > 0){
       Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
       while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
@@ -91,7 +161,7 @@ void init_WiFi(int timeout = 10000){
     else {
       Serial.println("[WIFI] Connecting to wifi, waiting..... ");
       while(WiFi.waitForConnectResult() != WL_CONNECTED){
-        Serial.print(".");
+        // Serial.print(".");
         delay(100);
       }  
     }
@@ -109,7 +179,7 @@ void init_WiFi(int timeout = 10000){
 }
 
 void init_wifi(){
-  init_WiFi();
+  init_WiFi(0);
 }
 
 int getRSSIasQuality() {
@@ -148,7 +218,7 @@ void checkWifi(){
 
 void enableWiFi(){
   WiFi.mode(WIFI_STA);
-  init_WiFi();
+  init_WiFi(0);
 }
 
 void disableWiFi(){
@@ -270,42 +340,6 @@ void disableWiFi(){
 //   if (SW_RESET == reason) { return REASON_EXT_SYS_RST; }
 // }
 
-
-String WiFi_SSID(bool persistent) {
-
-    #ifdef ESP8266
-    struct station_config conf;
-    if(persistent) wifi_station_get_config_default(&conf);
-    else wifi_station_get_config(&conf);
-
-    char tmp[33]; //ssid can be up to 32chars, => plus null term
-    memcpy(tmp, conf.ssid, sizeof(conf.ssid));
-    tmp[32] = 0; //nullterm in case of 32 char ssid
-    return String(reinterpret_cast<char*>(tmp));
-    
-    #elif defined(ESP32)
-    if(persistent){
-      wifi_config_t conf;
-      esp_wifi_get_config(WIFI_IF_STA, &conf);
-      return String(reinterpret_cast<const char*>(conf.sta.ssid));
-    }
-    else {
-      if(WiFiGenericClass::getMode() == WIFI_MODE_NULL){
-          return String();
-      }
-      wifi_ap_record_t info;
-      if(!esp_wifi_sta_get_ap_info(&info)) {
-          return String(reinterpret_cast<char*>(info.ssid));
-      }
-      return String();
-    }
-    #endif
-}
-
-bool wifiIsAutoConnect(){
-  return WiFi_SSID(true) != "";  
-}
-
 String getResetReason(){
     int reason;
     #ifdef ESP8266
@@ -324,5 +358,6 @@ String getResetReason(){
       return "";
     #endif
 }
+
 
 #endif 
