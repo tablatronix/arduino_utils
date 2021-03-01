@@ -4,6 +4,10 @@
 #include <log.h>
 #include <Wire.h>
 
+#ifdef ESP32
+#include <analogWrite.h>
+#endif
+
 bool swap = false;
 
 int getPinMode(uint8_t pin)

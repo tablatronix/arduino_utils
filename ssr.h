@@ -3,10 +3,7 @@
 #define RELAYPIN  3   // relay control SSR PWM
 
 #include <number_format.h>
-
-#ifdef ESP32
-#include <analogWrite.h>
-#endif
+#include <io_utils.h>
 
 #ifdef DEBUG
 bool DEBUG_ssr = true;
@@ -14,13 +11,12 @@ bool DEBUG_ssr = true;
 bool DEBUG_ssr = false;
 #endif
 
-bool ssrDisabled = false;
+bool ssrDisabled = true; // safety ON
 float currentDuty = 0; // ssrpower
 bool invertDuty = true; // invert logic vcc range
 bool invertLOW  = false;  // Drive SSR with VCC
 
 int _ssrRelayPin = -1;
-
 
 void ssr_off(){
   if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,!invertLOW ? HIGH : LOW);
@@ -68,6 +64,7 @@ void SetSSRFrequency( int duty,int power =1)
     // if(duty == 0)ssr_off();
     // if(duty == 255)ssr_on();
   }
+  else ssr_off(); // ENFORCE SAFETY
 
   if(duty!=currentDuty){
     // if(DEBUG_ssr) Serial.println("[SSR] " + (String)duty);
@@ -145,4 +142,22 @@ void ssrTest(int speed){
   ssr_off();
 }
 
+void ssrPing(int speed){
+  
+  ssr_on();
+  delay(1000);
+  ssr_off();
+
+  for(int i=0;i<255;i+20){
+    SetSSRFrequency( i );
+    delay(100);
+  }
+
+  for(int i=0;i<255;i+20){
+    SetSSRFrequency( 255-i );
+    delay(100);
+  }
+
+  ssr_off();
+}
 #endif

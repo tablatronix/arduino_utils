@@ -206,11 +206,11 @@ void indTest(){
     ind.setBrightness(255); // full bright
 
     indSetColor(255,0,0);
-    delay(500);
+    delay(wait*100);
     indSetColor(0,255,0);
-    delay(500);
+    delay(wait*100);
     indSetColor(0,0,255);
-    delay(500);
+    delay(wait*100);
     indSetColor(0,0,0);
     delay(200);
 
