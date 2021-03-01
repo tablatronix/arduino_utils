@@ -2,6 +2,7 @@
 #define buzzer_h
 
 #ifdef ESP8266
+
 #include <ESP8266_Tones.h>
 #include <Tone_Pitches.h>
 ESP8266_Tones BUZZER_TONE(BUZ_PIN);
@@ -125,5 +126,36 @@ void playBlurpA(){
     delay(50);
 }
 
+void chime(){
+  playBlurpA();
+}
+
+void alarm(){
+  blurp4();
+}
+
+#else
+
+bool init_buzzer(){
+  pinMode(BUZ_PIN,OUTPUT);
+}
+
+bool chime(){
+  analogWrite(BUZ_PIN,500);
+  delay(100);
+  analogWrite(BUZ_PIN,500);
+  delay(100);
+  analogWrite(BUZ_PIN,0);
+}
+
+bool soundalarm(){
+  analogWrite(BUZ_PIN,500);
+  delay(100);
+  analogWrite(BUZ_PIN,500);
+  delay(100);
+  analogWrite(BUZ_PIN,0);
+}
+
 #endif
+
 #endif
