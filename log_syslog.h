@@ -1,6 +1,7 @@
 #ifndef log_syslog_h
 #define log_syslog_h
 
+#include <log.h>
 #include <Syslog.h>
 #include <WiFiUdp.h>
 #include <creds.h>
@@ -24,13 +25,14 @@ int iteration = 1;
 const char* syslog_hostname;
 const char* syslog_appname;
 
-void init_syslog(){
+void init_syslog(const char* hostname){
   Serial.println("[LOG] syslog init");
   Serial.println("[LOG] syslog hostname: " + getHostname());
   Serial.println("[LOG] syslog appname: " + logTopic);
 
   // syslog_hostname = getHostname().c_str(); // gibberish not working
-  syslog_hostname = WiFi.getHostname();
+  syslog_hostname = hostname;
+   // : getHostname().c_str();
   syslog_appname  = logTopic.c_str();
   // prepare syslog configuration here (can be anywhere before first call of 
 	// log/logf method)
