@@ -4,6 +4,9 @@
 
 #include <number_format.h>
 #include <io_utils.h>
+#include <log.h>
+
+#define DEBUG
 
 #ifdef DEBUG
 bool DEBUG_ssr = true;
@@ -27,6 +30,7 @@ void ssr_on(){
 }
 
 void ssr_init(uint16_t pin){
+  Logger.println("[SSR] ready on pin " + (String)_ssrRelayPin);
   _ssrRelayPin = pin;
   pinMode( _ssrRelayPin, OUTPUT );
   delay(600);
@@ -54,6 +58,8 @@ void SetSSRFrequency( int duty,int power =1)
   // Write the clamped duty cycle to the RELAYPIN GPIO 
   int out = invertDuty ? 255-duty : duty;
 
+  // Logger.println("[SSR] " + (String)out);
+
   if(!ssrDisabled){
     #ifdef ESP8266
     analogWrite( _ssrRelayPin, out);
@@ -67,11 +73,11 @@ void SetSSRFrequency( int duty,int power =1)
   else ssr_off(); // ENFORCE SAFETY
 
   if(duty!=currentDuty){
-    // if(DEBUG_ssr) Serial.println("[SSR] " + (String)duty);
-    if(duty<1 && DEBUG_ssr) Serial.println("[SSR]: OFF");
+    // if(DEBUG_ssr) Logger.println("[SSR] " + (String)duty);
+    if(duty<1 && DEBUG_ssr) Logger.println("[SSR]: OFF");
     else{
-      if(DEBUG_ssr) Serial.print("[SSR] ON");
-      if(DEBUG_ssr) Serial.println( " - duty: " + (String)duty + " " + String( ( duty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );
+      if(DEBUG_ssr) Logger.print("[SSR] ON");
+      if(DEBUG_ssr) Logger.println( " - duty: " + (String)duty + " " + String( ( duty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );
     }
   }
   currentDuty = duty;  

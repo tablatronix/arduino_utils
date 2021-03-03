@@ -11,6 +11,7 @@
 #include <pidtune.h>
 // #include <FastPID.h> 
 #include <PID_v1.h> // https://github.com/br3ttb/Arduino-PID-Library
+#include <log.h>
 
 // [PIDTUNE] COMPLETE
 // P 97.403
@@ -25,6 +26,7 @@
 uint16_t fullPowerPeriod = 10000; // full power startup pulse period
 bool fullPowerStartup = true; // enable full power period
 
+bool pidEnabled        = false;
 int long pidTimerStart = 0;
 bool pidRunning        = false; // flag is pid running, used for init start etc.
 
@@ -34,7 +36,7 @@ bool isCuttoff       = false;
 bool isFanOn         = false;
 float lastWantedTemp = -1;
 
-bool DEBUG_pid       = false;
+bool DEBUG_pid       = true;
 
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
@@ -171,20 +173,20 @@ void pid_preset_I(){
 }
 
 void pid_peak(){
-  Serial.println("[PID] adjust tunings");
+  Logger.println("[PID] adjust tunings");
   myPID.SetTunings(KpAgr, KiAgr, KdAgr);
   // @todo confirm tunings
 }
 
 void init_PID(){
   // float Kp=97.403, Ki=3.142, Kd=754.9, Hz=10;
-  Serial.println("[PID] init");
-  Serial.println("[PID] PID : " + (String)Kp + " " + (String)Ki + " " + (String)Kd);
+  Logger.println("[PID] init");
+  Logger.println("[PID] PID : " + (String)Kp + " " + (String)Ki + " " + (String)Kd);
   myPID.SetMode(AUTOMATIC);
   myPID.SetOutputLimits(0,250); // depending on the ssr freq, low values do nothing < 5%, test this, even 1% will slowly add thermal over time
   // myPID.SetSampleTime(120);
-  // if(!res) Serial.println("[ERROR] init FAILED (outputrange)");
-  // if(myPID.err()) Serial.println("[ERROR] init FAILED (construct)");
+  // if(!res) Logger.println("[ERROR] init FAILED (outputrange)");
+  // if(myPID.err()) Logger.println("[ERROR] init FAILED (construct)");
 }
 
 void pidStart(){
@@ -193,10 +195,12 @@ void pidStart(){
     myPID.SetMode(MANUAL);
     Output = 250; // output never returns to normal !!!!
   }
+  // pidEnabled = true;
   pidRunning = true;
 }
 
 void run_PID(){
+  // if(!pidEnabled) return;
   if(!pidRunning) pidStart();
   // updateTemps(); // this is too close to the PID freq
   // make sure temps are updated before calling run pid, but do not run close to the same frequency
@@ -215,10 +219,10 @@ void run_PID(){
 
   // why is PID doing effort after setpoint
   if(Input > Setpoint && (Output > 1)){
-    Serial.println("[PID] WTF PID");
+    // Logger.println("[PID] WTF PID");
   }
-  // Serial.print("-");
-  // Serial.print(Output);
+  // Logger.print("-");
+  // Logger.print(Output);
   if(fullPowerStartup){
     if(millis()-pidTimerStart < fullPowerPeriod){
     }
@@ -251,7 +255,7 @@ void MatchTemp()
   // set.lookAhead = 2;
   // set.lookAheadWarm = 2;
 
-  // Serial.print(".");
+  // Logger.print(".");
   // if(wantedTemp > 0)  run_PID();
   // return;
   float duty = 0;
@@ -278,28 +282,28 @@ void MatchTemp()
     DEBUG_pid = currentDelta > 0;
 
 if(DEBUG_pid){
-    Serial.print( "[PID]" );
+    Logger.print( "[PID]" );
     
-    // Serial.print( "T: " );
-    // Serial.print( timeX );
+    // Logger.print( "T: " );
+    // Logger.print( timeX );
     
-    Serial.print( "  Current: " );
-    Serial.print( currentTemp );
+    Logger.print( "  Current: " );
+    Logger.print( currentTemp );
     
-    Serial.print( "  Wanted: " );
-    Serial.print( wantedTemp );
+    Logger.print( "  Wanted: " );
+    Logger.print( wantedTemp );
     
-    Serial.print( "  T Diff: " );
-    Serial.print( tempDiff  );
+    Logger.print( "  T Diff: " );
+    Logger.print( tempDiff  );
     
-    Serial.print( "  W Diff: " );
-    Serial.print( wantedDiff );
+    Logger.print( "  W Diff: " );
+    Logger.print( wantedDiff );
     
-    Serial.print( "  Perc: " );
-    Serial.print( perc );
+    Logger.print( "  Perc: " );
+    Logger.print( perc );
   
-    Serial.print( "  Delta: " );
-    Serial.print( currentDelta );
+    Logger.print( "  Delta: " );
+    Logger.print( currentDelta );
 }
   
   float base = 128;
@@ -316,27 +320,27 @@ if(DEBUG_pid){
   base = constrain( base, 0, 256 );
 
 if(DEBUG_pid){
-  Serial.print("  Base: ");
-  Serial.print( base );
-  // Serial.print( " -> " );
+  Logger.print("  Base: ");
+  Logger.print( base );
+  // Logger.print( " -> " );
 }
   
   duty = base + ( 172 * perc ); // 172?
 
 if(DEBUG_pid){
-  Serial.print("  Duty: ");
-  Serial.print( duty );
-  Serial.print( " -> " );
-  Serial.println("");
+  Logger.print("  Duty: ");
+  Logger.print( duty );
+  Logger.print( " -> " );
+  Logger.println("");
 }
 
   // if(duty<0)duty = 0;
   duty = constrain( duty, 0, 256 );
 
   // override for full blast at start
-  // Serial.println("startFullBlast");
-  // Serial.println(timeX);
-  // Serial.println(CurrentGraph().reflowGraphX[1]);
+  // Logger.println("startFullBlast");
+  // Logger.println(timeX);
+  // Logger.println(CurrentGraph().reflowGraphX[1]);
   // if ( set.startFullBlast && (timeX < CurrentGraph().reflowGraphX[1]) ) duty = 256;
   // if ( set.startFullBlast && timeX < CurrentGraph().reflowGraphX[1] && currentTemp < wantedTemp ) duty = 256;
   setSSR( duty );

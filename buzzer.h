@@ -127,11 +127,14 @@ void playBlurpA(){
 }
 
 void chime(){
-  playBlurpA();
+  blurp4();
 }
 
-void alarm(){
-  blurp4();
+void soundalarm(){
+  for(int i=0; i<6; i++){
+    blurp6();
+    delay(50);
+  }
 }
 
 #else
