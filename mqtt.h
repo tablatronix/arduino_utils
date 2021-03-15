@@ -123,6 +123,7 @@ void init_MQTT(String clientid){
 #ifdef USEJSON
 
 void MQTT_pub(String topic, String sensor, String value){
+    #ifdef debug_mqtt
     Logger.print("[MQTT] Publish: ");
     Logger.print(sensor);
     Logger.print(" ");
@@ -131,7 +132,7 @@ void MQTT_pub(String topic, String sensor, String value){
       Logger.println("[ERROR] MQTT value is empty");
       return;
     }
-
+    #endif
     // JsonArray data = payload.createNestedArray(topic);
     payload["topic"] = topic;
     payload["clientid"] = clientID;
@@ -152,6 +153,7 @@ void MQTT_pub(String topic, String sensor, String value){
 }
 
 void MQTT_pub(String topic, String sensor, String value, bool json){
+    #ifdef debug_mqtt
     Logger.print("[MQTT] Publish: ");
     Logger.print(sensor);
     Logger.print(" ");
@@ -160,10 +162,11 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
       Logger.println("[ERROR] MQTT value is empty");
       return;
     }
+    #endif
     JsonArray data = payload.createNestedArray(topic);
-    payload["topic"] = data;
+    payload["topic"] = data; // tag key = tag value
     payload["clientid"] = clientID;
-    payload["type"] = sensor;
+    payload["type"] = sensor; // field key = field value
     payload["value"] = value.toFloat();
     // payload["unit"] = "";
     if(debug_mqtt) serializeJson(payload, Serial);
@@ -196,7 +199,9 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
 }
 
 void MQTT_pub_send(String topic){
-  Logger.println("[MQTT] sending json");
+  #ifdef debug_mqtt
+  Logger.println("[MQTT] sending json for topic " + topic);
+  #endif
   // serializeJson(jsondata, Logger);
   // rootdoc.createNestedObject();
   // rootdoc.add(pubjson);

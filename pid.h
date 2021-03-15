@@ -23,7 +23,7 @@
 // 1468.5591
 // da fuq?
 
-uint16_t fullPowerPeriod = 10000; // full power startup pulse period
+uint16_t fullPowerPeriod = 8000; // full power startup pulse period
 bool fullPowerStartup = true; // enable full power period
 
 bool pidEnabled        = false;
@@ -41,7 +41,7 @@ bool DEBUG_pid       = true;
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
 
-float integatorReset = 0.75; // when to reset Ki
+float integatorReset = 0.75; // when to reset Ki percent of delta 75%
 
 // profiling open
 // pulse 100% @ 23C
