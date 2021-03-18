@@ -32,7 +32,8 @@ void MQTTreconnect() {
 
   // Loop until we're reconnected
   // this is blocking
-  while (!client.connected()) {
+  if (!client.connected()) {
+  // while (!client.connected()) {
     Logger.println("[MQTT] Connecting...");
     // Attempt to connect
     if (client.connect(clientID.c_str())) {
@@ -100,11 +101,13 @@ void process_MQTT_nb(){
 }
 
 void process_MQTT(){
+  if(!wifiIsConnected()) return;
   MQTTreconnect();
   client.loop(); // will wait loop reconnect to mqtt
 }
 
 void init_MQTT(){
+  if(!wifiIsConnected()) return;
   client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
   if (client.connect(clientID.c_str())) Logger.println("[MQTT] connected");
@@ -123,6 +126,10 @@ void init_MQTT(String clientid){
 #ifdef USEJSON
 
 void MQTT_pub(String topic, String sensor, String value){
+    if(!wifiIsConnected()){
+      // Logger.print("[MQTT] OFFLINE: ");
+      return;
+    }
     #ifdef debug_mqtt
     Logger.print("[MQTT] Publish: ");
     Logger.print(sensor);
@@ -249,5 +256,16 @@ void MQTT_pub(String topic, String sensor, String value){
     client.publish((topic+"/"+clientID+"/"+sensor).c_str(), value.c_str());
 }
 #endif
+
+void MQTT_pub_device(){
+  MQTT_pub("device","rssi",(String)getRSSIasQuality());
+  #ifdef ESP32
+  MQTT_pub("device","hall",(String)hallRead());
+  MQTT_pub("device","temp",(String)temperatureRead());
+  MQTT_pub("device","adc_1",(String)analogRead(39));
+  #endif
+  MQTT_pub("device","uptime_s",(String)(millis()/1000));  
+  MQTT_pub_send("device");
+}
 
 #endif
