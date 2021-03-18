@@ -27,6 +27,9 @@ Average<float> avg_a(10);
 #include <log.h>
 
 // I2C
+
+#define MPU6050   // MPU 6050 GY521 3axis gyro/accel
+
 #define USESHT31 // SHT31  Temp/Humidity
 // #define USESHT21 // SHT21 / HTU21D Temp/Humidity
 // #define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
@@ -78,6 +81,13 @@ Interface: I2C
 #include <Genv_asset.h>
 
 void init_env(){
+  bool ret = false;
+  ret = env.begin();
+  if(!ret){
+    Logger.println("[ERROR] xxxxxx init failed");
+  }
+  else Logger.println("[ENV] xxxxx initialized!");
+  return ret;  
 }
 
 void print_env(){
@@ -92,7 +102,7 @@ float get_env(uint8_t channel = 0){
 #endif
 */
 
-/*
+/*****************************************
 #ifdef ENV_TEMPLATE
 #include <Genv_asset.h>
 
@@ -109,7 +119,86 @@ float get_env(uint8_t channel = 0){
   if(channel == 2) return ;
 
 #endif
-*/
+*********************************************/
+
+#ifdef MPU6050
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+
+Adafruit_MPU6050 mpu;
+
+bool init_mpu6050(){
+  bool ret = false;
+  ret = mpu.begin();
+
+  // mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
+  // mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  // mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
+  
+  // mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  // mpu.setGyroRange(MPU6050_RANGE_1000_DEG);
+  // mpu.setGyroRange(MPU6050_RANGE_2000_DEG);
+
+  // mpu.setFilterBandwidth(MPU6050_BAND_260_HZ);
+  // mpu.setFilterBandwidth(MPU6050_BAND_184_HZ);
+  // mpu.setFilterBandwidth(MPU6050_BAND_94_HZ);
+  // mpu.setFilterBandwidth(MPU6050_BAND_44_HZ);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  // mpu.setFilterBandwidth(MPU6050_BAND_10_HZ);
+  // mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
+
+
+  if(!ret){
+    Logger.println("[ERROR] MPU6050 init failed");
+  }
+  else Logger.println("[ENV] MPU6050 gyro/accel initialized!");
+  return ret;  
+}
+
+void print_mpu6050(){
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+
+  /* Print out the values */
+  Logger.print("Acceleration X: ");
+  Logger.print(a.acceleration.x);
+  Logger.print(", Y: ");
+  Logger.print(a.acceleration.y);
+  Logger.print(", Z: ");
+  Logger.print(a.acceleration.z);
+  Logger.println(" m/s^2");
+
+  Logger.print("Rotation X: ");
+  Logger.print(g.gyro.x);
+  Logger.print(", Y: ");
+  Logger.print(g.gyro.y);
+  Logger.print(", Z: ");
+  Logger.print(g.gyro.z);
+  Logger.println(" rad/s");
+
+  Logger.print("Temperature: ");
+  Logger.print(temp.temperature);
+  Logger.println(" degC");  
+}
+
+float get_mpu6050(uint8_t channel = 0){
+  print_mpu6050();
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);  
+  // accel m/s^2
+  if(channel == 0) return a.acceleration.x;
+  if(channel == 1) return a.acceleration.y;
+  if(channel == 2) return a.acceleration.z; 
+
+  // gyro rad/s
+  if(channel == 3) return g.gyro.x;
+  if(channel == 4) return g.gyro.y;
+  if(channel == 5) return g.gyro.z;
+}
+
+#endif
 
 #ifdef BH1750
 #include <hp_BH1750.h>  //inlude the library
