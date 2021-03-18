@@ -8,6 +8,7 @@
   #include <ESP8266mDNS.h>
   #define WIFI_getChipId() ESP.getChipId()
 #elif defined(ESP32)
+    #include <rom/rtc.h>
     #include <WiFi.h>
     #include <esp_wifi.h>
     #include <ESPmDNS.h>
@@ -161,7 +162,7 @@ void init_WiFi(int timeout){
     else {
       Serial.println("[WIFI] Connecting to wifi, waiting..... ");
       while(WiFi.waitForConnectResult() != WL_CONNECTED){
-        // Serial.print(".");
+        Serial.print(".");
         delay(100);
       }  
     }
@@ -346,7 +347,7 @@ String getResetReason(){
       return ESP.getResetReason();
     #elif defined(ESP32) && defined(_ROM_RTC_H_)
       // requires #include <rom/rtc.h>
-      p = FPSTR(HTTP_INFO_lastreset);
+      // String p = FPSTR(HTTP_INFO_lastreset);
       for(int i=0;i<2;i++){
         int reason = rtc_get_reset_reason(i);
         return (String)reason;
@@ -355,7 +356,7 @@ String getResetReason(){
         // }
       }
       #else 
-      return "";
+      return "UNSET";
     #endif
 }
 
