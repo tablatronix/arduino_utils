@@ -27,6 +27,7 @@ const char* syslog_appname;
 
 void init_syslog(const char* hostname){
   Serial.println("[LOG] syslog init");
+  Serial.println("[LOG] syslog devicename: " + (String)hostname);
   Serial.println("[LOG] syslog hostname: " + getHostname());
   Serial.println("[LOG] syslog appname: " + logTopic);
 
