@@ -4,6 +4,7 @@
 
 #define USESYSLOG
 #ifdef USESYSLOG
+#include <Syslog.h>
 #include <log_syslog.h>
 #endif
 
@@ -33,7 +34,7 @@ void sendToSyslog(String msg){
   if(msgb.indexOf("warning") != -1)  level = LOG_WARNING;
   if(msgb.indexOf("fatal")   != -1)  level = LOG_CRIT;
 
-  syslog.log(level,msg);
+  // syslog.log(level,msg);
   // todo clean up string, remove whitespace such as CR LF \t
   // reset buffer
   logbuffer[0] = (char)0;
