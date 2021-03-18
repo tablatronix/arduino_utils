@@ -139,6 +139,8 @@ void soundalarm(){
 
 #else
 
+#include <analogWrite.h>
+
 bool init_buzzer(){
   pinMode(BUZ_PIN,OUTPUT);
 }
