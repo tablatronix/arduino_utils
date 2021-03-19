@@ -19,7 +19,7 @@
 
 bool debug_wifi = false;
 
-long downtimeRestart = 300000;
+long downtimeRestart = 1*3600; // 5 minutes
 long downtime        = 0;
 
 
@@ -200,7 +200,14 @@ int getRSSIasQuality() {
 void checkWifi(){
   if(WiFi.status() != WL_CONNECTED  ){
     if(downtime == 0) downtime = millis();
-    if(millis() > downtime + downtimeRestart) ESP.restart();
+    if(millis() > downtime + downtimeRestart){
+      #ifdef USENEOIND
+        indSetColor(255,0,0);
+      #endif
+      Serial.println("[ERROR] wifi not found, rebooting after timeout");
+      delay(1000);
+      ESP.restart();
+    }  
     #ifdef USENEOIND
       indSetColor(255,0,0);
     #endif
@@ -263,50 +270,30 @@ void disableWiFi(){
     //   strcpy_P(buff, PSTR("Unknown"));
 
 
-// String ESP32GetResetReason(uint32_t cpu_no) {
-//   // tools\sdk\include\esp32\rom\rtc.h
-//   switch (rtc_get_reset_reason( (RESET_REASON) cpu_no)) {
-//     case POWERON_RESET          : return F("Vbat power on reset");                              // 1
-//     case SW_RESET               : return F("Software reset digital core");                      // 3
-//     case OWDT_RESET             : return F("Legacy watch dog reset digital core");              // 4
-//     case DEEPSLEEP_RESET        : return F("Deep Sleep reset digital core");                    // 5
-//     case SDIO_RESET             : return F("Reset by SLC module, reset digital core");          // 6
-//     case TG0WDT_SYS_RESET       : return F("Timer Group0 Watch dog reset digital core");        // 7
-//     case TG1WDT_SYS_RESET       : return F("Timer Group1 Watch dog reset digital core");        // 8
-//     case RTCWDT_SYS_RESET       : return F("RTC Watch dog Reset digital core");                 // 9
-//     case INTRUSION_RESET        : return F("Instrusion tested to reset CPU");                   // 10
-//     case TGWDT_CPU_RESET        : return F("Time Group reset CPU");                             // 11
-//     case SW_CPU_RESET           : return F("Software reset CPU");                               // 12
-//     case RTCWDT_CPU_RESET       : return F("RTC Watch dog Reset CPU");                          // 13
-//     case EXT_CPU_RESET          : return F("or APP CPU, reseted by PRO CPU");                   // 14
-//     case RTCWDT_BROWN_OUT_RESET : return F("Reset when the vdd voltage is not stable");         // 15
-//     case RTCWDT_RTC_RESET       : return F("RTC Watch dog reset digital core and rtc module");  // 16
-//     default                     : return F("NO_MEAN");                                          // 0
-//   }
-// }
+String ESP32GetResetReason(uint32_t cpu_no) {
+  // tools\sdk\include\esp32\rom\rtc.h
+  switch (rtc_get_reset_reason( (RESET_REASON) cpu_no)) {
+    case POWERON_RESET          : return F("Vbat power on reset");                              // 1
+    case SW_RESET               : return F("Software reset digital core");                      // 3
+    case OWDT_RESET             : return F("Legacy watch dog reset digital core");              // 4
+    case DEEPSLEEP_RESET        : return F("Deep Sleep reset digital core");                    // 5
+    case SDIO_RESET             : return F("Reset by SLC module, reset digital core");          // 6
+    case TG0WDT_SYS_RESET       : return F("Timer Group0 Watch dog reset digital core");        // 7
+    case TG1WDT_SYS_RESET       : return F("Timer Group1 Watch dog reset digital core");        // 8
+    case RTCWDT_SYS_RESET       : return F("RTC Watch dog Reset digital core");                 // 9
+    case INTRUSION_RESET        : return F("Instrusion tested to reset CPU");                   // 10
+    case TGWDT_CPU_RESET        : return F("Time Group reset CPU");                             // 11
+    case SW_CPU_RESET           : return F("Software reset CPU");                               // 12
+    case RTCWDT_CPU_RESET       : return F("RTC Watch dog Reset CPU");                          // 13
+    case EXT_CPU_RESET          : return F("or APP CPU, reseted by PRO CPU");                   // 14
+    case RTCWDT_BROWN_OUT_RESET : return F("Reset when the vdd voltage is not stable");         // 15
+    case RTCWDT_RTC_RESET       : return F("RTC Watch dog reset digital core and rtc module");  // 16
+    default                     : return F("NO_MEAN");                                          // 0
+  }
+}
 
-//   switch ( reason)
-//   {
-//     case 1 : Serial.println ("POWERON_RESET");break;          /**<1,  Vbat power on reset*/
-//     case 3 : Serial.println ("SW_RESET");break;               /**<3,  Software reset digital core*/
-//     case 4 : Serial.println ("OWDT_RESET");break;             /**<4,  Legacy watch dog reset digital core*/
-//     case 5 : Serial.println ("DEEPSLEEP_RESET");break;        /**<5,  Deep Sleep reset digital core*/
-//     case 6 : Serial.println ("SDIO_RESET");break;             /**<6,  Reset by SLC module, reset digital core*/
-//     case 7 : Serial.println ("TG0WDT_SYS_RESET");break;       /**<7,  Timer Group0 Watch dog reset digital core*/
-//     case 8 : Serial.println ("TG1WDT_SYS_RESET");break;       /**<8,  Timer Group1 Watch dog reset digital core*/
-//     case 9 : Serial.println ("RTCWDT_SYS_RESET");break;       /**<9,  RTC Watch dog Reset digital core*/
-//     case 10 : Serial.println ("INTRUSION_RESET");break;       /**<10, Instrusion tested to reset CPU*/
-//     case 11 : Serial.println ("TGWDT_CPU_RESET");break;       /**<11, Time Group reset CPU*/
-//     case 12 : Serial.println ("SW_CPU_RESET");break;          /**<12, Software reset CPU*/
-//     case 13 : Serial.println ("RTCWDT_CPU_RESET");break;      /**<13, RTC Watch dog Reset CPU*/
-//     case 14 : Serial.println ("EXT_CPU_RESET");break;         /**<14, for APP CPU, reseted by PRO CPU*/
-//     case 15 : Serial.println ("RTCWDT_BROWN_OUT_RESET");break;*<15, Reset when the vdd voltage is not stable
-//     case 16 : Serial.println ("RTCWDT_RTC_RESET");break;      /**<16, RTC Watch dog reset digital core and rtc module*/
-//     default : Serial.println ("NO_MEAN");
-//   }
-// }
 
-// void verbose_print_reset_reason(RESET_REASON reason)
+// void esp32_resetreason(RESET_REASON reason)
 // {
 //   switch ( reason)
 //   {
@@ -347,13 +334,9 @@ String getResetReason(){
       return ESP.getResetReason();
     #elif defined(ESP32) && defined(_ROM_RTC_H_)
       // requires #include <rom/rtc.h>
-      // String p = FPSTR(HTTP_INFO_lastreset);
       for(int i=0;i<2;i++){
-        int reason = rtc_get_reset_reason(i);
-        return (String)reason;
-        // switch (reason)
-        // {
-        // }
+        return ESP32GetResetReason(i);
+        // return (String)reason;
       }
       #else 
       return "UNSET";
