@@ -1,3 +1,6 @@
+#ifndef old_i2c_sh1106_h
+#define old_i2c_sh1106_h
+
 /*oled_i2c*/
 
 #include <log.h>
@@ -15,6 +18,101 @@
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
 #endif
+
+
+// const char WIFI_SYMBOL[] = { 93,94,123,168, 176, 247, 253, 263, 277,278,279,280,281, '\0'};
+#define GLYPH_BELL       93 // bell
+#define GLYPH_BT         94 // bt
+#define GLYPH_CLOCK     123 // clock
+#define GLYPH_FLAME     168 // flame
+#define GLYPH_CHART     176 // chart
+#define GLYPH_SIGNAL    253 // bell
+#define GLYPH_SPARK      96 // bell
+#define GLYPH_GEAR      129 // bell
+#define GLYPH_ALERT   0x118 // bell
+#define GLYPH_SPKOFF  0x117 // bell
+#define GLYPH_SPKHI   0x115 // bell
+#define GLYPH_SPKLO   0x116 // bell
+#define GLYPH_HASHF     177 // bell
+#define GLYPH_HASHM     178 // bell
+#define GLYPH_HASHC     179 // bell
+#define GLYPH_HDOTS     155 // bell
+#define GLYPH_HBAR      221 // bell
+#define GLYPH_CROSS     218 // bell
+#define GLYPH_CROSSB    234 // bell
+#define GLYPH_EKG       238 // bell
+#define GLYPH_WIFI    0x119 // bell
+#define GLYPH_WRENCH  0x120 // bell
+#define GLYPH_TARGET  0x107 // bell
+#define GLYPH_LISTINV 0x101 // bell
+#define GLYPH_STAR    0x102 // bell
+#define GLYPH_SUN     0x103 // bell
+#define GLYPH_STPWTCH  269  // bell
+#define GLYPH_TERM    0x109 // bell
+#define GLYPH_DEL     0x121 // bell
+#define GLYPH_GOOD      120 // bell
+#define GLYPH_BAD       121 // bell
+#define GLYPH_HEART     183 // bell
+#define GLYPH_HOUSE     184 // bell
+#define GLYPH_SQUARE    217 // bell
+#define GLYPH_SPACE     287 // bell
+#define GLYPH_NO         87 // busted
+
+// const char* testing = u8"\u0263\u0BA3\u0B82";
+
+// lcd.setFont(u8g2_font_open_iconic_embedded_1x_t);
+// lcd.setFont(u8g2_font_open_iconic_all_1x_t);
+// lcd.drawStr(0,y,WIFI_SYMBOL);
+// lcd.drawUTF8(0,y,testing);
+// lcd.drawGlyph(0,y, 93);    // bell
+// lcd.drawGlyph(10,y, 94);    // bluetooth
+// lcd.drawGlyph(20,y, 123);   // clock
+// lcd.drawGlyph(30,y, 168);   // flame
+// lcd.drawGlyph(40,y, 176);   // chart
+// lcd.drawGlyph(50,y, 253);   // signal
+// lcd.drawGlyph(60,y, 96);    // terminus
+// lcd.drawGlyph(70,y, 129);   // gear
+// lcd.drawGlyph(80,y, 0x118); // alert
+// lcd.drawGlyph(90,y, 0x117); // speaker off
+// lcd.drawGlyph(100,y, 0x115); // speaker high
+// lcd.drawGlyph(110,y, 0x116); // speaker med
+
+// lcd.drawGlyph(0,y, 177);   // hash fine
+// lcd.drawGlyph(10,y, 178);   // hash med
+// lcd.drawGlyph(20,y, 179);   // hash low
+// lcd.drawGlyph(30,y, 155);   // 3 dots
+// lcd.drawGlyph(40,y, 221);   // mid bar
+// lcd.drawGlyph(50,y, 218);   // cross
+// lcd.drawGlyph(60,y, 234);   // cross
+// lcd.drawGlyph(60,y, 238);   // heartbeat
+
+// lcd.drawGlyph(40,y,0x119); // wifi
+// lcd.drawGlyph(50,y,0x120); // wrench not working
+// lcd.drawGlyph(60,y,0x107); // target
+// lcd.drawGlyph(70,y,0x101); // list inverted
+// lcd.drawGlyph(80,y,0x102); // star
+// lcd.drawGlyph(90,y,0x103); // sunshine
+// lcd.drawGlyph(100,y,269);  // stopwatch
+// lcd.drawGlyph(110,y,0x109); // terminal
+// lcd.drawGlyph(120,y,0x121); // delete
+// 
+// 
+// lcd.drawGlyph(70,y, 120); // good
+// lcd.drawGlyph(80,y, 121); // bad
+// lcd.drawGlyph(90,y, 183); // heart
+// lcd.drawGlyph(100,y, 184); // house
+// lcd.drawGlyph(110,y, 217); // square
+// // lcd.drawGlyph(110,y, 287); // space
+
+// if(glyphanimstate==0){
+//   lcd.drawGlyph(120,y, 155); // 
+//   glyphanimstate = 1;
+// }
+// else{
+//   lcd.drawGlyph(120,y, 287); //
+//   glyphanimstate = 0;
+// }
+
 
 // https://github.com/olikraus/u8g2/wiki/fntlistall#24-pixel-height
 // U8g2 Font names
@@ -227,3 +325,5 @@ void oled_test(uint8_t num = 0){
   // lcd.setDrawColor(2);
   // lcd.drawBox(posx, (posy-lh)+pady, strw+(padx*2),lh); // x,y(POSITIVE GOING!),w,h
   // lcd.setDrawColor(1); // restore default
+
+  #endif
