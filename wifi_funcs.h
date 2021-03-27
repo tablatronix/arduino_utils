@@ -217,7 +217,7 @@ void checkWifi(){
     if(debug_wifi){
       Serial.println("[WIFI] WiFi is CONNECTED");
       Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
-    }  
+    }
     #ifdef USENEOIND
       indSetColor(0,255,0);
     #endif
@@ -269,7 +269,7 @@ void disableWiFi(){
     // } else {
     //   strcpy_P(buff, PSTR("Unknown"));
 
-
+#ifdef ESP32
 String ESP32GetResetReason(uint32_t cpu_no) {
   // tools\sdk\include\esp32\rom\rtc.h
   switch (rtc_get_reset_reason( (RESET_REASON) cpu_no)) {
@@ -291,7 +291,7 @@ String ESP32GetResetReason(uint32_t cpu_no) {
     default                     : return F("NO_MEAN");                                          // 0
   }
 }
-
+#endif
 
 // void esp32_resetreason(RESET_REASON reason)
 // {

@@ -1,12 +1,12 @@
 #ifndef creds_h
 #define creds_h
 
-String apikeya     = "";
-const char* SSID_B   = "";
-const char* PASS_B   = "";
+String apikeya     = "741F4992029440228F7B6B1F270728D4";
+const char* SSID_B   = "harlet";
+const char* PASS_B   = "turdtron";
 
-const char* SSID = "";
-const char* PASS = "";
+const char* SSID = "leela";
+const char* PASS = "Turdtr0n";
 
 const char* STASSID = SSID;
 const char* STAPSK  = PASS;
@@ -15,8 +15,8 @@ const char* ssid     = SSID;          // your network SSID (name)
 const char* password = PASS;
 
 // mqtt
-const char* mqtt_server_host = "";
-const char* mqtt_server_ip   = "";
+const char* mqtt_server_host = "zerbert.local";
+const char* mqtt_server_ip   = "192.168.100.17";
 const int mqtt_server_port =  1883;
 
 // syslog

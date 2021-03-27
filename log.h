@@ -14,6 +14,7 @@
 char logbuffer[256];
 int  logbufferidx = 0; // end char
 // might need a ring buffer here, so we can keep logging mutiple messages and send delayed
+bool syslogactive = true;
 
 void sendToSyslog(String msg){
   #ifdef USESYSLOG
@@ -33,8 +34,7 @@ void sendToSyslog(String msg){
   if(msgb.indexOf("error")   != -1)  level = LOG_ERR;
   if(msgb.indexOf("warning") != -1)  level = LOG_WARNING;
   if(msgb.indexOf("fatal")   != -1)  level = LOG_CRIT;
-
-  // syslog.log(level,msg);
+  if(syslogactive) syslog.log(level,msg); // SEND IT
   // todo clean up string, remove whitespace such as CR LF \t
   // reset buffer
   logbuffer[0] = (char)0;
