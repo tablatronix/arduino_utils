@@ -191,7 +191,7 @@ void init_PID(){
 
 void pidStart(){
   pidTimerStart = millis();
-  if(fullPowerStartup){
+  if((currentTemp<currentTempAvg) && fullPowerStartup){
     myPID.SetMode(MANUAL);
     Output = 250; // output never returns to normal !!!!
   }
