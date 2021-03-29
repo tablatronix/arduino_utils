@@ -17,11 +17,12 @@
 // HW cs       D8 15
 
 // #define MAXDO   5 // HWMISO
-#define MAXCS   16 // 2
+#define MAXCS   15 // 2
 #define MAXCLK  14 // HWSLK
-#define MAXMISO 4
-// Adafruit_MAX31855 tc(MAXCLK,MAXCS,MAXMISO);
-Adafruit_MAX31855 tc(14,15,12);
+#define MAXMISO 13
+Adafruit_MAX31855 tc(MAXCLK,MAXCS,MAXMISO);
+
+// Adafruit_MAX31855 tc(14,15,12);
 
 #ifdef TC2
 Adafruit_MAX31855 tcB(1);
