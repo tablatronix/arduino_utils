@@ -25,7 +25,7 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt = true;
+bool debug_mqtt = false;
 String clientID = "";
 
 void MQTTreconnect() {
@@ -221,7 +221,7 @@ void MQTT_pub_send(String topic){
 
   char message[2048];
   serializeJson(pubjson, message);
-  Serial.println((String)message);
+  // Serial.println((String)message);
   client.publish(topic.c_str(),message);
   delay(500);
   // pubjson.clear();
@@ -258,11 +258,12 @@ void MQTT_pub(String topic, String sensor, String value){
 #endif
 
 void MQTT_pub_device(){
+  Serial.println("[TASK] doMQTT Device");
   MQTT_pub("device","rssi",(String)getRSSIasQuality());
   #ifdef ESP32
-  MQTT_pub("device","hall",(String)hallRead());
+  // MQTT_pub("device","hall",(String)hallRead()); // USES PINS 36,39
   MQTT_pub("device","temp",(String)temperatureRead());
-  MQTT_pub("device","adc_1",(String)analogRead(39));
+  // MQTT_pub("device","adc_1",(String)analogRead(39));
   #endif
   MQTT_pub("device","uptime_s",(String)(millis()/1000));  
   MQTT_pub_send("device");
