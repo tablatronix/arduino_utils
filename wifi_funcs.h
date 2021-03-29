@@ -198,6 +198,7 @@ int getRSSIasQuality() {
 }
 
 void checkWifi(){
+  Serial.println("[TASK] checkWiFi");
   if(WiFi.status() != WL_CONNECTED  ){
     if(downtime == 0) downtime = millis();
     if(millis() > downtime + downtimeRestart){
