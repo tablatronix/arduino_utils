@@ -23,6 +23,7 @@ bool useInt = false; // use interrupts, via interruptPin
 
 bool encoderHasPress     = false;
 bool encoderHasHold      = false;
+bool debug_enc = false;
 
 volatile bool PCFInterruptFlag = false;
 
@@ -32,40 +33,43 @@ void encoderClear(){
   encoderHasChange = false;
 }
 
-void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
+void IRAM_ATTR onEncoderChange(int newValue) {
   // @todo always a false trigger on start
   // if(encoderLast < 0){
-  //   Logger.println("[ENC] init fired");
+  //   Serial.println("[ENC] init fired");
   //   encoderLast = newValue;
   //   encoderClear();
   //   return; // init
   // }
 
   if(_maximumEncoderValue > 0){
-    Logger.print("[ENCODER] change to ");
-    Logger.print(newValue);
-    Logger.print(" from ");
-    Logger.print(encoderLast);
-    if(encoderLast == newValue){
-      Logger.println("\n");
-      return;
+    if(debug_enc){
+      Serial.print("[ENCODER] change to ");
+      Serial.print(newValue);
+      Serial.print(" from ");
+      Serial.print(encoderLast);
+      if(encoderLast == newValue){
+        Serial.println("\n");
+        return;
+      }
     }
     bool dir = (encoderLast > newValue);
-    Logger.println(" dir: " + String(dir ? "CC" : "CW"));
+    if(debug_enc) Serial.println(" dir: " + String(dir ? "CC" : "CW"));
     encoderStale = encoderLast;
     encoderLast  = newValue;
     encoderHasChange = true;
   }
   else{
     if(newValue == 0){
-      Logger.print("[ENCODER] no change");
+      if(debug_enc) Serial.print("[ENCODER] no change");
       return;
     }
-    Logger.print("[ENCODER] change by ");
-    Logger.print(newValue);
+    if(debug_enc){
+      Serial.print("[ENCODER] change by ");
+      Serial.print(newValue);
+    }
     bool dir = (newValue == 1);
-    Logger.println(" dir: " + String(dir ? "CW" : "CC")); // for plotting use 10,20 etc
-    
+    if(debug_enc) Serial.println(" dir: " + String(dir ? "CW" : "CC")); // for plotting use 10,20 etc
     encoderStale = encoderLast;
     encoderLast  = newValue;
     encoderHasChange = true;
@@ -73,8 +77,8 @@ void ICACHE_RAM_ATTR onEncoderChange(int newValue) {
 }
 
 void ICACHE_RAM_ATTR onEncoderSWPressed(uint8_t pin, bool heldDown) {
-  Logger.print("[ENCODER] Button ");
-  Logger.println(heldDown ? "Held" : "Pressed");
+  Serial.print("[ENCODER] Button ");
+  Serial.println(heldDown ? "Held" : "Pressed");
   encoderHasPress = true;
   encoderHasHold = heldDown;
 }
@@ -142,10 +146,10 @@ void checkAnalogSW(uint8_t pin, uint16_t value,uint32_t hold){
   // IoAbstractionRef iodev = switches.getIoAbstraction();
   // iodev->pinDirection(7,OUTPUT);
   // bool res = iodev->runLoop();
-  // if(res!=1) Logger.println("devsync: " + (String)res);
+  // if(res!=1) Serial.println("devsync: " + (String)res);
   // taskManager.runLoop();
   // if(!res){
-  //   Logger.println("error");
+  //   Serial.println("error");
   //   delay(500);
   // }
 #endif
