@@ -1,9 +1,12 @@
 #ifndef buzzer_h
 #define buzzer_h
 
+int BUZZ_VOLUME = 100;
+int buzzer_pin = -1;
+
 #ifdef ESP8266
 
-#include <ESP8266_Tones.h>
+#include <ESP8266_Tones.h> // https://github.com/Mottramlabs/ESP8266-Tone-Generator
 #include <Tone_Pitches.h>
 ESP8266_Tones BUZZER_TONE(BUZ_PIN);
 char szBuf[128]; // serial buffer seems to be only 128 bytes on ESP, only 64 on ATmega
@@ -11,7 +14,6 @@ char szBuf[128]; // serial buffer seems to be only 128 bytes on ESP, only 64 on 
 #include <MmlMusicPWM.h> // requires #include <MmlBUZZER_MUSIC.h>
 // define the pin used and initialize a MusicEngine object
 MmlMusicPWM BUZZER_MUSIC(BUZ_PIN);
-int BUZZ_VOLUME = 100;
 
 bool init_buzzer(){
 	pinMode(BUZ_PIN,OUTPUT);
@@ -139,26 +141,83 @@ void soundalarm(){
 
 #else
 
+#include <Tone32.h>
+#define BUZ_CHAN 0
+
+void Chirp() {
+  tone(BUZ_PIN, NOTE_A7, 10); // F6
+  tone(BUZ_PIN, NOTE_C8, 20); // F5
+  noTone(BUZ_PIN, BUZ_CHAN);  
+} // End of beep
+
+void Bleep() {
+  tone(BUZ_PIN, NOTE_C7, 50, BUZ_CHAN); // F6
+  tone(BUZ_PIN, NOTE_C8, 100, BUZ_CHAN); // F5
+} // End of beep
+
+void Tone_Down() {
+  tone(BUZ_PIN, NOTE_F6, 200, BUZ_CHAN); // F6
+  tone(BUZ_PIN, NOTE_F5, 200, BUZ_CHAN); // F5
+  tone(BUZ_PIN, NOTE_C6, 200, BUZ_CHAN); // C6
+} // End of beep
+
+void Tone_Up() {
+  tone(BUZ_PIN, NOTE_C6, 200, BUZ_CHAN); // C6
+  tone(BUZ_PIN, NOTE_F5, 200, BUZ_CHAN); // F5
+  tone(BUZ_PIN, NOTE_F6, 200, BUZ_CHAN); // F6
+} // End of beep
+
+void buzzer_test() {
+  Chirp();
+  delay(500);
+  Bleep();
+  delay(500);
+  Tone_Down();
+  delay(500);
+  Tone_Up();
+  delay(500);
+
+  tone(BUZ_PIN, NOTE_C4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+  tone(BUZ_PIN, NOTE_D4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+  tone(BUZ_PIN, NOTE_E4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+  tone(BUZ_PIN, NOTE_F4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+  tone(BUZ_PIN, NOTE_G4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+  tone(BUZ_PIN, NOTE_A4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+  tone(BUZ_PIN, NOTE_B4, 500, BUZ_CHAN);
+  noTone(BUZ_PIN, BUZ_CHAN);
+}
+
 #include <analogWrite.h>
 
+bool init_buzzer(int pin){
+  buzzer_pin = pin;
+  pinMode(buzzer_pin,OUTPUT);
+}
+
 bool init_buzzer(){
-  pinMode(BUZ_PIN,OUTPUT);
+  init_buzzer(BUZ_PIN);
 }
 
 bool chime(){
-  analogWrite(BUZ_PIN,500);
+  analogWrite(buzzer_pin,500);
   delay(100);
-  analogWrite(BUZ_PIN,500);
+  analogWrite(buzzer_pin,500);
   delay(100);
-  analogWrite(BUZ_PIN,0);
+  analogWrite(buzzer_pin,0);
 }
 
 bool soundalarm(){
-  analogWrite(BUZ_PIN,500);
+  analogWrite(buzzer_pin,500);
   delay(100);
-  analogWrite(BUZ_PIN,500);
+  analogWrite(buzzer_pin,500);
   delay(100);
-  analogWrite(BUZ_PIN,0);
+  analogWrite(buzzer_pin,0);
 }
 
 #endif
