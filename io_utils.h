@@ -147,4 +147,45 @@ Logger.println(analogRead(33));
 }
 #endif
 
+
+// //ISR test
+// struct Button {
+//     const uint8_t PIN;
+//     uint32_t numberKeyPresses;
+//     bool pressed;
+// };
+
+// Button button1 = {36, 0, false};
+// Button button2 = {32, 0, false};
+
+// void isr_begin(){
+//   pinMode(button1.PIN, INPUT_PULLUP);
+//   attachInterruptArg(button1.PIN, isr, &button1, FALLING);
+//   pinMode(button2.PIN, INPUT_PULLUP);
+//   attachInterrupt(button2.PIN, isr, FALLING);
+// }
+
+// void IRAM_ATTR isr_test_a(void* arg) {
+//     Button* s = static_cast<Button*>(arg);
+//     s->numberKeyPresses += 1;
+//     s->pressed = true;
+// }
+
+// void IRAM_ATTR isr_test_b() {
+//     button2.numberKeyPresses += 1;
+//     button2.pressed = true;
+// }
+
+// void process_isr_test(){
+//   if (button1.pressed) {
+//       Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
+//       button1.pressed = false;
+//   }
+//   // Serial.print(digitalRead(ENC_PINA));
+//   // Serial.print(digitalRead(ENC_PINB));
+//   // Serial.print(digitalRead(ENC_SW));
+//   // Serial.println(" <- ENC");
+// }
+
+
 #endif
