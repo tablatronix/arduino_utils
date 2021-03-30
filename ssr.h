@@ -16,17 +16,22 @@ bool DEBUG_ssr = false;
 
 bool ssrDisabled = true; // safety ON
 float currentDuty = 0; // ssrpower
-bool invertDuty = true; // invert logic vcc range
+bool invertDuty = true; // invert duty logic vcc range
 bool invertLOW  = false;  // Drive SSR with VCC
 
 int _ssrRelayPin = -1;
 
 void ssr_off(){
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,!invertLOW ? HIGH : LOW);
+  if(_ssrRelayPin >= 0){
+    Logger.println("[SSR] off");
+    digitalWrite(_ssrRelayPin, invertLOW ? LOW : HIGH); // @todo esp32 issue? must do analogwrite first
+    // analogWrite( _ssrRelayPin, 255);
+  }
 }
 
 void ssr_on(){
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin,!invertLOW ? LOW : HIGH);
+  Logger.println("[SSR] on");
+  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin, invertLOW ? HIGH : LOW);
 }
 
 void ssr_init(uint16_t pin){
@@ -74,7 +79,7 @@ void SetSSRFrequency( int duty,int power =1)
 
   if(duty!=currentDuty){
     // if(DEBUG_ssr) Logger.println("[SSR] " + (String)duty);
-    if(duty<1 && DEBUG_ssr) Logger.println("[SSR]: OFF");
+    if(duty<1 && DEBUG_ssr) Logger.println("[SSR]: duty OFF - " + (String)out);
     else{
       if(DEBUG_ssr) Logger.print("[SSR] ON");
       if(DEBUG_ssr) Logger.println( " - duty: " + (String)duty + " " + String( ( duty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );

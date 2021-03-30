@@ -169,6 +169,7 @@ void Tone_Up() {
 
 void buzzer_test() {
   Chirp();
+  return;
   delay(500);
   Bleep();
   delay(500);
@@ -177,20 +178,20 @@ void buzzer_test() {
   Tone_Up();
   delay(500);
 
-  tone(BUZ_PIN, NOTE_C4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
-  tone(BUZ_PIN, NOTE_D4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
-  tone(BUZ_PIN, NOTE_E4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
-  tone(BUZ_PIN, NOTE_F4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
-  tone(BUZ_PIN, NOTE_G4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
-  tone(BUZ_PIN, NOTE_A4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
-  tone(BUZ_PIN, NOTE_B4, 500, BUZ_CHAN);
-  noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_C4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_D4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_E4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_F4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_G4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_A4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
+  // tone(BUZ_PIN, NOTE_B4, 500, BUZ_CHAN);
+  // noTone(BUZ_PIN, BUZ_CHAN);
 }
 
 #include <analogWrite.h>
@@ -213,11 +214,12 @@ bool chime(){
 }
 
 bool soundalarm(){
-  analogWrite(buzzer_pin,500);
-  delay(100);
-  analogWrite(buzzer_pin,500);
-  delay(100);
-  analogWrite(buzzer_pin,0);
+  Bleep();
+  delay(500);
+  Bleep();
+  delay(500);
+  Bleep();
+  delay(500);
 }
 
 #endif
