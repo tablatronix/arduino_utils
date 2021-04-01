@@ -24,7 +24,7 @@
 // da fuq?
 
 uint16_t fullPowerPeriod = 8000; // full power startup pulse period
-bool fullPowerStartup = true; // enable full power period
+bool fullPowerStartup = true; // enable full power period if startup wanted temp is greater than 5 degrees(arb)
 
 bool pidEnabled        = false;
 int long pidTimerStart = 0;
@@ -191,7 +191,7 @@ void init_PID(){
 
 void pidStart(){
   pidTimerStart = millis();
-  if((currentTemp<currentTempAvg) && fullPowerStartup){
+  if((currentTemp-currentTempAvg>5) && fullPowerStartup){
     myPID.SetMode(MANUAL);
     Output = 250; // output never returns to normal !!!!
   }
@@ -225,6 +225,7 @@ void run_PID(){
   // Logger.print(Output);
   if(fullPowerStartup){
     if(millis()-pidTimerStart < fullPowerPeriod){
+      // handled on startup atm
     }
     else if(myPID.GetMode() == MANUAL){
       Output = 0;

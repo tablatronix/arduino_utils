@@ -13,39 +13,29 @@ bool DEBUG_ssr = true;
 #else
 bool DEBUG_ssr = false;
 #endif
-
+  
 bool ssrDisabled = true; // safety ON
 float currentDuty = 0; // ssrpower
-bool invertDuty = true; // invert duty logic vcc range
-bool invertLOW  = false;  // Drive SSR with VCC
+bool invertDuty = true; // invert duty logic vcc range, true for low side sinking, pwm is high pulse
+bool invertLOW  = !invertDuty;  // Drive SSR with VCC // invert logic for 2 state relay, this is usually opposite of invertDuty
 
 int _ssrRelayPin = -1;
 
-void ssr_off(){
-  if(_ssrRelayPin >= 0){
-    Logger.println("[SSR] off");
-    digitalWrite(_ssrRelayPin, invertLOW ? LOW : HIGH); // @todo esp32 issue? must do analogwrite first
-    // analogWrite( _ssrRelayPin, 255);
-  }
-}
-
-void ssr_on(){
-  Logger.println("[SSR] on");
-  if(_ssrRelayPin > 0) digitalWrite(_ssrRelayPin, invertLOW ? HIGH : LOW);
-}
-
 void ssr_init(uint16_t pin){
-  Logger.println("[SSR] ready on pin " + (String)_ssrRelayPin);
-  _ssrRelayPin = pin;
-  pinMode( _ssrRelayPin, OUTPUT );
-  delay(600);
-  ssr_off();
-
   #ifdef ESP8266
   analogWriteRange(255); // esp8266 
   // analogWriteFreq(120); // min 100hz
   #elif defined(ESP32)
-  #endif 
+  // analogWriteResolution(_ssrRelayPin, 8);
+  #endif
+
+  //ssr enable
+
+  Serial.println("[SSR] READY on pin " + (String)_ssrRelayPin);
+  _ssrRelayPin = pin;
+  // ssr_off();
+  digitalWrite(_ssrRelayPin, invertLOW ? LOW : HIGH);
+  pinMode( _ssrRelayPin, OUTPUT );
 }
 
 void ssr_init(){
@@ -55,6 +45,7 @@ void ssr_init(){
 // This is where the SSR is controlled via PWM
 void SetSSRFrequency( int duty,int power =1)
 {
+  if(duty!=currentDuty){
   // calculate the wanted duty based on settings power override
   duty = ((float)duty * power ); // power adjust
   duty = constrain( round_f( duty ), 0, 255); // round and clamp
@@ -69,23 +60,41 @@ void SetSSRFrequency( int duty,int power =1)
     #ifdef ESP8266
     analogWrite( _ssrRelayPin, out);
     #elif defined(ESP32)
+    Serial.println("[DAC] - " + (String)out);
     analogWrite( _ssrRelayPin, out);
     // dacWrite(_ssrRelayPin,out);
     #endif
     // if(duty == 0)ssr_off();
     // if(duty == 255)ssr_on();
   }
-  else ssr_off(); // ENFORCE SAFETY
+  // else ssr_off(); // ENFORCE SAFETY
 
-  if(duty!=currentDuty){
     // if(DEBUG_ssr) Logger.println("[SSR] " + (String)duty);
-    if(duty<1 && DEBUG_ssr) Logger.println("[SSR]: duty OFF - " + (String)out);
+    if(duty<1 && DEBUG_ssr) Logger.println("[SSR]: Duty OFF - " + (String)out);
     else{
-      if(DEBUG_ssr) Logger.print("[SSR] ON");
+      if(DEBUG_ssr) Logger.print("[SSR] Duty ON");
       if(DEBUG_ssr) Logger.println( " - duty: " + (String)duty + " " + String( ( duty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );
     }
   }
   currentDuty = duty;  
+}
+
+void ssr_off(){
+  if(_ssrRelayPin >= 0){
+    Logger.println("[SSR] OFF");
+    SetSSRFrequency(0); //working
+    analogWrite( _ssrRelayPin, invertDuty ? 255 : 0 ); // MUST use analogwrite if using shim lib
+    // digitalWrite(_ssrRelayPin, invertLOW ? LOW : HIGH); // @todo esp32 issue? must do analogwrite first
+  }
+}
+
+void ssr_on(){
+  if(_ssrRelayPin > 0) {
+    Logger.println("[SSR] ON");
+    SetSSRFrequency(255); // working
+    analogWrite( _ssrRelayPin, invertDuty ? 0: 255);
+    // digitalWrite(_ssrRelayPin, invertLOW ? HIGH : LOW);
+  }
 }
 
 void setSSR(int duty){
@@ -107,11 +116,27 @@ float getSSRPower(){
 }
 
 void ssr_resume(){
-  if(_ssrRelayPin > 0) setSSR(currentDuty);
+  Serial.println("[SSR] ssr_resume");
+  if(_ssrRelayPin >= 0) setSSR(currentDuty);
 }
 
 void disableSSR(bool disabled = true){
+  Serial.println("[SSR] disable ssr - " + (String)disabled);
+  setSSR(0);
+  ssr_off();
   ssrDisabled = disabled;
+  // init safe state, lockdown
+  pinMode(_ssrRelayPin,INPUT_PULLUP);
+}
+
+void enableSSR(bool disabled = true){
+  Serial.println("[SSR] disable ssr - " + (String)disabled);
+  setSSR(0);
+  ssr_off();
+  ssrDisabled = disabled;
+  // init safe state
+  pinMode(_ssrRelayPin,OUTPUT);
+  ssr_off();
 }
 
 void toggleSSR(){
@@ -154,21 +179,35 @@ void ssrTest(int speed){
 }
 
 void ssrPing(int speed){
-  
+  Serial.println("[SSR] PING");
+
+  ssrDisabled = false;
+  ssr_off();
+  ssr_off();
+
+  delay(500);
   ssr_on();
-  delay(1000);
+  delay(speed*3);
   ssr_off();
+  delay(speed*3);
+  ssr_on();
+  delay(speed*2);
+  ssr_off();
+  delay(speed*2);
+  ssr_on();
+  delay(speed);
 
-  for(int i=0;i<255;i+20){
-    SetSSRFrequency( i );
-    delay(100);
-  }
+  // for(int i=0;i<255;i+20){
+  //   SetSSRFrequency( i );
+  //   delay(100);
+  // }
 
-  for(int i=0;i<255;i+20){
-    SetSSRFrequency( 255-i );
-    delay(100);
-  }
+  // for(int i=0;i<255;i+20){
+  //   SetSSRFrequency( 255-i );
+  //   delay(100);
+  // }
 
   ssr_off();
+  ssrDisabled = true;
 }
 #endif
