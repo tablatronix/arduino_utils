@@ -204,13 +204,13 @@ void print_oled(String str,uint8_t size,bool flush){
 
 void init_oled(bool preamble,bool pinswap = false){
   Logger.println("[OLED] Initializing SSD1106 OLED");
-  Logger.println("[I2C] SDA: "+(String)SDA);
-  Logger.println("[I2C] SCL: "+(String)SCL);
+  Logger.println("[OLED] SDA: "+(String)SDA);
+  Logger.println("[OLED] SCL: "+(String)SCL);
   if(pinswap){
     Wire.begin(5,4);  // begin(sda, scl) SWAP!
-    Logger.println("[I2C] pinswapped");
-    Logger.println("[I2C] SDA: "+(String)SDA);
-    Logger.println("[I2C] SCL: "+(String)SCL);
+    Logger.println("[OLED] pinswapped");
+    Logger.println("[OLED] SDA: "+(String)SDA);
+    Logger.println("[OLED] SCL: "+(String)SCL);
   }
   // Wire.setClock(400000L);
   #ifdef ROT
