@@ -3,7 +3,7 @@
 
 #include <Average.h>
 
-Average<float> avg_a(10);
+Average<float> avg_a(20);
 
 // supported sensors
 // SHT31

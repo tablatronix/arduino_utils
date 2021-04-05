@@ -6,7 +6,6 @@
 // #include <analogWrite.h>
 // #endif
 
-#include <log.h>
 #include <buttons.h>
 #include <i2c_fans.h>
 

@@ -106,6 +106,7 @@ String getDeviecID(){
 }
 
 void setWiFiHostname(const char* hostname){
+  // @todo add string templ
   #ifdef ESP32
   WiFi.setHostname(hostname);
   #else
@@ -115,7 +116,7 @@ void setWiFiHostname(const char* hostname){
 
 String getHostname(){
   #ifdef ESP32
-  return WiFi.getHostname(); // getHostName ( @todo return string of c.str?)
+  return WiFi.getHostname(); // getHostName ( @todo return string or c.str?)
   #else
   return WiFi.hostname(); // getHostName
   #endif
@@ -140,6 +141,9 @@ void init_WiFi(int timeout){
     //   WiFi_print_sta();
     //   return;
     // }
+    
+    WiFi.printDiag(Serial);
+    Serial.println("[WIFI] mode STA");
     WiFi.mode(WIFI_STA);
     #ifdef ESP8266
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
@@ -150,8 +154,8 @@ void init_WiFi(int timeout){
 
     // WiFi.hostname(hostname);
     unsigned long start = millis();
-    if(wifiIsAutoConnect)  WiFi.begin();
-    else WiFi.begin(SSID,PASS);
+    // if(wifiIsAutoConnect)  WiFi.begin();
+    WiFi.begin(SSID,PASS);
     if(timeout > 0){
       Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
       while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
