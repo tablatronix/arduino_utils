@@ -26,7 +26,7 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 bool debug_mqtt = false;
-String clientID = "";
+const char* clientID = "";
 
 void MQTTreconnect() {
 
@@ -34,9 +34,9 @@ void MQTTreconnect() {
   // this is blocking
   if (!client.connected()) {
   // while (!client.connected()) {
-    Logger.println("[MQTT] Connecting...");
+    if(debug_mqtt) Logger.println("[MQTT] Connecting...");
     // Attempt to connect
-    if (client.connect(clientID.c_str())) {
+    if (client.connect(clientID)) {
       Logger.println("[MQTT] Connected");
       // Once connected, publish an announcement...
       client.publish("TESTOUT", "hello world");
@@ -44,8 +44,7 @@ void MQTTreconnect() {
       client.subscribe("TESTIN");
     } else {
       Logger.print("[ERROR] [MQTT] failed, rc=");
-      Logger.print(client.state());
-      Logger.println(" try again in 5 seconds");
+      Logger.println(client.state());
       // Wait 5 seconds before retrying
       // delay(5000);
     }
@@ -84,7 +83,7 @@ void mqtt_checkconn(){
       // Attempt to reconnect
       if (mqttReconnect()) {
         lastReconnectAttempt = 0;
-        client.connect(clientID.c_str());
+        client.connect(clientID);
       }
     }
   } else {
@@ -102,7 +101,7 @@ void process_MQTT_nb(){
 
 void process_MQTT(){
   if(!wifiIsConnected()) return;
-  MQTTreconnect();
+  MQTTreconnect(); // @todo throttle
   client.loop(); // will wait loop reconnect to mqtt
 }
 
@@ -110,7 +109,7 @@ void init_MQTT(){
   if(!wifiIsConnected()) return;
   client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
-  if (client.connect(clientID.c_str())) Logger.println("[MQTT] connected");
+  if (client.connect(clientID)) Logger.println("[MQTT] connected");
   client.setBufferSize(2048);
   client.subscribe("downstream");
   process_MQTT();
@@ -118,8 +117,13 @@ void init_MQTT(){
   // jsondata = pubjson.createNestedArray();
 }
 
-void init_MQTT(String clientid){
+void init_MQTT(const char* clientid){
   clientID = clientid; // global
+  init_MQTT();
+}
+
+void init_MQTT(String clientid){
+  clientID = clientid.c_str(); // global
   init_MQTT();
 }
 
