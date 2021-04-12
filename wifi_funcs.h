@@ -142,9 +142,9 @@ void init_WiFi(int timeout){
     //   return;
     // }
     
-    WiFi.printDiag(Serial);
     Serial.println("[WIFI] mode STA");
     WiFi.mode(WIFI_STA);
+    WiFi.printDiag(Serial);
     #ifdef ESP8266
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
     #elif defined(ESP32)

@@ -8,7 +8,7 @@ bool DEBUG_neohelp = false;
 #endif
 
 uint16_t NEOBRIGHTNESS = 100;
-int NEONUMPIXELS = 1;
+int NEONUMPIXELS = 5;
 #define NEOPIXELSTYPE NEO_GRB + NEO_KHZ800
 
 #include <Adafruit_NeoPixel.h>
@@ -345,6 +345,31 @@ void NEO_nb_animate(){
   if(millis() - NEO_lastUpdate > NEO_ANIMDELAY) NEO_nb_rainbow();
 }
 
+void rainbow(int wait) {
+  // Hue of first pixel runs 3 complete loops through the color wheel.
+  // Color wheel has a range of 65536 but it's OK if we roll over, so
+  // just count from 0 to 3*65536. Adding 256 to firstPixelHue each time
+  // means we'll make 3*65536/256 = 768 passes through this outer loop:
+  for(long firstPixelHue = 0; firstPixelHue < 3*65536; firstPixelHue += 256) {
+    // for(int i=0; i<ind.numPixels(); i++) { // For each pixel in ind...
+    //   // Offset pixel hue by an amount to make one full revolution of the
+    //   // color wheel (range of 65536) along the length of the strip
+    //   // (ind.numPixels() steps):
+    //   int pixelHue = firstPixelHue + (i * 65536L / ind.numPixels());
+    //   // ind.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
+    //   // optionally add saturation and value (brightness) (each 0 to 255).
+    //   // Here we're using just the single-argument hue variant. The result
+    //   // is passed through ind.gamma32() to provide 'truer' colors
+    //   // before assigning to each pixel:
+    //   ind.setPixelColor(i, ind.gamma32(ind.ColorHSV(pixelHue)));
+    // }
+    strip.fill(strip.gamma32(strip.ColorHSV(firstPixelHue)));
+
+    strip.show(); // Update strip with new contents
+    delay(wait);  // Pause for a moment
+  }
+}
+
 void demo(){
   int wait = 5000;
   int blank = 200;
@@ -367,6 +392,32 @@ void demo(){
   delay(blank);
   Serial.println("demo DONE");
 
+}
+
+void stripTest(){
+    bool quicktest = true;
+    int wait = quicktest ? 1 : 10;
+    strip.setBrightness(255); // full bright
+
+    setAllPixels(color(255,0,0));
+    delay(wait*100);
+    setAllPixels(color(0,255,0));
+    delay(wait*100);
+    setAllPixels(color(0,0,255));
+    delay(wait*100);
+    setAllPixels(color(0,0,0));
+    delay(200);
+
+    for(size_t i=0;i<10;i++){
+        setAllPixels(Wheel(random(255)));
+        delay(wait);
+    }
+    // indBlink(Wheel(random(255)),10,50);
+    rainbow(wait+5);
+
+    setAllPixels(color(0,0,0)); // set black
+    strip.setBrightness(NEOBRIGHTNESS); // set normal brightness
+    Serial.println("[STRIP] striptest complete");
 }
 
 #endif
