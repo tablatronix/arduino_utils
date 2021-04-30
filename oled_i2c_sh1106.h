@@ -19,6 +19,8 @@
 #include <Wire.h>
 #endif
 
+// Wire.begin(SDA,SCL);  
+// Wire.setClock(400000L);
 
 // const char WIFI_SYMBOL[] = { 93,94,123,168, 176, 247, 253, 263, 277,278,279,280,281, '\0'};
 #define GLYPH_BELL       93 // bell
@@ -57,6 +59,7 @@
 #define GLYPH_SQUARE    217 // bell
 #define GLYPH_SPACE     287 // bell
 #define GLYPH_NO         87 // busted
+#define GLYPH_COFFEE     2615 // busted
 
 // const char* testing = u8"\u0263\u0BA3\u0B82";
 
@@ -248,8 +251,8 @@ void init_oled(bool preamble,bool pinswap = false){
   lcd.println("Booting....");
   lcd.display();
   delay(1000);
-  lcd.clearDisplay();
-  lcd.display();
+  lcd.clearBuffer();
+  lcd.sendBuffer();
 }
 
 void displayFPS(){
@@ -301,20 +304,20 @@ int printValuePair(const char* str,String strb,int x,int y){
 void oled_test(uint8_t num = 0){
   // print_oled_line(msg, line, size);
   for(uint8_t i=0;i<num;i++){
-    lcd.clearDisplay();
+    lcd.clearBuffer();
     print_oled_line("millis",0);
     print_oled_line((String)millis(),1);
-    lcd.display();
+    lcd.sendBuffer();
     delay(1000);
     print_oled_line("Line One",0);
     print_oled_line("Line Two",1);
     print_oled_line("Line Three",2);
-    lcd.display();
+    lcd.sendBuffer();
     delay(1000);
-    lcd.clearDisplay();
+    lcd.clearBuffer();
     print_oled_line("Line One",0,2);  
     print_oled_line("Line Two",2);  
-    lcd.display();
+    lcd.sendBuffer();
   }
 }
 
