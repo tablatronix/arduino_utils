@@ -69,12 +69,24 @@ Lux Range: 188 uLux sensitivity, up to 88,000 Lux input measurements.
 Temperature range: -30 to 80 *C
 Voltage range: 3.3-5V into onboard regulator
 Interface: I2C
+
 */
+#define INA219  // INA219 current sense
+
+#define PCF8591 // PCF8591  
 
 // [I2C] Device found - ADDR: 0x23 // BH1750
 // [I2C] Device found - ADDR: 0x39 // APDS9960 / TSL2561
 // [I2C] Device found - ADDR: 0x5A // 
 // [I2C] Device found - ADDR: 0x76 // 
+
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x23 0x46
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x39 0x72
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x44 0x88
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x48 0x90
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x5A 0xB4
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x68 0xD0
+// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x76 0xEC
 
 /*
 #ifdef ENV_TEMPLATE
@@ -102,24 +114,121 @@ float get_env(uint8_t channel = 0){
 #endif
 */
 
-/*****************************************
-#ifdef ENV_TEMPLATE
-#include <Genv_asset.h>
+#ifdef PCF8591
+#include <Adafruit_PCF8591.h>
+// Make sure that this is set to the value in volts of VCC
+#define ADC_REFERENCE_VOLTAGE 5.0
+Adafruit_PCF8591 pcf = Adafruit_PCF8591();
 
-bool init_env(){
+bool init_PCF8591(){
+  bool ret = false;
+  ret = pcf.begin();
+  if(!ret){
+    Logger.println("[ERROR] PCF8591 init failed");
+    return false;
+  }
+  else Logger.println("[ENV] PCF8591 initialized!");
+  pcf.enableDAC(true);
+  return ret;  
 }
 
-void print_env(){
+float int_to_volts(uint16_t dac_value, uint8_t bits, float logic_level) {
+  return (((float)dac_value / ((1 << bits) - 1)) * logic_level);
 }
 
-float get_env(uint8_t channel = 0){
+void print_PCF8591(){
+  pcf.analogWrite(random(255));
+    // Make a triangle wave on the DAC output
+  // pcf.analogWrite(dac_counter++);
+  Logger.print((pcf.analogRead(0)));
+  Logger.print(", ");
+  Logger.print((pcf.analogRead(1)));
+  Logger.print(", ");
+  Logger.print((pcf.analogRead(2)));
+  Logger.print(", ");
+  Logger.print((pcf.analogRead(3)));
+  Logger.print("");
+  Logger.println("");
+
+  Logger.print(int_to_volts(pcf.analogRead(0), 8, ADC_REFERENCE_VOLTAGE));
+  Logger.print("V, ");
+  Logger.print(int_to_volts(pcf.analogRead(1), 8, ADC_REFERENCE_VOLTAGE));
+  Logger.print("V, ");
+  Logger.print(int_to_volts(pcf.analogRead(2), 8, ADC_REFERENCE_VOLTAGE));
+  Logger.print("V, ");
+  Logger.print(int_to_volts(pcf.analogRead(3), 8, ADC_REFERENCE_VOLTAGE));
+  Logger.print("V");
+  Logger.println("");  
+}
+
+
+float get_PCF8591(uint8_t channel = 0, bool volts=false){
   // print_env();
-  if(channel == 0) return ;
-  if(channel == 1) return ;
-  if(channel == 2) return ;
+  if(volts){
+    if(channel == 0) return int_to_volts(pcf.analogRead(0), 8, ADC_REFERENCE_VOLTAGE);
+    if(channel == 1) return int_to_volts(pcf.analogRead(1), 8, ADC_REFERENCE_VOLTAGE);
+    if(channel == 2) return int_to_volts(pcf.analogRead(2), 8, ADC_REFERENCE_VOLTAGE);
+    if(channel == 3) return int_to_volts(pcf.analogRead(3), 8, ADC_REFERENCE_VOLTAGE);
+  }
+  else {
+    if(channel == 0) return pcf.analogRead(0);
+    if(channel == 1) return pcf.analogRead(1);
+    if(channel == 2) return pcf.analogRead(2);
+    if(channel == 3) return pcf.analogRead(3);
+  }
+}
 
 #endif
-*********************************************/
+
+
+#ifdef INA219
+#include <Adafruit_INA219.h>
+
+Adafruit_INA219 ina219;
+
+bool init_INA219(){
+  bool ret = false;
+  ret = ina219.begin();
+  if(!ret){
+    Logger.println("[ERROR] INA219 init failed");
+  }
+  else Logger.println("[ENV] INA219 initialized!");
+  return ret;  
+}
+
+void print_INA219(){
+  float shuntvoltage = 0;
+  float busvoltage = 0;
+  float current_mA = 0;
+  float loadvoltage = 0;
+  float power_mW = 0;
+
+  shuntvoltage = ina219.getShuntVoltage_mV();
+  busvoltage = ina219.getBusVoltage_V();
+  current_mA = ina219.getCurrent_mA();
+  power_mW = ina219.getPower_mW();
+  loadvoltage = busvoltage + (shuntvoltage / 1000);
+  
+  Logger.print("Bus Voltage:   "); Logger.print(busvoltage); Logger.println(" V");
+  Logger.print("Shunt Voltage: "); Logger.print(shuntvoltage); Logger.println(" mV");
+  Logger.print("Load Voltage:  "); Logger.print(loadvoltage); Logger.println(" V");
+  Logger.print("Current:       "); Logger.print(current_mA); Logger.println(" mA");
+  Logger.print("Power:         "); Logger.print(power_mW); Logger.println(" mW");
+  Logger.println("");  
+}
+
+float get_INA219(uint8_t channel = 0){
+  print_INA219();
+  float shuntvoltage = ina219.getShuntVoltage_mV();
+  float busvoltage = ina219.getBusVoltage_V();
+  if(channel == 0) return shuntvoltage;
+  if(channel == 1) return busvoltage;
+  if(channel == 2) return ina219.getCurrent_mA();
+  if(channel == 3) return ina219.getPower_mW();
+  if(channel == 4) return busvoltage + (shuntvoltage / 1000);
+}
+#endif
+
 
 #ifdef MPU6050
 #include <Adafruit_MPU6050.h>
