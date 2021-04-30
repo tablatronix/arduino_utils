@@ -43,7 +43,7 @@ void MQTTreconnect() {
       // ... and resubscribe
       client.subscribe("TESTIN");
     } else {
-      Logger.print("[ERROR] [MQTT] failed, rc=");
+      Logger.print("[ERROR] [MQTT] failed, rc="); // @todo we get here but no actual reconnnect loop, why?
       Logger.println(client.state());
       // Wait 5 seconds before retrying
       // delay(5000);

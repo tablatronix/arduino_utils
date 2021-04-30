@@ -20,7 +20,9 @@ uint lastprogress = 0; // micros timestamp
 uint progressthrottle = 0;// progress serial throttle, should make ota faster
 
 void handleOTA(){
-  // MDNS.update(); // handled by ota, not required
+  #ifdef ESP8266
+  MDNS.update(); // handled by ota, not required
+  #endif
   ArduinoOTA.handle();
 }
 

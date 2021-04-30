@@ -327,7 +327,7 @@ void flasherSmooth(uint32_t colorA, uint32_t colorB,int waitA, int waitB){
 }
 
 unsigned long NEO_lastUpdate = 0 ; // for millis() when last update occoured
-uint32_t NEO_ANIMDELAY = 60;
+uint32_t NEO_ANIMDELAY = 10;
 
 void NEO_nb_rainbow() { // modified from Adafruit example to make it a state machine
   static uint16_t neo_j=128;
