@@ -218,7 +218,8 @@ void init_oled(bool preamble,bool pinswap = false){
   // Wire.setClock(400000L);
   #ifdef ROT
     lcd.setDisplayRotation(U8G2_R2);
-  #endif  
+  #endif
+  lcd.setBusClock(100000L);
   lcd.begin();
   // lcd.setI2CAddress(0x78);
   // if(!lcd.begin()) { // Address 0x3C for 128x32
@@ -256,9 +257,13 @@ void init_oled(bool preamble,bool pinswap = false){
 }
 
 void displayFPS(){
-    lcd.print((String)(1000000/((micros()-oledfpsmicros)/2)));
+  String str = (String)(1000000/((micros()-oledfpsmicros)/2));
+  lcd.clearBuffer();         // clear the internal memory
+  lcd.drawStr(0,10,String(str+ "fps").c_str()); 
+  // lcd.drawStr(60,px,String(micros()).c_str());  // write something to the internal memory
+  lcd.sendBuffer();
     // println(" FPS");
-    oledfpsmicros = micros();
+  oledfpsmicros = micros();
 }
 
 // void printInverted(const char* str){
