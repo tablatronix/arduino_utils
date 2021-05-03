@@ -6,7 +6,6 @@
 #include <ktypelinear.h>
 // #include <quickstats.h> // @todo test quickstats, add child class for container
 // #include <Statistics.h> // https://github.com/provideyourown/statistics
-#include <ntc_multi.h>
 #include <Average.h>
 #include <number_format.h>
 

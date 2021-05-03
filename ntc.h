@@ -12,7 +12,7 @@
  * https://en.wikipedia.org/wiki/Thermistor#Steinhart.E2.80.93Hart_equation * 
  *
  * See the example for more information. * 
- *
+ * 
  * Example of use with panStamp:
  * https://github.com/panStamp/panstamp/wiki/Temperature-measurement-with-cheap-NTC's
 */
@@ -27,7 +27,7 @@ int rt = 330000/V - 320000;
 
 // Thermistor object
 THERMISTOR thermistor(NTC_PIN,        // Analog pin
-                      10000,          // Nominal resistance at 25 ºC
+                      100000,          // Nominal resistance at 25 ºC
                       3950,           // thermistor's beta coefficient
                       10000);         // Value of the series resistor
 
@@ -49,6 +49,10 @@ float get_ntc(){
   return ntc_temp;
 }
 
+void calc_ntc(int value){
+  ntc_temp = thermistor.read(value);
+}
+
 /**
  * loop
  *
@@ -64,9 +68,9 @@ void read_ntc()
 }
 
 void printNTC(){
-  read_ntc();
+  // read_ntc();
   float tempf = (((ntc_temp/10)*1.8)+32);
-  Serial.println("[NTC]: " + (String)(get_ntc()/10) + "ºC " + tempf + "ºF");	
+  Logger.println("[NTC]: " + (String)(get_ntc()/10) + "ºC " + tempf + "ºF");	
 }
 
 #endif

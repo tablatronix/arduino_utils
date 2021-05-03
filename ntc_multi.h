@@ -1,5 +1,5 @@
-#ifndef ntc_h
-#define ntc_h
+#ifndef ntc_multi_h
+#define ntc_multi_h
 
 #include "thermistor.h"
 /** 
@@ -34,25 +34,30 @@ int rt = 330000/V - 320000;
 //                       3950,           // thermistor's beta coefficient
 //                       10000);         // Value of the series resistor
 
-uint16_t resist = 100000;
+uint16_t resist     = 100000;
 uint16_t ntcnominal = 100000;
-uint16_t betaco = 3950;
-bool lowside = true;
+uint16_t betaco     = 3950;
+
+// Does not properly compensate for non balanced reisstance
 
 #ifdef local_thermistor_h
+bool lowside = true;
 THERMISTOR ntc(NTC_PIN,ntcnominal,betaco,resist,lowside);
 THERMISTOR ntcB(NTC_BPIN,ntcnominal,betaco,resist,!lowside);
 THERMISTOR ntcC(NTC_CPIN,ntcnominal,betaco,resist,lowside);
+THERMISTOR ntcD(NTC_CPIN,ntcnominal,betaco,resist,lowside);
 #else
-THERMISTOR ntc(NTC_PIN,ntcnominal,betaco,resist);
+THERMISTOR  ntc(NTC_PIN ,ntcnominal,betaco,resist);
 THERMISTOR ntcB(NTC_BPIN,ntcnominal,betaco,resist);
 THERMISTOR ntcC(NTC_CPIN,ntcnominal,betaco,resist);
+THERMISTOR ntcD(NTC_CPIN,ntcnominal,betaco,resist);
 #endif
 
 // Global temperature reading
 float ntc_temp;
 float ntc_temp_b;
 float ntc_temp_c;
+float ntc_temp_d;
 
 /**
  * setup
@@ -75,6 +80,11 @@ float get_ntc_B(){
 float get_ntc_C(){
   return ntc_temp_c;
 }
+
+float get_ntc_D(){
+  return ntc_temp_d;
+}
+
 /**
  * loop
  *
@@ -85,6 +95,7 @@ void read_ntc()
   ntc_temp = ntc.read();   // Read temperature
   ntc_temp_b = ntcB.read();
   ntc_temp_c = ntcC.read();
+  ntc_temp_d = ntcD.read();
   // Serial.print("Temp in 1/10 ºC : ");
   // Serial.println(ntc_temp);
   // Serial.print("Temp in ºF : ");
@@ -92,9 +103,33 @@ void read_ntc()
 }
 
 void printNTC(){
-  read_ntc();
-  float tempf = (((ntc_temp/10)*1.8)+32);
-  Serial.println("[NTC]: " + (String)(get_ntc()/10) + "ºC " + tempf + "ºF");	
+  // read_ntc();
+  float tempf;
+  tempf = (((ntc_temp/10)*1.8)+32);
+  Serial.println("[NTC]: " + (String)(get_ntc()/10) + "ºC " + tempf + "ºF");
+  
+  tempf = (((ntc_temp_b/10)*1.8)+32);
+  Serial.println("[NTC]: " + (String)(get_ntc_B()/10) + "ºC " + tempf + "ºF");  
+  
+  tempf = (((ntc_temp_c/10)*1.8)+32);
+  Serial.println("[NTC]: " + (String)(get_ntc_C()/10) + "ºC " + tempf + "ºF");  
+  
+  tempf = (((ntc_temp_d/10)*1.8)+32);
+  Serial.println("[NTC]: " + (String)(get_ntc_D()/10) + "ºC " + tempf + "ºF");
+}
+
+
+void calc_ntc(int value){
+  ntc_temp = ntc.read(value);
+}
+void calc_ntc_B(int value){
+  ntc_temp_b = ntcB.read(value);
+}
+void calc_ntc_C(int value){
+  ntc_temp_c = ntcC.read(value);
+}
+void calc_ntc_D(int value){
+  ntc_temp_d = ntcD.read(value);
 }
 
 #endif

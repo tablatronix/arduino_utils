@@ -116,6 +116,12 @@ float get_env(uint8_t channel = 0){
 
 #ifdef PCF8591
 #include <Adafruit_PCF8591.h>
+
+// TwoWire Wire_B = TwoWire();
+// Wire_B.setClock(100000);
+// Wire_B.setClockStretchLimit();
+// adafruit_i2c bool setSpeed(uint32_t desiredclk);
+
 // Make sure that this is set to the value in volts of VCC
 #define ADC_REFERENCE_VOLTAGE 5.0
 Adafruit_PCF8591 pcf = Adafruit_PCF8591();
@@ -136,33 +142,8 @@ float int_to_volts(uint16_t dac_value, uint8_t bits, float logic_level) {
   return (((float)dac_value / ((1 << bits) - 1)) * logic_level);
 }
 
-void print_PCF8591(){
-  pcf.analogWrite(random(255));
-    // Make a triangle wave on the DAC output
-  // pcf.analogWrite(dac_counter++);
-  Logger.print((pcf.analogRead(0)));
-  Logger.print(", ");
-  Logger.print((pcf.analogRead(1)));
-  Logger.print(", ");
-  Logger.print((pcf.analogRead(2)));
-  Logger.print(", ");
-  Logger.print((pcf.analogRead(3)));
-  Logger.print("");
-  Logger.println("");
-
-  Logger.print(int_to_volts(pcf.analogRead(0), 8, ADC_REFERENCE_VOLTAGE));
-  Logger.print("V, ");
-  Logger.print(int_to_volts(pcf.analogRead(1), 8, ADC_REFERENCE_VOLTAGE));
-  Logger.print("V, ");
-  Logger.print(int_to_volts(pcf.analogRead(2), 8, ADC_REFERENCE_VOLTAGE));
-  Logger.print("V, ");
-  Logger.print(int_to_volts(pcf.analogRead(3), 8, ADC_REFERENCE_VOLTAGE));
-  Logger.print("V");
-  Logger.println("");  
-}
-
-
 float get_PCF8591(uint8_t channel = 0, bool volts=false){
+  Wire.setClock(100000L);
   // print_env();
   if(volts){
     if(channel == 0) return int_to_volts(pcf.analogRead(0), 8, ADC_REFERENCE_VOLTAGE);
@@ -176,6 +157,19 @@ float get_PCF8591(uint8_t channel = 0, bool volts=false){
     if(channel == 2) return pcf.analogRead(2);
     if(channel == 3) return pcf.analogRead(3);
   }
+  Wire.setClock(400000L);
+}
+
+void print_PCF8591(){
+  pcf.analogWrite(random(128)+128);
+  for(int i=0;i<4;i++){
+    Logger.print(get_PCF8591(i));
+  }
+  Logger.println("");
+  for(int i=0;i<4;i++){
+    Logger.print(get_PCF8591(i,true));
+  }
+  Logger.println("");
 }
 
 #endif
@@ -293,7 +287,7 @@ void print_mpu6050(){
 }
 
 float get_mpu6050(uint8_t channel = 0){
-  print_mpu6050();
+  // print_mpu6050();
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);  
   // accel m/s^2
@@ -808,5 +802,7 @@ float getVoltage(){
   #endif  
 }
 #endif
+
+
 
 #endif
