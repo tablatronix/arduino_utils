@@ -41,7 +41,7 @@ void rainbowAccent(int wait) {
 
 void indAccentTest(){
     bool quicktest = true;
-    int wait = quicktest ? 5 : 50;
+    int wait = quicktest ? 5 : 100;
     ind.setBrightness(255); // full bright
 
     for(size_t i=0;i<20;i++){
