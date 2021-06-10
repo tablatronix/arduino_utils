@@ -124,7 +124,7 @@ void oled_test(uint8_t num = 0){
 }
 
 void displayFPS(){
-    lcd.print((String)(1000000/((micros()-fpsmicros)/2)));
+    lcd.print((String)(1000000/((micros()-oledfpsmicros)/2)));
     // println(" FPS");
     oledfpsmicros = micros();
 }
