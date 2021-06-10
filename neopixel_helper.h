@@ -394,8 +394,8 @@ void demo(){
 
 }
 
-void stripTest(){
-    bool quicktest = true;
+void stripTest(bool quicktest = true){
+    // bool quicktest = true;
     int wait = quicktest ? 1 : 10;
     strip.setBrightness(255); // full bright
 

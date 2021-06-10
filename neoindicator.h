@@ -200,8 +200,8 @@ void indClear(){
     }  
 }
 
-void indTest(){
-    bool quicktest = true;
+void indTest(bool quicktest = true){
+    // bool quicktest = true;
     int wait = quicktest ? 1 : 100;
     ind.setBrightness(255); // full bright
 
