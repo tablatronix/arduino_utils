@@ -25,7 +25,7 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt = false;
+bool debug_mqtt = true;
 const char* clientID = "";
 
 void MQTTreconnect() {
@@ -51,7 +51,6 @@ void MQTTreconnect() {
     delay(100);
   }
 }
-
 
 void MQTTcallback(char* topic, byte* payload, unsigned int length) {
   Logger.print("[MQTT] IN Message arrived [");
@@ -122,7 +121,7 @@ void init_MQTT(const char* clientid){
   init_MQTT();
 }
 
-void init_MQTT(String clientid){
+void init_MQTT(const String& clientid){
   clientID = clientid.c_str(); // global
   init_MQTT();
 }
@@ -132,18 +131,18 @@ void init_MQTT(String clientid){
 void MQTT_pub(String topic, String sensor, String value){
     if(!wifiIsConnected()){
       // Logger.print("[MQTT] OFFLINE: ");
-      return;
+      // return;
     }
-    #ifdef debug_mqtt
+    if(debug_mqtt){
     Logger.print("[MQTT] Publish: ");
     Logger.print(sensor);
     Logger.print(" ");
     Logger.println(value);
     if(value == "") {
-      Logger.println("[ERROR] MQTT value is empty");
-      return;
+        Logger.println("[ERROR] MQTT value is empty");
+        return;
+      }
     }
-    #endif
     // JsonArray data = payload.createNestedArray(topic);
     payload["topic"] = topic;
     payload["clientid"] = clientID;
@@ -164,16 +163,16 @@ void MQTT_pub(String topic, String sensor, String value){
 }
 
 void MQTT_pub(String topic, String sensor, String value, bool json){
-    #ifdef debug_mqtt
-    Logger.print("[MQTT] Publish: ");
-    Logger.print(sensor);
-    Logger.print(" ");
-    Logger.println(value);
-    if(value == "") {
-      Logger.println("[ERROR] MQTT value is empty");
-      return;
+    if(debug_mqtt){
+      Logger.print("[MQTT] Publish: ");
+      Logger.print(sensor);
+      Logger.print(" ");
+      Logger.println(value);
+      if(value == "") {
+        Logger.println("[ERROR] MQTT value is empty");
+        return;
+      }
     }
-    #endif
     JsonArray data = payload.createNestedArray(topic);
     payload["topic"] = data; // tag key = tag value
     payload["clientid"] = clientID;
@@ -210,9 +209,9 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
 }
 
 void MQTT_pub_send(String topic){
-  #ifdef debug_mqtt
-  Logger.println("[MQTT] sending json for topic " + topic);
-  #endif
+  if(debug_mqtt){
+    Serial.println("[MQTT] sending json for topic " + topic);
+  }
   // serializeJson(jsondata, Logger);
   // rootdoc.createNestedObject();
   // rootdoc.add(pubjson);
@@ -225,7 +224,10 @@ void MQTT_pub_send(String topic){
 
   char message[2048];
   serializeJson(pubjson, message);
-  // Serial.println((String)message);
+  if(debug_mqtt){  
+    Serial.println((String)message);
+    Serial.flush();
+  }
   client.publish(topic.c_str(),message);
   delay(500);
   // pubjson.clear();
@@ -261,6 +263,8 @@ void MQTT_pub(String topic, String sensor, String value){
 }
 #endif
 
+// todo 
+// add free heap
 void MQTT_pub_device(){
   Serial.println("[TASK] doMQTT Device");
   MQTT_pub("device","rssi",(String)getRSSIasQuality());
