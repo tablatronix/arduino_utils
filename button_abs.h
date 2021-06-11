@@ -21,6 +21,9 @@ int encoderLast   = -1; // prev value
 bool encoderHasChange = false; // flag enc change
 bool useInt = false; // use interrupts, via interruptPin
 
+long int encoderLastChange  = 0; // timestamp of last encoder change
+int encoderThrottleDuration = 500; // how long to defer loop for encoder waits
+
 bool encoderHasPress     = false;
 bool encoderHasHold      = false;
 bool debug_enc = false;
@@ -31,6 +34,7 @@ void encoderClear(){
   encoderHasPress = false;
   encoderHasHold  = false;
   encoderHasChange = false;
+  encoderLastChange = millis();
 }
 
 void IRAM_ATTR onEncoderChange(int newValue) {
