@@ -1,6 +1,9 @@
 #ifndef reflow_pid_h
 #define reflow_pid_h
 
+// remove all reflowoven methods, use for all SSR pid control generic
+//
+  
 #include "InterpolationLib.h"
 
 unsigned long stateStartMS = 0; // state start timers
@@ -11,7 +14,7 @@ int reflowGraphCounter = 0; // counter period for graphing graphInterval
 
 // temperature vars
 int hotTemp  = 70; // C burn temperature for HOT indication, 0=disable
-int coolTemp = 50; // C safe temperature for HOT indication, 0=disable
+int coolTemp = 48; // C safe temperature for HOT indication, 0=disable
 int lowTemp  = 30; // C of TC warmed than typical CJ
 int shutDownTemp = 210; // degrees C
 int fanTemp = lowTemp+5; // cooldown complete fan off low temp
