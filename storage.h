@@ -4,9 +4,6 @@
 #include <FS.h>
 #include <LittleFS.h>
 
-
-
-
 void listDir(const char * dirname) {
   Serial.printf("Listing directory: %s\n", dirname);
 

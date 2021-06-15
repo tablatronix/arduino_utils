@@ -5,7 +5,9 @@
 #define buttons_abs_h
 
 
-#include <IoAbstraction.h>
+#include <taskmanager.h> // davetcc/TaskManagerIO
+
+#include <IoAbstraction.h> // davetcc/ioabstraction
 #include <IoAbstractionWire.h>
 
 const int interruptPin = 3; // if motor.h stalldetect, Real interrupt for io expander USES SERIAL RX!!!
@@ -26,7 +28,7 @@ int encoderThrottleDuration = 500; // how long to defer loop for encoder waits
 
 bool encoderHasPress     = false;
 bool encoderHasHold      = false;
-bool debug_enc = false;
+bool debug_enc = true;
 
 volatile bool PCFInterruptFlag = false;
 
@@ -100,7 +102,7 @@ void setEncoderAccel(HWAccelerationMode accel){
 void init_encoder(int encoderAPin, int encoderBPin, int encoderSWPin,uint8_t addr=0){
 
   if(addr){
-    // First we set up the switches library, giving it the task manager and tell it where the pins are located
+    // First we set up the switches library, giving it the task  manager and tell it where the pins are located
     // We could also of chosen IO through an i2c device that supports interrupts.
     // the second parameter is a flag to use pull up switching, (true is pull up).
     if(useInt)switches.initialiseInterrupt(ioFrom8574(0x20, interruptPin), true);
@@ -127,7 +129,6 @@ void init_encoder(int encoderAPin, int encoderBPin, int encoderSWPin,uint8_t add
   
   // interrupt for any
   // taskManager.setInterruptCallback(onInterrupt);
-  
 
   // now we add the switches, we dont want the spinwheel button to repeat, so leave off the last parameter
   // which is the repeat interval (millis / 20 basically) Repeat button does repeat as we can see.

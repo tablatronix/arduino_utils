@@ -19,8 +19,8 @@ Syslog syslog(udpClient, SYSLOG_PROTO_IETF); // SYSLOG_PROTO_BSD
 String logTopic = "ESP";
 int iteration = 1;
 
-#define DEVICE_HOSTNAME "my-device"
-#define APP_NAME "my-app"
+#define DEVICE_HOSTNAME "unknown-device"
+#define APP_NAME "unkown-app"
 
 const char* syslog_hostname;
 const char* syslog_appname;

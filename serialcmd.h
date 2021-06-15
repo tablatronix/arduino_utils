@@ -2,9 +2,9 @@
 #define serialcmd_h
 
 #include <temp_logger.h>
-#include <motor.h>
-#include <ssr.h>
-#include <pid.h>
+#include <motor.h> // @todo remove
+#include <ssr.h>   // @todo remove
+#include <pid.h>   // @todo remove
 
 // HardwareSerial DebugOut = Serial;
 // HardwareSerial DebugOut(0);

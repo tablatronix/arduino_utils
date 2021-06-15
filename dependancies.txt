@@ -2,6 +2,34 @@ dependancies
 
 panstamp/thermistor
 MajenkoLibraries/Average
-ug82
+
 jackw01/PIDAutotuner
 luisllamasbinaburo/Arduino-Interpolation
+
+Chris--A/PrintEx (NI)
+bblanchon/ArduinoStreamUtils
+arcao/Syslog
+
+davetcc/taskmanagerio
+davetcc/ioabstraction
+
+
+ug82
+Adafruit_NeoPixel
+
+bblanchon/ArduinoJson
+knolleary/pubsubclient
+
+Mottramlabs/ESP8266-Tone-Generator
+<Tone_Pitches.h>
+<MmlMusicPWM.h> // requires #include <MmlBUZZER_MUSIC.h>
+
+<Adafruit_MCP4725.h>
+
+soligen2010/encoder
+
+"Adafruit_MAX31855.h" 
+<ktypelinear.h>
+
+// NI #include <quickstats.h> // @todo test quickstats, add child class for container
+// NI #include <Statistics.h> // https://github.com/provideyourown/statistics

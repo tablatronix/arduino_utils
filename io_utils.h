@@ -5,7 +5,7 @@
 #include <Wire.h>
 
 #ifdef ESP32
-#include <analogWrite.h>
+#include <analogWrite.h> // ERROPiX/ESP32_AnalogWrite
 #endif
 
 bool swap = false;
