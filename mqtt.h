@@ -5,7 +5,8 @@
 
 #define USEJSON
 #ifdef USEJSON
-#include <ArduinoJson.h>
+#include <ArduinoJson.h> // bblanchon/ArduinoJson
+
 StaticJsonDocument<2048> payload;
 StaticJsonDocument<2048> rootdoc;
 // payload["sensor"] = "gps";
@@ -18,14 +19,15 @@ StaticJsonDocument<2048> rootdoc;
   JsonArray jsondata = pubjson.to<JsonArray>();
 #endif
 
-#include <PubSubClient.h>
+#include <PubSubClient.h> // knolleary/pubsubclient
 #define MQTT_MAX_PACKET_SIZE 2048
 
 WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt = true;
+bool debug_mqtt      = false;
+bool debug_mqtt_json = true;
 const char* clientID = "";
 
 void MQTTreconnect() {
@@ -179,7 +181,7 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
     payload["type"] = sensor; // field key = field value
     payload["value"] = value.toFloat();
     // payload["unit"] = "";
-    if(debug_mqtt) serializeJson(payload, Serial);
+    // if(debug_mqtt_json) serializeJson(payload, Logger);
     // serializeJsonPretty(payload, Serial);
     
     String output;
@@ -224,9 +226,9 @@ void MQTT_pub_send(String topic){
 
   char message[2048];
   serializeJson(pubjson, message);
-  if(debug_mqtt){  
-    Serial.println((String)message);
-    Serial.flush();
+  if(debug_mqtt_json){  
+    Logger.println((String)message);
+    Logger.flush();
   }
   client.publish(topic.c_str(),message);
   delay(500);
@@ -266,7 +268,7 @@ void MQTT_pub(String topic, String sensor, String value){
 // todo 
 // add free heap
 void MQTT_pub_device(){
-  Serial.println("[TASK] doMQTT Device");
+  if(debug_mqtt) Logger.println("[MQTT] Publish Device");
   MQTT_pub("device","rssi",(String)getRSSIasQuality());
   #ifdef ESP32
   // MQTT_pub("device","hall",(String)hallRead()); // USES PINS 36,39
