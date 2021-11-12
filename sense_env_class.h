@@ -66,7 +66,7 @@ class sensorcollection {
 	public:
 		sensorcollection();
 		void addSensorValue(int idx,float value);
-		// float getSensorValue(int idx);
+		float getSensorValue(int idx);
 
 };
 
@@ -83,9 +83,10 @@ class sensorcollection {
 		sensors[idx].push(value);
 	}
 
-	// template <class T> float sensorcollection<T>::getSensorValue(int idx){
-	// 	return sensors[idx].average();
-	// }
+	template <class T> 
+	float sensorcollection<T>::getSensorValue(int idx){
+		return sensors[idx].mean();
+	}
 
 // individual sensor log, one per value
 // or find a way to create anonymous objects, but each one might have different units so might as well keep them seperate.
