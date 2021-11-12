@@ -33,3 +33,10 @@ soligen2010/encoder
 
 // NI #include <quickstats.h> // @todo test quickstats, add child class for container
 // NI #include <Statistics.h> // https://github.com/provideyourown/statistics
+
+
+
+ArduinoBufferedStreams
+stream buffer
+https://github.com/paulo-raca/ArduinoBufferedStreams
+
