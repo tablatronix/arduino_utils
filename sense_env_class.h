@@ -47,31 +47,45 @@ using namespace std;
 #include <Statistic.h>
 // Statistic myStats;
 
+// vector or list of sensor objects
+// group by type for sensors with many metrics
+// addSensor(char* id, char* name, char* unit, T datatype);
+// removeSensor(char* id);
+// getSensorByID(char* id);
+// vector<Statistic> sensors; // how to use a templated class here?
+
 // collections of sensors
-template <typename T>
+// T datatype
+template <class T>
 class sensorcollection {
-	// vector or list of sensor objects
-	// group by type for sensors with many metrics
-	// addSensor(char* id, char* name, char* unit, T datatype);
-	// removeSensor(char* id);
-    // getSensorByID(char* id);
-    // vector<Statistic> sensors; // how to use a templated class here?
-    
     private:
-    // template <typename T> datatype;
-    vector<Average<T>*> sensors;
-    // vector<Statistic*> sensors;
-    int _numsamples = 20;
+		vector<Average<T>> sensors;
+		int _numsamples = 20;
 
-    sensorcollection(){
-    	// examples, will be via management methods
-    	// BUT how to create many new instances and retain them in class?
-    	Average<T> avg_a(_numsamples); // scope this in class?
-    	sensors.push_back(&avg_a); // use temp obj or smart pointers?
-	}
 
+	public:
+		sensorcollection();
+		void addSensorValue(int idx,float value);
+		// float getSensorValue(int idx);
 
 };
+
+	template <class T> 
+	sensorcollection<T>::sensorcollection(){
+		// testing in constructor for now
+		// BUT how to create many new instances and retain them in class?
+		// Average<T> avg_x(_numsamples); // scope this in class?, surely this will go bye bye
+		sensors.push_back(Average<T>(_numsamples)); // use temp obj or smart pointers?
+	}
+
+	template <class T> 
+	void sensorcollection<T>::addSensorValue(int idx,float value){
+		sensors[idx].push(value);
+	}
+
+	// template <class T> float sensorcollection<T>::getSensorValue(int idx){
+	// 	return sensors[idx].average();
+	// }
 
 // individual sensor log, one per value
 // or find a way to create anonymous objects, but each one might have different units so might as well keep them seperate.
