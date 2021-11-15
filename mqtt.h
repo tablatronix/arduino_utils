@@ -7,15 +7,15 @@
 #ifdef USEJSON
 #include <ArduinoJson.h> // bblanchon/ArduinoJson
 
-StaticJsonDocument<2048> payload;
-StaticJsonDocument<2048> rootdoc;
+StaticJsonDocument<4096> payload;
+StaticJsonDocument<4096> rootdoc;
 // payload["sensor"] = "gps";
 // payload["time"] = 1351824120;
 
   // const size_t CAPACITY = JSON_ARRAY_SIZE(1);
   // StaticJsonDocument<CAPACITY> docH;
   // JsonArray arrayH = docH.to<JsonArray>();
-  DynamicJsonDocument pubjson(2048);
+  DynamicJsonDocument pubjson(4096);
   JsonArray jsondata = pubjson.to<JsonArray>();
 #endif
 
@@ -26,8 +26,8 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt      = false;
-bool debug_mqtt_json = true;
+bool debug_mqtt      = true;
+bool debug_mqtt_json = false;
 const char* clientID = "";
 
 void MQTTreconnect() {
@@ -101,7 +101,10 @@ void process_MQTT_nb(){
 }
 
 void process_MQTT(){
-  if(!wifiIsConnected()) return;
+  if(!wifiIsConnected()){
+  Logger.println("[MQTT] wifi not connected");
+  return;
+  }
   MQTTreconnect(); // @todo throttle
   client.loop(); // will wait loop reconnect to mqtt
 }
@@ -110,7 +113,7 @@ void init_MQTT(){
   if(!wifiIsConnected()) return;
   client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
-  if (client.connect(clientID)) Logger.println("[MQTT] connected");
+  if (client.connect(clientID)) Logger.println("[MQTT] connected to " + (String)mqtt_server_ip);
   client.setBufferSize(2048);
   client.subscribe("downstream");
   process_MQTT();
@@ -212,7 +215,7 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
 
 void MQTT_pub_send(String topic){
   if(debug_mqtt){
-    Serial.println("[MQTT] sending json for topic " + topic);
+    Logger.println("[MQTT] sending json for topic: " + topic);
   }
   // serializeJson(jsondata, Logger);
   // rootdoc.createNestedObject();
@@ -224,7 +227,7 @@ void MQTT_pub_send(String topic){
   // Serial.println(output);
   // Serial.flush();
 
-  char message[2048];
+  char message[4096];
   serializeJson(pubjson, message);
   if(debug_mqtt_json){  
     Logger.println((String)message);
