@@ -5,7 +5,7 @@
 #include <Wire.h>
 
 #ifdef ESP32
-#include <analogWrite.h> // ERROPiX/ESP32_AnalogWrite
+// #include <analogWrite.h> // ERROPiX/ESP32_AnalogWrite
 #endif
 
 bool swap = false;
@@ -30,11 +30,21 @@ void debugPin(uint8_t pin){
     Logger.println(" pinstate: " + (String)digitalRead(pin));  
 }
 
+
+
+// i2c scanner
+// @todo add oled support, remember device addrs and lookup indexes, 
+// detect new device, shows list of devices when it gets to your device press button or unplug device ,
+// it will then be stored and automatically setup.
+
+
+// #include <i2c_identify.h>
+
 void scani2c(bool pinswap = false){
   swap = pinswap;
   byte error, address;
   int nDevices;
-  if(!swap)Wire.begin();
+  if(!swap) Wire.begin();
   else Wire.begin(SCL,SDA);  // begin(sda, scl) SWAP!
   Logger.print("[I2C] SDA:"+(String) SDA);
   Logger.print(" SCL:"+(String) SCL);
@@ -67,7 +77,7 @@ void scani2c(bool pinswap = false){
         Logger.println("");
         nDevices++;
     }
-    else if(res!=2)
+    else if(res!=2 && res !=255)
     {
       Logger.println("[ERROR]:" + (String)res);
       Logger.print("Unknown error ADDR: 0x");
@@ -108,44 +118,44 @@ void pinregister(){
   // and on esp32 etc set the pins desired specs and avoid conflicts with multiple adc reads
 }
 
-#ifdef ESP32
+// #ifdef ESP32
 
-#define ADC_1 36
-#define ADC_2 38 // missing from some boards?
-#define ADC_3 39
-#define ADC_4 32
-#define ADC_5 33
-#define ADC_6 34
-#define ADC_7 37
+// #define ADC_1 36
+// #define ADC_2 38 // missing from some boards?
+// #define ADC_3 39
+// #define ADC_4 32
+// #define ADC_5 33
+// #define ADC_6 34
+// #define ADC_7 37
 
-// ADC2 restoring procedure
-// This is a Workaround to use ADC2 Pins on ESP32 when Wifi or Bluetooth is on.
-// (usually only ADC1 Pins are usable for analogRead() when Wifi or Bluetooth is on.)
-// -- We save the ADC2 control register before WifiBegin() or BluetoothBegin()
-// -- then restore its original value, then set a specific bit of the ADC2 control register   
-//to avoid inverted readings: we do the latter two before every analogRead() cycle.
-// -- This achieves ADC2 usability even when Wifi/Bluetooth are turned on!
+// // ADC2 restoring procedure
+// // This is a Workaround to use ADC2 Pins on ESP32 when Wifi or Bluetooth is on.
+// // (usually only ADC1 Pins are usable for analogRead() when Wifi or Bluetooth is on.)
+// // -- We save the ADC2 control register before WifiBegin() or BluetoothBegin()
+// // -- then restore its original value, then set a specific bit of the ADC2 control register   
+// //to avoid inverted readings: we do the latter two before every analogRead() cycle.
+// // -- This achieves ADC2 usability even when Wifi/Bluetooth are turned on!
 
-#include "esp32-hal-adc.h" // needed for adc pin reset
-#include "soc/sens_reg.h" // needed for manipulating ADC2 control register
-uint64_t reg_b; // Used to store ADC2 control register
-int value;
+// #include "esp32-hal-adc.h" // needed for adc pin reset
+// #include "soc/sens_reg.h" // needed for manipulating ADC2 control register
+// uint64_t reg_b; // Used to store ADC2 control register
+// int value;
 
-void storeADC() {
-// Save ADC2 control register value : Do this before begin Wifi/Bluetooth
-reg_b = READ_PERI_REG(SENS_SAR_READ_CTRL2_REG);
-// Wifi.Begin(); // or similar wifi init function or Bluetooth begin()
-}
+// void storeADC() {
+// // Save ADC2 control register value : Do this before begin Wifi/Bluetooth
+// reg_b = READ_PERI_REG(SENS_SAR_READ_CTRL2_REG);
+// // Wifi.Begin(); // or similar wifi init function or Bluetooth begin()
+// }
 
-void restoreADC() {
-// ADC2 control register restoring
-WRITE_PERI_REG(SENS_SAR_READ_CTRL2_REG, reg_b);
-//VERY IMPORTANT: DO THIS TO NOT HAVE INVERTED VALUES!
-SET_PERI_REG_MASK(SENS_SAR_READ_CTRL2_REG, SENS_SAR2_DATA_INV);
-Logger.println(analogRead(4));
-Logger.println(analogRead(33));
-}
-#endif
+// void restoreADC() {
+// // ADC2 control register restoring
+// WRITE_PERI_REG(SENS_SAR_READ_CTRL2_REG, reg_b);
+// //VERY IMPORTANT: DO THIS TO NOT HAVE INVERTED VALUES!
+// SET_PERI_REG_MASK(SENS_SAR_READ_CTRL2_REG, SENS_SAR2_DATA_INV);
+// Logger.println(analogRead(4));
+// Logger.println(analogRead(33));
+// }
+// #endif
 
 
 // //ISR test
