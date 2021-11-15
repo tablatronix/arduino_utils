@@ -5,7 +5,7 @@
 
 Average<float> avg_a(20);
 
-// supported sensors
+// SUPPORTED SENSORS
 // SHT31
 // SHT21
 // HTU21D
@@ -13,13 +13,26 @@ Average<float> avg_a(20);
 // BMP280
 // BME280
 // CS811
-// GP2Y
 // TSL2561
-// BH1750
-// 
+// BH1750  https://github.com/claws/BH1750
+// APDS9960
+// GP2Y
+// PM Dust sensors https://github.com/avaldebe/PMserial
+// MPU6050
+// PCF8591
+
+
+// NOT IMPLEMENTED @TODO
+// VEML6070
+// HMC5883L
+// MAX9814
+// MCP3421
+// INA219
+// MCP4725
+// MCP3421
 
 // BUGS
-// sensors do not reinit is they drop out
+// sensors do not reinit is they drop out, add heathcheck()
 // co2 voc, resubmits the same value over and over if device is lost
 // use real temp and humidity to compensate other sensors
 
@@ -28,7 +41,14 @@ Average<float> avg_a(20);
 
 // I2C
 
+//MOTION
 #define MPU6050   // MPU 6050 GY521 3axis gyro/accel
+#define HMC5883L  // NI Honeywell HMC5883L
+
+
+// TEMP/HUMIDITY/GAS
+#define SI7021
+#define AHT10
 
 #define USESHT31 // SHT31  Temp/Humidity
 // #define USESHT21 // SHT21 / HTU21D Temp/Humidity
@@ -46,13 +66,49 @@ This board/chip uses I2C 7-bit address 0x77.
 // #define USEBME280 // BME280 Humidity/Pressure/Altitude
 // Pressure: 300...1100 hPa
 
+
 #define USECS811  // CCS811 Temp/CO2/VOC
-#define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
+// #define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
+#define PMSx
+
+// LIGHT
 #define APDS9960  // Proximity, Light, RGB, and Gesture Sensor
 
-#define BH1750    // Light Sensor
+#define USEBH1750    // Light Sensor
+/*
+  BH1750 has six different measurement modes. They are divided in two groups;
+  continuous and one-time measurements. In continuous mode, sensor continuously
+  measures lightness value. In one-time mode the sensor makes only one
+  measurement and then goes into Power Down mode.
 
-#define TSL2561   // Luminosity/Lux/Light Address = 0x39 //Slave addr also 0x29 or 0x49
+  Each mode, has three different precisions:
+
+    - Low Resolution Mode - (4 lx precision, 16ms measurement time)
+    - High Resolution Mode - (1 lx precision, 120ms measurement time)
+    - High Resolution Mode 2 - (0.5 lx precision, 120ms measurement time)
+
+  By default, the library uses Continuous High Resolution Mode, but you can
+  set any other mode, by passing it to BH1750.begin() or BH1750.configure()
+  functions.
+
+  [!] Remember, if you use One-Time mode, your sensor will go to Power Down
+  mode each time, when it completes a measurement and you've read it.
+
+  Full mode list:
+
+    BH1750_CONTINUOUS_LOW_RES_MODE
+    BH1750_CONTINUOUS_HIGH_RES_MODE (default)
+    BH1750_CONTINUOUS_HIGH_RES_MODE_2
+
+    BH1750_ONE_TIME_LOW_RES_MODE
+    BH1750_ONE_TIME_HIGH_RES_MODE
+    BH1750_ONE_TIME_HIGH_RES_MODE_2
+*/
+
+#define VEML6070  // UV Sensor
+
+
+// #define TSL2561   // Luminosity/Lux/Light Address = 0x39 //Slave addr also 0x29 or 0x49
 /*
 TSL2561
 Approximates Human eye Response
@@ -71,22 +127,35 @@ Voltage range: 3.3-5V into onboard regulator
 Interface: I2C
 
 */
+
+// SOUND
+#define MAX9814 // MAX9814 Auto GC amplifier
+#define MAX4466 // MAX4466 Adj GC amplifier
+
+
+// Energy
 #define INA219  // INA219 current sense
 
-#define PCF8591 // PCF8591  
+// IO
+#define MCP4725 // 12bit DAC with EEPROM
+#define MCP3421 // 18bit delta-sigma ADC
+// #define PCF8591 // PCF8591 io expander
+
 
 // [I2C] Device found - ADDR: 0x23 // BH1750
 // [I2C] Device found - ADDR: 0x39 // APDS9960 / TSL2561
 // [I2C] Device found - ADDR: 0x5A // 
 // [I2C] Device found - ADDR: 0x76 // 
 
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x23 0x46
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x39 0x72
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x44 0x88
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x48 0x90
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x5A 0xB4
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x68 0xD0
-// Apr 29 16:37:07 ESP_env 192.168.20.33 ESP:[INFO]- ﻿[I2C] Device found - ADDR: 0x76 0xEC
+// [I2C] Device found - ADDR: 0x23 0x46
+// [I2C] Device found - ADDR: 0x38 0x70
+// [I2C] Device found - ADDR: 0x39 0x72
+// [I2C] Device found - ADDR: 0x3C 0x78
+// [I2C] Device found - ADDR: 0x44 0x88
+// [I2C] Device found - ADDR: 0x48 0x90
+// [I2C] Device found - ADDR: 0x5A 0xB4
+// [I2C] Device found - ADDR: 0x68 0xD0
+// [I2C] Device found - ADDR: 0x76 0xEC
 
 /*
 #ifdef ENV_TEMPLATE
@@ -96,10 +165,10 @@ void init_env(){
   bool ret = false;
   ret = env.begin();
   if(!ret){
-    Logger.println("[ERROR] xxxxxx init failed");
+    Logger.println("[ERROR] _env init FAILED");
   }
-  else Logger.println("[ENV] xxxxx initialized!");
-  return ret;  
+  else Logger.println("[ENV] _env is ACTIVE");
+  // return ret;  
 }
 
 void print_env(){
@@ -107,12 +176,203 @@ void print_env(){
 
 float get_env(uint8_t channel = 0){
   // print_env();
-  if(channel == 0) return ;
-  if(channel == 1) return ;
-  if(channel == 2) return ;
-
+  if(channel == 0) return _env.readvalue();
+  // if(channel == 1) return ;
+  // if(channel == 2) return ;
+}
 #endif
 */
+
+
+#ifdef VEML6070
+
+// PRODUCT SUMMARY
+// PART NUMBER
+// OPERATING VOLTAGE RANGE
+// (V)2.7 to 5.5 
+// I2C BUS VOLTAGE RANGE
+// (V) 1.7 to 5.5 
+// PEAK SENSITIVITY
+// (nm) 355 
+// RANGE OF SPECTRAL BANDWIDTH λ0.5
+// (nm) ± 20 
+// OUTPUT CODE 16 bit, I2C
+// VEML6070 
+
+// Slave Address and Function Description
+// The VEML6070 has one slave address used for write functions (command) and two slave addresses used for read functions
+// (UV data LSB and MSB).
+// The 7-bit address for write functions is 38h = 0111000x resulting in a 70h = 01110000 8-bit address. The 7-bit addresses
+// for read functions are 38h = 0111000x for the UV Data LSB and 39h = 0111001x for the UV data MSB. This results in a
+// 71h = 01110001 and 73h = 01110011 8-bit address, respectively. The 7-bit address 39h should not be used for a write function.
+
+#include "Adafruit_VEML6070.h"
+
+Adafruit_VEML6070 env_veml6070 = Adafruit_VEML6070();
+
+void init_veml6070(){
+  bool ret = true; // NI
+  env_veml6070.begin(VEML6070_1_T);  // pass in the integration time constant
+  if(!ret){
+    Logger.println("[ERROR] _veml6070 init FAILED");
+  }
+  else Logger.println("[ENV] _veml6070 is ~ACTIVE");
+  // return ret;  
+}
+
+void print_veml6070(){
+}
+
+float get_veml6070(uint8_t channel = 0){
+  // print_env();
+  if(channel == 0) return env_veml6070.readUV();
+}
+#endif
+
+
+#ifdef PMSx // particulate matter / DUST sensor
+
+#ifndef ESP32
+#include <SoftwareSerial.h>
+#endif
+
+#include <PMserial.h> // Arduino library for PM sensors with serial interface
+
+bool pms_debug = false;
+#if !defined(PMS_RX) && !defined(PMS_TX)
+constexpr auto PMS_RX = 14;
+constexpr auto PMS_TX = 17;
+#endif
+
+#ifndef ESP32
+SerialPM pms(PMS5003, PMS_RX, PMS_TX); // PMSx003, RX, TX
+
+// Alternative:
+//SoftwareSerial SoftSerial1(PMS_RX, PMS_TX);
+//SerialPM pms(PMS5003, SoftSerial1);
+#else
+SerialPM pms(PMS5003, PMS_RX, PMS_TX); // PMSx003, RX, TX
+#endif
+
+bool init_pms(){
+  // Logger.println(F("PMS sensor on SWSerial"));
+  // Logger.print(F("  RX:"));
+  // Logger.println(PMS_RX);
+  // Logger.print(F("  TX:"));
+  // Logger.println(PMS_TX);  
+  bool ret = true;
+  pms.init();
+  if(!ret){
+    Logger.println("[ERROR] pms init FAILED");
+  }
+  else Logger.println("[ENV] pms is ACTIVE");
+  return ret;  
+}
+
+void print_pms_status(){
+    Logger.print("[ENV] pms status: ");
+    switch (pms.status)
+    {
+    case pms.OK: // should never come here
+      Logger.println("OK");    
+      break;     // included to compile without warnings
+    case pms.ERROR_TIMEOUT:
+      Logger.println(F(PMS_ERROR_TIMEOUT));
+      break;
+    case pms.ERROR_MSG_UNKNOWN:
+      Logger.println(F(PMS_ERROR_MSG_UNKNOWN));
+      break;
+    case pms.ERROR_MSG_HEADER:
+      Logger.println(F(PMS_ERROR_MSG_HEADER));
+      break;
+    case pms.ERROR_MSG_BODY:
+      Logger.println(F(PMS_ERROR_MSG_BODY));
+      break;
+    case pms.ERROR_MSG_START:
+      Logger.println(F(PMS_ERROR_MSG_START));
+      break;
+    case pms.ERROR_MSG_LENGTH:
+      Logger.println(F(PMS_ERROR_MSG_LENGTH));
+      break;
+    case pms.ERROR_MSG_CKSUM:
+      Logger.println(F(PMS_ERROR_MSG_CKSUM));
+      break;
+    case pms.ERROR_PMS_TYPE:
+      Logger.println(F(PMS_ERROR_PMS_TYPE));
+      break;
+    }
+  }
+
+void print_pms(){
+  // print the results
+  Logger.print(F("PM1.0 "));
+  Logger.print(pms.pm01);
+  Logger.print(F(", "));
+  Logger.print(F("PM2.5 "));
+  Logger.print(pms.pm25);
+  Logger.print(F(", "));
+  Logger.print(F("PM10 "));
+  Logger.print(pms.pm10);
+  Logger.println(F(" [ug/m3]"));
+
+  if(!pms_debug) return;
+
+  print_pms_status();
+
+  if (pms.has_number_concentration())
+  {
+    Serial.print(F("N0.3 "));
+    Serial.print(pms.n0p3);
+    Serial.print(F(", "));
+    Serial.print(F("N0.5 "));
+    Serial.print(pms.n0p5);
+    Serial.print(F(", "));
+    Serial.print(F("N1.0 "));
+    Serial.print(pms.n1p0);
+    Serial.print(F(", "));
+    Serial.print(F("N2.5 "));
+    Serial.print(pms.n2p5);
+    Serial.print(F(", "));
+    Serial.print(F("N5.0 "));
+    Serial.print(pms.n5p0);
+    Serial.print(F(", "));
+    Serial.print(F("N10 "));
+    Serial.print(pms.n10p0);
+    Serial.println(F(" [#/100cc]"));
+  }
+
+  if (pms.has_temperature_humidity() || pms.has_formaldehyde())
+  {
+    Serial.print(pms.temp, 1);
+    Serial.print(F(" °C"));
+    Serial.print(F(", "));
+    Serial.print(pms.rhum, 1);
+    Serial.print(F(" %rh"));
+    Serial.print(F(", "));
+    Serial.print(pms.hcho, 2);
+    Serial.println(F(" mg/m3 HCHO"));
+  }
+}
+
+
+float get_pms(uint8_t channel = 0){
+  // print_env();
+  if(channel == 0){
+    pms.read();
+    return pms.pm01;
+  }  
+  if(channel == 1)  return pms.pm25;
+  if(channel == 2)  return pms.pm10;
+  if(channel == 3)  return pms.n0p3;
+  if(channel == 4)  return pms.n0p5;
+  if(channel == 5)  return pms.n1p0;
+  if(channel == 6)  return pms.n2p5;
+  if(channel == 7)  return pms.n5p0;
+  if(channel == 8)  return pms.n10p0;
+}
+
+#endif
+
 
 #ifdef PCF8591
 #include <Adafruit_PCF8591.h>
@@ -130,10 +390,10 @@ bool init_PCF8591(){
   bool ret = false;
   ret = pcf.begin();
   if(!ret){
-    Logger.println("[ERROR] PCF8591 init failed");
+    Logger.println("[ERROR] PCF8591 init FAILED");
     return false;
   }
-  else Logger.println("[ENV] PCF8591 initialized!");
+  else Logger.println("[ENV] PCF8591 is ACTIVE");
   pcf.enableDAC(true);
   return ret;  
 }
@@ -184,9 +444,9 @@ bool init_INA219(){
   bool ret = false;
   ret = ina219.begin();
   if(!ret){
-    Logger.println("[ERROR] INA219 init failed");
+    Logger.println("[ERROR] INA219 init FAILED");
   }
-  else Logger.println("[ENV] INA219 initialized!");
+  else Logger.println("[ENV] INA219 is ACTIVE");
   return ret;  
 }
 
@@ -254,9 +514,9 @@ bool init_mpu6050(){
 
 
   if(!ret){
-    Logger.println("[ERROR] MPU6050 init failed");
+    Logger.println("[ERROR] MPU6050 init FAILED");
   }
-  else Logger.println("[ENV] MPU6050 gyro/accel initialized!");
+  else Logger.println("[ENV] MPU6050 gyro/accel is ACTIVE");
   return ret;  
 }
 
@@ -303,56 +563,90 @@ float get_mpu6050(uint8_t channel = 0){
 
 #endif
 
-#ifdef BH1750
-#include <hp_BH1750.h>  //inlude the library
-hp_BH1750 env_BH1750;
 
-// BH1750Address addr = BH1750_TO_VCC;
-// BH1750Address BH1750addr = BH1750_TO_GROUND;
-// 0x23/0x5A , or 0X5C
-// BH1750_TO_GROUND = 0x23,
-// BH1750_TO_VCC = 0x5C
 
-bool init_bh1750(){
-  Logger.println("[ENV] hp_BH175 init");
-  bool status = env_BH1750.begin(BH1750_TO_GROUND);   // will be false no sensor found
-                                            // use BH1750_TO_GROUND or BH1750_TO_VCC depending how you wired the address pin of the sensor.
-  
-  // BH1750.calibrateTiming();  //uncomment this line if you want to speed up your sensor
-  env_BH1750.start();
-  // BH1750.start(BH1750_QUALITY_HIGH2, mtreg);
-  // BH1750.setQuality(mode);
-  
-  if(!status) Logger.println("[ERROR] bh1750 failed to initialize device! Please check your wiring.");
-  else Logger.println("[ENV] bh1750 Device initialized!");  
-  return status;
+#ifdef USEBH1750
+#include <BH1750.h>
+BH1750 lightMeter(0x23);
+
+bool init_BH1750(){
+  bool ret = false;
+  ret = lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE);
+  if(!ret){
+    Logger.println("[ERROR] BH1750 init FAILED");
+  }
+  else Logger.println("[ENV] BH1750 is ACTIVE");
+  return ret;
 }
 
-void print_bh1750(){
-   if (env_BH1750.hasValue() == true) {    // non blocking reading
-    float lux = env_BH1750.getLux();
-    Logger.println(lux);
-    env_BH1750.start();
-  } 
+void print_BH1750(){
 }
 
-float get_bh1750(uint8_t channel = 0){
-  float lux;
-  if(channel == 0){
-    if (env_BH1750.hasValue() == true) {    // non blocking reading
-     lux = env_BH1750.getLux();
-     env_BH1750.start();
-     Logger.println(lux);
-    }
+float get_BH1750(uint8_t channel = 0){
+  // print_env();
+  if (lightMeter.measurementReady()){
+    if(channel == 0) return (float)lightMeter.readLightLevel();
+    if(channel == 1) return 0;
+    if(channel == 2) return 0;
   }
-  else{
-    env_BH1750.start();   //starts a measurement
-    lux=env_BH1750.getLux();
-    Logger.println(lux);
-  }
-  return lux;
+  return 0;
 }
 #endif
+
+
+// #ifdef BH1750_B
+// #include <hp_BH1750.h>  //inlude the library
+// hp_BH1750 env_BH1750_B;
+
+// // BH1750Address addr = BH1750_TO_VCC;
+// // BH1750Address BH1750addr = BH1750_TO_GROUND;
+// // 0x23/0x5A , or 0X5C
+// // BH1750_TO_GROUND = 0x23,
+// // BH1750_TO_VCC = 0x5C
+
+// void print_bh1750(){
+//    if (env_BH1750_B.hasValue() == true) {    // non blocking reading
+//     float lux = env_BH1750_B.getLux();
+//     Logger.println("[ENV] lux");
+//     Logger.println(lux);
+//     env_BH1750_B.start();
+//   } 
+// }
+
+// bool init_bh1750(){
+//   bool status = env_BH1750_B.begin(BH1750_TO_GROUND);   // will be false no sensor found
+//                                             // use BH1750_TO_GROUND or BH1750_TO_VCC depending how you wired the address pin of the sensor.
+  
+//   // BH1750.calibrateTiming();  //uncomment this line if you want to speed up your sensor
+//   env_BH1750_B.start();
+//   // BH1750.start(BH1750_QUALITY_HIGH2, mtreg);
+//   // BH1750.setQuality(mode);
+  
+//   if(!status) Logger.println("[ERROR] BH1750 init FAILED");
+//   else Logger.println("[ENV] BH1750 Device is ACTIVE");
+
+//   return status;
+// }
+
+// float get_bh1750(uint8_t channel = 0){
+//   float lux;
+//   if(channel == 0){
+//     Logger.println("env_BH1750_B get channel 0");
+//     if (env_BH1750_B.hasValue() == true) {    // non blocking reading
+//      Logger.println("env_BH1750_B has value");
+//      lux = env_BH1750_B.getLux();
+//      env_BH1750_B.start();
+//      Logger.println(lux);
+//     }
+//   }
+//   else{
+//     env_BH1750_B.start();   //starts a measurement
+//     lux=env_BH1750_B.getLux();
+//     Logger.println(lux);
+//   }
+//   return lux;
+// }
+// #endif
 
 
 #ifdef APDS9960
@@ -361,13 +655,15 @@ float get_bh1750(uint8_t channel = 0){
 Adafruit_APDS9960 apds;
 uint8_t apds_int_pin = -1;
 
+// apds_addr = ;
+
 bool init_apds(){
   bool ret = false;
   ret = apds.begin();
   if(!ret){
-    Logger.println("[ERROR] APDS9960 init failed");
+    Logger.println("[ERROR] APDS9960 init FAILED");
   }
-  else Logger.println("[ENV] APDS9960 initialized!");
+  else Logger.println("[ENV] APDS9960 is ACTIVE");
   if(apds_int_pin > 0)  pinMode(apds_int_pin, INPUT_PULLUP);
   return ret;
 }
@@ -534,9 +830,9 @@ Adafruit_BMP280 bmp; // I2C
 #ifdef USEBMP280
 void init_bmp280(){
    if (!bmp.begin(BMP280_ADDRESS_ALT)) {
-    Logger.println(F("[ERROR] Could not find a valid BMP280 sensor, check wiring!"));
+    Logger.println(F("[ERROR] BMP280 init FAILED"));
   }
-  else Logger.println(F("[ENV] BMP280 sensor is active")); 
+  else Logger.println(F("[ENV] BMP280 is ACTIVE")); 
 
   /* Default settings from datasheet. */
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -581,11 +877,11 @@ uint8_t loopCnt = 0;
 void init_sht31(){
   bool init = sht31.begin(0x44);
   if(init){
-      Logger.println(F("[ENV] SHT31 sensor is active")); 
+      Logger.println(F("[ENV] SHT31 is ACTIVE")); 
   }
   else
   {
-      Logger.println(F("[ERROR] SHT31 init failed")); 
+      Logger.println(F("[ERROR] SHT31 init FAILED")); 
   }
 
   Logger.print("Heater Enabled State: ");
@@ -628,7 +924,7 @@ void sht31_process(){
   if (++loopCnt == 30) {
     enableHeater = !enableHeater;
     sht31.heater(enableHeater);
-    Logger.print("Heater Enabled State: ");
+    Logger.print("[ENV] SHT31 Heater State: ");
     if (sht31.isHeaterEnabled())
       Logger.println("ENABLED");
     else
@@ -643,11 +939,11 @@ void sht31_process(){
 void init_sht21(){
   bool init = myHTU21D.begin();
   if(init){
-      Logger.println(F("[ENV] HTU21D, SHT21 sensor initialized")); 
+      Logger.println(F("[ENV] HTU21D, SHT21 is ACTIVE")); 
   }
   else
   {
-      Logger.println(F("[ERROR] HTU21D, SHT21 sensor is failed or not connected")); //(F()) saves string to flash & keeps dynamic memory free
+      Logger.println(F("[ERROR] HTU21D, SHT21 init FAILED")); //(F()) saves string to flash & keeps dynamic memory free
   }
 
   delay(1000);
@@ -722,11 +1018,11 @@ void print_LM75(){
 Adafruit_CCS811 ccs;
 
 void init_cs811(){
-  Logger.println("[ENV] cs811 init");
   if(!ccs.begin()){
-    Logger.println("[ERROR] CS811 Begin Failed");
+    Logger.println("[ERROR] CS811 init FAILED");
   }
   else {
+     Logger.println("[ENV] CS811 is ACTIVE");
     //calibrate temperature sensor
       while(!ccs.available() && millis() < 30000);
       float temp = ccs.calculateTemperature();
