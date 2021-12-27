@@ -184,7 +184,7 @@ void init_WiFi(int timeout){
     delay(500);
 }
 
-void init_wifi(){
+void init_WiFi(){
   init_WiFi(0);
 }
 

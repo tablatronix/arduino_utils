@@ -1,4 +1,4 @@
-// #include <../LiquidCrystal_I2C/LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C.h>
 
 const int numRows  = 2;
 const int numCols  = 16;
@@ -306,7 +306,7 @@ byte db[8] = {
   0b11111
 };
 
-byte link[4][8] = {
+byte wlink[4][8] = {
 {
   0b00000,
   0b00111,
@@ -368,14 +368,14 @@ uint8_t getQualityIcon(int rssi){
 uint8_t getConnectIcon(int connState){
   return 32;
   // Serial.println("connect: " + (String)connState);
-  lcd.createChar(WIFILINKICO,link[connState]);
+  lcd.createChar(WIFILINKICO,wlink[connState]);
   return WIFILINKICO;
 }
 
 void initLcdChars(){
   lcd.createChar(WIFIQICO, qualityIco[0]);
   lcd.createChar(ARIALICO, arial);
-  lcd.createChar(WIFILINKICO, link[0]);
+  lcd.createChar(WIFILINKICO, wlink[0]);
   lcd.createChar(WIFIDBICO, db);
 }
 
@@ -396,10 +396,15 @@ void initLcdGraphChars(){
 }
 
 void initLCD(){
-  Wire.setClock(400000L);  // set i2c speed 400khz
-  Wire.begin(_SDA,_SCL);
+  // Wire.begin(_SDA,_SCL);
+  Wire.begin();
+  Wire.setClock(1700000L);  // set i2c speed 400khz
   lcd.init();              // initialize the lcd
-  
+
+  lcd.noBacklight();
+  delay(1000);
+  lcd.backlight();
+
   if(backlightState) lcd.backlight();
   else lcd.noBacklight();
 

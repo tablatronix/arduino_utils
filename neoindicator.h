@@ -41,8 +41,8 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	palevioletred	#DB7093	rgb(219,112,147)
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
-uint16_t INDBRIGHTNESS = 60;
-int INDNUMPIXELS = 1;
+uint16_t INDBRIGHTNESS = 255;
+int INDNUMPIXELS = 2;
 #define INDPIXELSTYPE NEO_GRB + NEO_KHZ800
 
 bool INDPINRESET = false;
@@ -75,9 +75,27 @@ void debugColor(uint32_t c){
   Serial.println("[RGB] Blue: " + (String)blue(c));
 }
 
+void indSetColorB(uint32_t c){
+  if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);
+  // debugColor(c);
+  // uint32_t color = ColorRGBA(red(c),green(c),blue(c),255);
+  ind.setPixelColor( 1, c);
+  if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
+  #ifdef ESP32
+  if(noInterrupts) portDISABLE_INTERRUPTS();
+  #endif
+  ind.show();
+  if(showTwice) ind.show();
+  #ifdef ESP32
+  if(noInterrupts) portENABLE_INTERRUPTS();
+  #endif
+  // #endif
+}
+
 void indSetColor(uint32_t c){
   if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);
   // debugColor(c);
+  // uint32_t color = ColorRGBA(red(c),green(c),blue(c),255);
   ind.setPixelColor( 0, c );
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
   #ifdef ESP32
