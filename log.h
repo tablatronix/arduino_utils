@@ -35,6 +35,7 @@ void sendToSyslog(String msg){
   if(msgb.indexOf("warning") != -1)  level = LOG_WARNING;
   if(msgb.indexOf("fatal")   != -1)  level = LOG_CRIT;
   if(syslogactive) syslog.log(level,msg); // SEND IT
+  // if(syslogactive) syslog.log(level,(String)millis()+" "+msg); // SEND IT
   // todo clean up string, remove whitespace such as CR LF \t
   // reset buffer
   logbuffer[0] = (char)0;
@@ -209,6 +210,7 @@ void debugPlatformInfo(){
     size_t freeHeap = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     DEBUGGER("Free heap:       ", freeHeap);
     DEBUGGER("ESP-IDF version: ", esp_get_idf_version());
+    // log_v("Chip Info: Model: %d, cores: %d, revision: %d", chipInfo.model, chipInfo.cores, chipInfo.revision);
   #endif
 }
 

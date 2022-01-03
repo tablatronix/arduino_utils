@@ -24,7 +24,7 @@
 // da fuq?
 
 uint16_t fullPowerPeriod = 8000; // full power startup pulse period
-bool fullPowerStartup = true; // enable full power period if startup wanted temp is greater than 5 degrees(arb)
+bool fullPowerStartup = false; // enable full power period if startup wanted temp is greater than 5 degrees(arb)
 
 bool pidEnabled        = false;
 int long pidTimerStart = 0;
@@ -108,6 +108,7 @@ float integatorReset = 0.75; // when to reset Ki percent of delta 75%
 double KpLite = 4, KiLite = .5, KdLite = 0; // slight undershoot, needs a little more power on ramp and peak
 
 double Kp = 13, Ki = .5, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
+// double Kp = 5, Ki = .1, Kd = 0; // slight undershoot, needs a little more power on ramp and peak
 
 // agressive
 double KpAgr = 28, KiAgr = .5, KdAgr = 0; // slight undershoot, needs a little more power on ramp and peak

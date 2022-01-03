@@ -26,7 +26,7 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt      = true;
+bool debug_mqtt      = false;
 bool debug_mqtt_json = false;
 const char* clientID = "";
 

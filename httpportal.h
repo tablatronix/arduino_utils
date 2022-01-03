@@ -6,7 +6,8 @@
 #include <log.h>
 #include <WiFiManager.h>
 
-WiFiManager portal(Logger);
+// WiFiManager portal(Logger);
+WiFiManager portal;
 
 void init_httpportal(String title = ""){
   portal.setDebugOutput(true,"[HTTPP] ");
@@ -29,6 +30,10 @@ void stop_httpportal(){
 
 void process_httpportal(){
 	portal.process();
+}
+
+void begin_httpportalap(){
+  portal.startConfigPortal();
 }
 
 #endif
