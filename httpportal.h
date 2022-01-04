@@ -8,17 +8,6 @@
 
 WiFiManager portal(Logger);
 
-void init_httpportal(String title = ""){
-  portal.setDebugOutput(true,"[HTTPP] ");
-  // invert theme, dark
-  portal.setDarkMode(true);
-  std::vector<const char *> menu = {"wifi","param","info","sep","update","restart","exit"};
-  portal.setMenu(menu); // custom menu, pass vector
-  portal.setTitle(title);
-  // portal.setBackButton(true);
-  // portal.setHostname(getHostname());
-}
-
 void begin_httpportal(){
 	portal.startWebPortal();
 }
@@ -29,6 +18,18 @@ void stop_httpportal(){
 
 void process_httpportal(){
 	portal.process();
+}
+
+void init_httpportal(String title = "",bool begin = true){
+  portal.setDebugOutput(true,"[HTTPP] ");
+  // invert theme, dark
+  portal.setDarkMode(true);
+  std::vector<const char *> menu = {"wifi","param","info","sep","update","restart","exit"};
+  portal.setMenu(menu); // custom menu, pass vector
+  portal.setTitle(title);
+  // portal.setBackButton(true);
+  // portal.setHostname(getHostname());
+  if(begin) begin_httpportal();
 }
 
 #endif
