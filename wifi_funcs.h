@@ -206,18 +206,19 @@ int getRSSIasQuality() {
 }
 
 
-void checkWifi(){
+void checkWifi(bool restart = false){
   Serial.println("[TASK] checkWiFi");
   if(WiFi.status() != WL_CONNECTED  ){
     if(downtime == 0) downtime = millis();
-    if(millis() > downtime + downtimeRestart){
+    if(restart && millis() > downtime + downtimeRestart){
       #ifdef USENEOIND
         indSetColor(255,0,0);
       #endif
       Serial.println("[ERROR] wifi not found, rebooting after timeout");
+      Serial.flush();
       delay(1000);
       ESP.restart();
-    }  
+    }
     #ifdef USENEOIND
       indSetColor(255,0,0);
     #endif
