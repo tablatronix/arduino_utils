@@ -6,7 +6,8 @@
 #include <log.h>
 #include <WiFiManager.h>
 
-WiFiManager portal(Logger);
+// WiFiManager portal(Logger);
+WiFiManager portal;
 
 void begin_httpportal(){
 	portal.startWebPortal();
@@ -30,6 +31,10 @@ void init_httpportal(String title = "",bool begin = true){
   // portal.setBackButton(true);
   // portal.setHostname(getHostname());
   if(begin) begin_httpportal();
+}
+
+void begin_httpportalap(){
+  portal.startConfigPortal();
 }
 
 #endif

@@ -17,11 +17,11 @@
 
 // const char* hostname   = "esp8266REFLOW";
 
-bool debug_wifi = false;
+bool debug_wifi = true;
 
-long downtimeRestart = 1*3600; // 5 minutes
+bool rebootAfterDowntime = true;
+long downtimeRestart = 1*3600; // n minutes
 long downtime        = 0;
-
 
 /** IP to String? */
 String toStringIp(IPAddress ip) {
@@ -96,6 +96,13 @@ bool wifiIsConnected(){
   return WiFi.status() == WL_CONNECTED;
 }
 
+void setWiFiFastConnect(){
+  //fast scan
+  // set channel
+  // set bssid
+  // WiFi.begin(SSID,PASS,WiFi.channel(),WiFi.BSSID(),true);
+}
+
 String getDeviecID(){
   String _wifissidprefix = "ESP";
   String hostString = String(WIFI_getChipId(),HEX);
@@ -130,6 +137,10 @@ void WiFi_print_sta(){
       Serial.println(WiFi.localIP());
       Serial.print("[WIFI] HOST: ");
       Serial.println(getHostname());
+      Serial.print("[WIFI] BSSID: ");
+      Serial.println(WiFi.BSSIDstr());
+      Serial.print("[WIFI] RSSI: ");
+      Serial.println(WiFi.RSSI());    
     }
 }
 
@@ -142,50 +153,63 @@ void init_WiFi(int timeout){
     //   WiFi_print_sta();
     //   return;
     // }
-    
+    unsigned long start = millis();
     Serial.println("[WIFI] mode STA");
     WiFi.mode(WIFI_STA);
-    WiFi.printDiag(Serial);
+    if(debug_wifi) WiFi.printDiag(Serial);
     #ifdef ESP8266
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
     #elif defined(ESP32)
     // btStop();
-    WiFi.setSleep(false);
+    // WiFi.setSleep(false);
     #endif
-
+// 
     // WiFi.hostname(hostname);
-    unsigned long start = millis();
     // if(wifiIsAutoConnect)  WiFi.begin();
+    // esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR);
+
     WiFi.begin(SSID,PASS);
     if(timeout > 0){
-      Serial.println("[WIFI] Connecting to wifi... [" + (String)timeout + " ms]\n");
+      // use local timer loop
+      if(debug_wifi) Serial.println("[WIFI] Connecting to wifi, wait for timeout... [" + (String)timeout + " ms]\n");
       while((WiFi.status() != WL_CONNECTED) && (millis()-start < timeout)){
-        Serial.print(".");
+        if(debug_wifi) Serial.print(".");
         delay(100);
       }
     }
     else {
-      Serial.println("[WIFI] Connecting to wifi, waiting..... ");
-      while(WiFi.waitForConnectResult() != WL_CONNECTED){
-        Serial.print(".");
-        delay(100);
-      }  
+      // waitForConnecrtResult default 60000
+      if(debug_wifi) Serial.println("[WIFI] Connecting to wifi, waitForConnectResult waiting..... ");
+      uint8_t status = WiFi.waitForConnectResult();
+      // while(status() != WL_CONNECTED){
+      //   Serial.print(".");
+      //   delay(500);
+        Serial.println((String)WiFi.status());
+      // }
     }
 
-    Serial.println("");
+    if(debug_wifi) Serial.println("");
 
     if(wifiIsConnected()){
-      WiFi_print_sta();
+      setWiFiFastConnect();
+      Serial.println("[WIFI] connected in " + (String)(millis()-start/1000) + " ms");
+      if(debug_wifi) WiFi_print_sta();
     }
     else{
       Serial.println("[ERROR] WIFI CONNECT FAILED");
-      Serial.println("[WIFI] waited for " + (String)(millis()-start/1000) + " seconds");
+      Serial.println("[WIFI] waited for " + (String)(millis()-start/1000) + " ms");
+      // delay(1000);
+      // WiFi.begin(SSID,PASS);
     }
     delay(500);
 }
 
-void init_wifi(){
+void init_WiFi(){
   init_WiFi(0);
+}
+
+void init_WiFi_saved(){
+  WiFi.begin();
 }
 
 int getRSSIasQuality(int RSSI) {
@@ -212,7 +236,7 @@ void checkWifi(bool restart = false){
     if(downtime == 0) downtime = millis();
     if(restart && millis() > downtime + downtimeRestart){
       #ifdef USENEOIND
-        indSetColor(255,0,0);
+        indSetColor(np_red);
       #endif
       Serial.println("[ERROR] wifi not found, rebooting after timeout");
       Serial.flush();
@@ -220,7 +244,7 @@ void checkWifi(bool restart = false){
       ESP.restart();
     }
     #ifdef USENEOIND
-      indSetColor(255,0,0);
+      indSetColor(np_red);
     #endif
     Serial.println("[WIFI] WiFi is Disconnected");
     WiFi.reconnect();
@@ -230,7 +254,7 @@ void checkWifi(bool restart = false){
       Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
     }
     #ifdef USENEOIND
-      indSetColor(0,255,0);
+      indSetColor(np_green);
     #endif
   }
 }
@@ -339,16 +363,24 @@ void disableWiFi(){
 //   if (SW_RESET == reason) { return REASON_EXT_SYS_RST; }
 // }
 
+    // esp_wifi_get_mac((wifi_interface_t)interface, mac);
+    // sprintf(winstance, "%s [%02x:%02x:%02x:%02x:%02x:%02x]", _hostname.c_str(), mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+      // esp_wifi_get_mac((wifi_interface_t)WIFI_IF_STA, eth_mac);
+      // snprintf(default_hostname, 32, "%s%02X%02X%02X", CONFIG_IDF_TARGET "-", eth_mac[3], eth_mac[4], eth_mac[5]);
+
+
+// @todo
 String getResetReason(){
     int reason;
     #ifdef ESP8266
       return ESP.getResetReason();
     #elif defined(ESP32) && defined(_ROM_RTC_H_)
       // requires #include <rom/rtc.h>
-      for(int i=0;i<2;i++){
+      // for(int i=0;i<2;i++){
         // return ESP32GetResetReason(i);
-        return "NA";
-      }
+      // }
+      return "NA";
       #else 
       return "UNSET";
     #endif

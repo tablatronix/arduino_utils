@@ -3,6 +3,7 @@
  * // https://github.com/soligen2010/encoder
  */
 #include <ClickEncoder.h>
+// : error: 'ClickEncoder::buttonHeldEnabled' will be initialized after [-Werror=reorder]
 
 #define ENCODER_PINA     2  // not working
 #define ENCODER_PINB     16 // working
