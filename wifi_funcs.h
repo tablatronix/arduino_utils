@@ -161,7 +161,7 @@ void init_WiFi(int timeout){
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
     #elif defined(ESP32)
     // btStop();
-    // WiFi.setSleep(false);
+    WiFi.setSleep(false);
     #endif
 // 
     // WiFi.hostname(hostname);
