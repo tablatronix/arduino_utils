@@ -17,22 +17,31 @@ int NEONUMPIXELS = 5;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel();
 
 // these are const, so they don't eat RAM
-const uint32_t np_white     = strip.Color(255,255,255);
-const uint32_t np_black     = strip.Color(0  ,0,0);
-const uint32_t np_red       = strip.Color(255,0,0);
-const uint32_t np_orange    = strip.Color(255,128,0);
-const uint32_t np_yellow    = strip.Color(255,100,0); // 255,100,0
-const uint32_t np_green     = strip.Color(0  ,255,0);
-const uint32_t np_cyan      = strip.Color(0  ,255,128);
-const uint32_t np_blue      = strip.Color(0  ,0,255);
-const uint32_t np_purple    = strip.Color(128,0,255);
-const uint32_t np_turquoise = strip.Color(0,80,80);
+const uint32_t np_white     = strip.Color(255, 255,  255);
+const uint32_t np_black     = strip.Color(  0,   0,   0);
+const uint32_t np_red       = strip.Color(255,   0,   0);
+const uint32_t np_orange    = strip.Color(255, 128,   0);
+const uint32_t np_yellow    = strip.Color(255, 100,   0); // 255,100,0
+const uint32_t np_green     = strip.Color(  0, 255,   0);
+const uint32_t np_cyan      = strip.Color(  0, 255, 128);
+const uint32_t np_blue      = strip.Color(  0,   0, 255);
+const uint32_t np_purple    = strip.Color(128,   0, 255);
+const uint32_t np_pink      = strip.Color(128,   0, 255);
+const uint32_t np_turquoise = strip.Color(  0,    80,  80);
 
+  // pink #FFC0CB rgb(255,192,203)
+ //   lightpink #FFB6C1 rgb(255,182,193)
+ //   hotpink #FF69B4 rgb(255,105,180)
+ //   deeppink  #FF1493 rgb(255,20,147)
+ //   palevioletred #DB7093 rgb(219,112,147)
+ //   mediumvioletred #C71585 rgb(199,21,133)
+ //   
 /**
  * collection of helper functions
  */
 
-void init_strip(int pin){
+void init_strip(int pin, Adafruit_NeoPixel& ind){
+  strip = ind; return;
   strip.setPin(pin);
   strip.setBrightness(NEOBRIGHTNESS);
   strip.updateLength(NEONUMPIXELS);
@@ -370,6 +379,35 @@ void rainbow(int wait) {
   }
 }
 
+// Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
+void rainbowHue(int wait) {
+  // Hue of first pixel runs 5 complete loops through the color wheel.
+  // Color wheel has a range of 65536 but it's OK if we roll over, so
+  // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
+  // means we'll make 5*65536/256 = 1280 passes through this outer loop:
+  for(long firstPixelHue = 0; firstPixelHue < 5*65536; firstPixelHue += 256) {
+    for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
+      // Offset pixel hue by an amount to make one full revolution of the
+      // color wheel (range of 65536) along the length of the strip
+      // (strip.numPixels() steps):
+      int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
+      // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
+      // optionally add saturation and value (brightness) (each 0 to 255).
+      // Here we're using just the single-argument hue variant. The result
+      // is passed through strip.gamma32() to provide 'truer' colors
+      // before assigning to each pixel:
+      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+    }
+    strip.show(); // Update strip with new contents
+    delay(wait);  // Pause for a moment
+  }
+}
+
+void clear(){
+    setAllPixels(color(0,0,0));
+    delay(200);  
+}
+
 void demo(){
   int wait = 5000;
   int blank = 200;
@@ -384,12 +422,21 @@ void demo(){
   Serial.println("rainbowCycleFast");
   // rainbowCycleFast(60); // chase through rainbow (can adjust single shot counts inside function) for small strips
 
-  for(int i=0;i<10;i++)breathe(2);
+  uint8_t count = 20;
+
+  for(int i=0;i<count;i++)breathe(2);
+  clear();
   delay(blank);
-  for(int i=0;i<20;i++) fadeTo(Wheel(random(255)),500);
+  for(int i=0;i<count;i++) fadeTo(Wheel(random(255)),500);
+  clear();
   delay(blank);
-  for(int i=0;i<20;i++) fadeTo((i % 2) ? color(255,0,255) : color(0,255,255),500);
+  for(int i=0;i<count;i++) fadeTo((i % 2) ? color(255,0,255) : color(0,255,255),500);
+  clear();
   delay(blank);
+  for(int i=0;i<count;i++) flasher(color(255,0,255),color(0,255,255),100,100);
+  clear();
+  delay(blank);
+  for(int i=0;i<count;i++) flasherSmooth(color(255,0,255),color(0,255,255),100,100);
   Serial.println("demo DONE");
 
 }

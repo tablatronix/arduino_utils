@@ -31,6 +31,7 @@ bool noInterrupts = false;
 
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel ind = Adafruit_NeoPixel();
+
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, PIN, NEO_GRB + NEO_KHZ800);
 // Adafruit_NeoPixel strip *= ind;
 
@@ -48,7 +49,7 @@ int INDNUMPIXELS = 2;
 bool INDPINRESET = false;
 uint8_t neoIndTaskID; // timer task
 
-uint32_t indColor;
+uint32_t indColor; // save color
 
 void init_indicator(uint16_t pin){
 // Adafruit_NeoPixel 
@@ -64,6 +65,10 @@ void init_indicator(uint16_t pin){
   // init_strip();
 }
 
+/**
+ * [indSetNextColor description]
+ * @param c [description]
+ */
 void indSetNextColor(uint32_t c){
   indColor = c;
 }
@@ -139,6 +144,7 @@ void stop_indicator(){
   // @todo unset object
 }
 
+// non blocking stepped color setter
 void updateIndColor(){
   if(indColor != ind.getPixelColor(0)){
     ind.setPixelColor(0,indColor);
@@ -277,6 +283,11 @@ void IND_nb_rainbow() { // modified from Adafruit example to make it a state mac
 
 void IND_nb_animate(){
   if(millis() - IND_lastUpdate > IND_ANIMDELAY) IND_nb_rainbow();
+}
+
+
+void processNeoInd(){
+  updateIndColor();
 }
 
 #endif
