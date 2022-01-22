@@ -140,7 +140,11 @@ void WiFi_print_sta(){
       Serial.print("[WIFI] BSSID: ");
       Serial.println(WiFi.BSSIDstr());
       Serial.print("[WIFI] RSSI: ");
-      Serial.println(WiFi.RSSI());    
+      Serial.println(WiFi.RSSI());
+      Serial.print("[WIFI] CHANNEL: ");
+      Serial.println(WiFi.channel());         
+    } else {
+      Serial.println("[WIFI] NOT CONNECTED");
     }
 }
 
@@ -409,19 +413,78 @@ void disableWiFi(){
 // #endif
 
 // const char* const WIFI_MODES[] PROGMEM = { "NULL", "STA", "AP", "STA+AP" };
+// typedef enum {
+//     NO_MEAN                =  0,
+//     POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
+//     RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core*/
+//     DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core*/
+//     TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core*/
+//     TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core*/
+//     RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core*/
+//     INTRUSION_RESET        = 10,    /**<10, Instrusion tested to reset CPU*/
+//     TG0WDT_CPU_RESET       = 11,    /**<11, Time Group0 reset CPU*/
+//     RTC_SW_CPU_RESET       = 12,    /**<12, Software reset CPU*/
+//     RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
+//     RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
+//     RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
+//     TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
+//     SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
+//     GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
+// } RESET_REASON;
+
+const char * const RESET_REASON_STR[] PROGMEM
+{
+    "NO_MEAN"                ,
+    "POWERON_RESET"          ,    /**<1, Vbat power on reset*/
+    "",
+    "RTC_SW_SYS_RESET"       ,    /**<3, Software reset digital core*/
+    "",
+    "DEEPSLEEP_RESET"        ,    /**<5, Deep Sleep reset digital core*/
+    "",
+    "TG0WDT_SYS_RESET"       ,    /**<7, Timer Group0 Watch dog reset digital core*/
+    "TG1WDT_SYS_RESET"       ,    /**<8, Timer Group1 Watch dog reset digital core*/
+    "RTCWDT_SYS_RESET"       ,    /**<9, RTC Watch dog Reset digital core*/
+    "INTRUSION_RESET"        ,    /**<10, Instrusion tested to reset CPU*/
+    "TG0WDT_CPU_RESET"       ,    /**<11, Time Group0 reset CPU*/
+    "RTC_SW_CPU_RESET"       ,    /**<12, Software reset CPU*/
+    "RTCWDT_CPU_RESET"       ,    /**<13, RTC Watch dog Reset CPU*/
+    "",
+    "RTCWDT_BROWN_OUT_RESET" ,    /**<15, Reset when the vdd voltage is not stable*/
+    "RTCWDT_RTC_RESET"       ,    /**<16, RTC Watch dog reset digital core and rtc module*/
+    "TG1WDT_CPU_RESET"       ,    /**<17, Time Group1 reset CPU*/
+    "SUPER_WDT_RESET"        ,    /**<18, super watchdog reset digital core and rtc module*/
+    "GLITCH_RTC_RESET"            /**<19, glitch reset digital core and rtc module*/
+};
+
+// typedef enum {
+//     NO_MEAN                = "NO_MEAN",
+//     POWERON_RESET          = "Vbat power on reset",
+//     RTC_SW_SYS_RESET       = "Software reset digital core",
+//     DEEPSLEEP_RESET        = "Deep Sleep reset digital core",
+//     TG0WDT_SYS_RESET       = "Timer Group0 Watch dog reset digital core",
+//     TG1WDT_SYS_RESET       = "Timer Group1 Watch dog reset digital core",
+//     RTCWDT_SYS_RESET       = "RTC Watch dog Reset digital core",
+//     INTRUSION_RESET        = "Instrusion tested to reset CPU",
+//     TG0WDT_CPU_RESET       = "Time Group0 reset CPU",
+//     RTC_SW_CPU_RESET       = "Software reset CPU",
+//     RTCWDT_CPU_RESET       = "RTC Watch dog Reset CPU",
+//     RTCWDT_BROWN_OUT_RESET = "Reset when the vdd voltage is not stable",
+//     RTCWDT_RTC_RESET       = "RTC Watch dog reset digital core and rtc module",
+//     TG1WDT_CPU_RESET       = "Time Group1 reset CPU",
+//     SUPER_WDT_RESET        = "super watchdog reset digital core and rtc module",
+//     GLITCH_RTC_RESET       = "glitch reset digital core and rtc module"
+// } RESET_REASON_STR_v;
 
 
 // @todo
-String getResetReason(){
+String getResetReason(uint8_t cpu = 0){
     int reason;
     #ifdef ESP8266
       return ESP.getResetReason();
     #elif defined(ESP32) && defined(_ROM_RTC_H_)
       // requires #include <rom/rtc.h>
-      // for(int i=0;i<2;i++){
-        // return ESP32GetResetReason(i);
-      // }
-      return "NA";
+      return RESET_REASON_STR[rtc_get_reset_reason(cpu)];
+      // return "NA";
       #else 
       return "UNSET";
     #endif
