@@ -370,6 +370,47 @@ void disableWiFi(){
       // snprintf(default_hostname, 32, "%s%02X%02X%02X", CONFIG_IDF_TARGET "-", eth_mac[3], eth_mac[4], eth_mac[5]);
 
 
+// const char * const WIFI_STA_STATUS[] PROGMEM
+// {
+//   "WL_IDLE_STATUS",     // 0 STATION_IDLE
+//   "WL_NO_SSID_AVAIL",   // 1 STATION_NO_AP_FOUND
+//   "WL_SCAN_COMPLETED",  // 2
+//   "WL_CONNECTED",       // 3 STATION_GOT_IP
+//   "WL_CONNECT_FAILED",  // 4 STATION_CONNECT_FAIL, STATION_WRONG_PASSWORD(NI)
+//   "WL_CONNECTION_LOST", // 5
+//   "WL_DISCONNECTED",    // 6 
+//   "WL_STATION_WRONG_PASSWORD" // 7 KLUDGE 
+// };
+
+// #ifdef ESP32
+// const char * const AUTH_MODE_NAMES[] PROGMEM
+// {
+//     "OPEN",
+//     "WEP",             
+//     "WPA_PSK",         
+//     "WPA2_PSK",        
+//     "WPA_WPA2_PSK",    
+//     "WPA2_ENTERPRISE", 
+//     "MAX"
+// };
+// #elif defined(ESP8266)
+// const char * const AUTH_MODE_NAMES[] PROGMEM
+// {
+//     "",
+//     "",
+//     "WPA_PSK",      // 2 ENC_TYPE_TKIP
+//     "",
+//     "WPA2_PSK",     // 4 ENC_TYPE_CCMP
+//     "WEP",          // 5 ENC_TYPE_WEP
+//     "",
+//     "OPEN",         //7 ENC_TYPE_NONE
+//     "WPA_WPA2_PSK", // 8 ENC_TYPE_AUTO
+// };
+// #endif
+
+// const char* const WIFI_MODES[] PROGMEM = { "NULL", "STA", "AP", "STA+AP" };
+
+
 // @todo
 String getResetReason(){
     int reason;
