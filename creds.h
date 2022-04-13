@@ -2,11 +2,11 @@
 #define creds_h
 
 String apikeya     = "741F4992029440228F7B6B1F270728D4";
-const char* SSID_B   = "harlet";
-const char* PASS_B   = "turdtron";
+const char* SSID_B   = "wifib";
+const char* PASS_B   = "password1234";
 
-const char* SSID = "leela";
-const char* PASS = "Turdtr0n";
+const char* SSID = "wifia";
+const char* PASS = "password1234";
 
 const char* STASSID = SSID;
 const char* STAPSK  = PASS;
@@ -15,8 +15,8 @@ const char* ssid     = SSID;          // your network SSID (name)
 const char* password = PASS;
 
 // mqtt
-const char* mqtt_server_host = "zerbert.local";
-const char* mqtt_server_ip   = "192.168.100.17";
+const char* mqtt_server_host = "mqtt.local";
+const char* mqtt_server_ip   = "192.168.100.1";
 const int mqtt_server_port =  1883;
 
 // syslog
