@@ -205,35 +205,43 @@ Wiring: Red for +5V; Black for ground; Blue for signal output.
 
 #ifdef DS18B20
 #include <OneWire.h>
+#include <DallasTemperature.h>
 // The DallasTemperature library can do all this work for you!
 // http://milesburton.com/Dallas_Temperature_Control_Library
-#define ONE_WIRE_BUS 14
+#define _DS18B20Pin 14
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
 
-// url=https://github.com/milesburton/Arduino-Temperature-Control-Library
 
+// url=https://github.com/milesburton/Arduino-Temperature-Control-Library
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature _DS18B20(&oneWire);
 // DallasTemperature _DS18B20[oneWireCount];
-DeviceAddress _DS18B20Addr[3];
+
+uint8_t _DS18B20_num_sensors = 3;
+DeviceAddress _DS18B20Addr[_DS18B20_num_sensors];
 
 void init_DS18B20(){
   bool ret = false;
+
+  // oneWire.setPin(_DS18B20Pin);
+  _DS18B20.setOneWire(_DS18B20Pin);
   ret = _DS18B20.begin();
-
-  //oneWire.reset_search();
-
-  printAddress(_DS18B20Addr[0]);
-  _DS18B20.getAddress(_DS18B20Addr[0], 0);
-  _DS18B20.setResolution(_DS18B20Addr[0], TEMPERATURE_PRECISION);
-  _DS18B20.getResolution(_DS18B20Addr[0], DEC);
 
   if(!ret){
     Logger.println("[ERROR] _DS18B20 init FAILED");
   }
   else Logger.println("[ENV] _DS18B20 is ACTIVE");
-  // return ret;  
+  // return ret;
+
+  //oneWire.reset_search();
+
+  for(size_t i=0; i<_DS18B20_num_sensors; i++){
+    _DS18B20.getAddress(_DS18B20Addr[i], i);    // get address
+    _DS18B20.setResolution(_DS18B20Addr[i], 9); // set precision
+    // _DS18B20.getResolution(_DS18B20Addr[i], DEC);
+  }
+
 }
 
 void print_DS18B20(){
