@@ -205,7 +205,7 @@ void print_oled(String str,uint8_t size,bool flush){
   if(flush)lcd.sendBuffer();          // transfer internal memory to the display
 }
 
-void init_oled(bool preamble,bool pinswap = false){
+void init_oled(bool preamble = true,bool pinswap = false){
   Logger.println("[OLED] Initializing SSD1106 OLED");
   Logger.println("[OLED] SDA: "+(String)SDA);
   Logger.println("[OLED] SCL: "+(String)SCL);
@@ -219,7 +219,7 @@ void init_oled(bool preamble,bool pinswap = false){
   #ifdef ROT
     lcd.setDisplayRotation(U8G2_R2);
   #endif
-  lcd.setBusClock(100000L);
+  // lcd.setBusClock(100000L);
   lcd.begin();
   // lcd.setI2CAddress(0x78);
   // if(!lcd.begin()) { // Address 0x3C for 128x32
@@ -257,13 +257,16 @@ void init_oled(bool preamble,bool pinswap = false){
 }
 
 void displayFPS(){
-  String str = (String)(1000000/((micros()-oledfpsmicros)/2));
-  lcd.clearBuffer();         // clear the internal memory
-  lcd.drawStr(0,10,String(str+ "fps").c_str()); 
+  String str = (String)((1000000/((micros()-oledfpsmicros))));
+  // String str = (String)((micros()-oledfpsmicros));
+  oledfpsmicros = micros();
+  lcd.clearBuffer(); // clear the internal memory
+  lcd.drawStr(0,10,String(str+ " FPS").c_str()); 
   // lcd.drawStr(60,px,String(micros()).c_str());  // write something to the internal memory
   lcd.sendBuffer();
     // println(" FPS");
-  oledfpsmicros = micros();
+  // delay(300);
+  // delay(950);
 }
 
 // void printInverted(const char* str){
