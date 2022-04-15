@@ -72,7 +72,7 @@ void print_oled_line(String str,uint16_t no = 1,uint16_t size = 1){
   lcd.println(str);
 }
 
-void init_oled(bool preamble){
+void init_oled(bool preamble = true){
   Serial.println("\nInitializing SSD1306 OLED");
   Serial.println("SDA: "+(String)SDA);   
   Serial.println("SCL: "+(String)SCL);
@@ -96,14 +96,14 @@ void init_oled(bool preamble){
 
   lcd.setTextSize(1);
   lcd.setCursor(0,0);
-  lcd.println("Booting....");
+  lcd.println("Booting...."); // show init
   lcd.display();
   delay(1000);
-  lcd.clearDisplay();
+  lcd.clearDisplay(); // clear display
   lcd.display();
 }
 
-void oled_test(uint8_t num = 0){
+void oled_test(uint8_t num = 1){
   // print_oled_line(msg, line, size);
   for(uint8_t i=0;i<num;i++){
     lcd.clearDisplay();
@@ -124,7 +124,11 @@ void oled_test(uint8_t num = 0){
 }
 
 void displayFPS(){
-    lcd.print((String)(1000000/((micros()-oledfpsmicros)/2)));
+    lcd.clearDisplay();
+    lcd.setTextSize(1);             // Normal 1:1 pixepl scale  
+    lcd.setCursor(0,0);             // Start at top-left corner
+    lcd.print((String)(10000000/((micros()-oledfpsmicros))));
+    lcd.display();
     // println(" FPS");
     oledfpsmicros = micros();
 }
