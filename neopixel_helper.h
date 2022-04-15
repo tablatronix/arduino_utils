@@ -104,6 +104,7 @@ uint32_t Wheel(byte WheelPos) {
 uint8_t getRGBA(uint8_t rgb, uint16_t A){
   if(A > 255 || rgb == 0) return rgb;
   if(A < 255) return floor(A*rgb/255);
+  return rgb;
 }
 
 // RGB to binary with MAXBRIGHTNESS brightness scaling
