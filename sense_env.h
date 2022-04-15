@@ -183,6 +183,88 @@ float get_env(uint8_t channel = 0){
 #endif
 */
 
+// ADC Sensors
+// ADC I2C
+
+// MCP3421
+// 
+
+/*
+ANALOG PRESSURE SENDER
+--30 psi
+Input: 0-30 psi
+Output: 0.5V~4.5V linear voltage output. 0 psi outputs 0.5V, 15psi outputs 2.5V, 30 psi outputs 4.5V.
+Accuracy: within 2% of reading (full scale).
+Thread: 1/8"-27 NPT.
+Wiring Connector: Water sealed quick disconnect. Mating connector is included.
+Wiring: Red for +5V; Black for ground; Blue for signal output.
+*/
+
+
+//ONEWIRE
+
+#ifdef DS18B20
+#include <OneWire.h>
+// The DallasTemperature library can do all this work for you!
+// http://milesburton.com/Dallas_Temperature_Control_Library
+#define ONE_WIRE_BUS 14
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// url=https://github.com/milesburton/Arduino-Temperature-Control-Library
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature _DS18B20(&oneWire);
+// DallasTemperature _DS18B20[oneWireCount];
+DeviceAddress _DS18B20Addr[3];
+
+void init_DS18B20(){
+  bool ret = false;
+  ret = _DS18B20.begin();
+
+  //oneWire.reset_search();
+
+  printAddress(_DS18B20Addr[0]);
+  _DS18B20.getAddress(_DS18B20Addr[0], 0);
+  _DS18B20.setResolution(_DS18B20Addr[0], TEMPERATURE_PRECISION);
+  _DS18B20.getResolution(_DS18B20Addr[0], DEC);
+
+  if(!ret){
+    Logger.println("[ERROR] _DS18B20 init FAILED");
+  }
+  else Logger.println("[ENV] _DS18B20 is ACTIVE");
+  // return ret;  
+}
+
+void print_DS18B20(){
+  float tempC = _DS18B20.getTempCByIndex(0);
+
+  // Check if reading was successful
+  if(tempC != DEVICE_DISCONNECTED_C) 
+  {
+    Serial.print("Temperature for the device 1 (index 0) is: ");
+    Serial.println(tempC);
+  } 
+  else
+  {
+    Serial.println("Error: Could not read temperature data");
+  }
+}
+
+float get_DS18B20(uint8_t channel = 0){
+  _DS18B20.requestTemperatures();
+  // for (int i = 0; i < oneWireCount; i++) {
+  //   sensor[i].requestTemperatures();
+  // }
+  // print_env();
+  if(channel == 0) return _DS18B20.getTempCByIndex(0);
+  if(channel == 1) return _DS18B20.getTempCByIndex(1);
+  if(channel == 2) return _DS18B20.getTempCByIndex(2);
+  // if(channel == 1) return ;
+  // if(channel == 2) return ;
+}
+#endif
+
 
 #ifdef VEML6070
 
