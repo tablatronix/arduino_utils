@@ -5,6 +5,10 @@
 
 Average<float> avg_a(20);
 
+// @todo
+// add global env_debug
+// add local status for each sensor, avoid sending bad values if init failed
+
 // SUPPORTED SENSORS
 // SHT31
 // SHT21
@@ -20,10 +24,10 @@ Average<float> avg_a(20);
 // PM Dust sensors https://github.com/avaldebe/PMserial
 // MPU6050
 // PCF8591
-
+// scd4x C02 sensor
+// VEML6070 // UV
 
 // NOT IMPLEMENTED @TODO
-// VEML6070
 // HMC5883L
 // MAX9814
 // MCP3421
@@ -50,8 +54,9 @@ Average<float> avg_a(20);
 #define SI7021
 #define AHT10
 
-#define USESHT31 // SHT31  Temp/Humidity
-// #define USESHT21 // SHT21 / HTU21D Temp/Humidity
+// #define USESHT31 // SHT31  Temp/Humidity
+#define USESHT21 // SHT21 / HTU21D Temp/Humidity
+
 // #define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
 /*
 Vin: 3 to 5VDC
@@ -66,7 +71,7 @@ This board/chip uses I2C 7-bit address 0x77.
 // #define USEBME280 // BME280 Humidity/Pressure/Altitude
 // Pressure: 300...1100 hPa
 
-
+#define SDC4X     // SDC40 Co2/Temp/Humidity
 #define USECS811  // CCS811 Temp/CO2/VOC
 // #define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
 #define PMSx
@@ -142,20 +147,16 @@ Interface: I2C
 // #define PCF8591 // PCF8591 io expander
 
 
-// [I2C] Device found - ADDR: 0x23 // BH1750
-// [I2C] Device found - ADDR: 0x39 // APDS9960 / TSL2561
-// [I2C] Device found - ADDR: 0x5A // 
-// [I2C] Device found - ADDR: 0x76 // 
-
-// [I2C] Device found - ADDR: 0x23 0x46
-// [I2C] Device found - ADDR: 0x38 0x70
-// [I2C] Device found - ADDR: 0x39 0x72
-// [I2C] Device found - ADDR: 0x3C 0x78
-// [I2C] Device found - ADDR: 0x44 0x88
-// [I2C] Device found - ADDR: 0x48 0x90
-// [I2C] Device found - ADDR: 0x5A 0xB4
-// [I2C] Device found - ADDR: 0x68 0xD0
-// [I2C] Device found - ADDR: 0x76 0xEC
+// 0x23 0x46 BH1750
+// 0x38 0x70
+// 0x39 0x72 APDS9960 / TSL2561
+// 0x3C 0x78
+// 0x44 0x88
+// 0x48 0x90
+// 0x5A 0xB4 CS811
+// 0x62 0xC4 SCD4X
+// 0x68 0xD0
+// 0x76 0xEC
 
 /*
 #ifdef ENV_TEMPLATE
@@ -185,6 +186,8 @@ float get_env(uint8_t channel = 0){
 
 // ADC Sensors
 // ADC I2C
+
+// ESP32 ADC
 
 // MCP3421
 // 
@@ -316,6 +319,7 @@ void print_veml6070(){
 float get_veml6070(uint8_t channel = 0){
   // print_env();
   if(channel == 0) return env_veml6070.readUV();
+  return 0;
 }
 #endif
 
@@ -444,7 +448,6 @@ void print_pms(){
   }
 }
 
-
 float get_pms(uint8_t channel = 0){
   // print_env();
   if(channel == 0){
@@ -459,10 +462,10 @@ float get_pms(uint8_t channel = 0){
   if(channel == 6)  return pms.n2p5;
   if(channel == 7)  return pms.n5p0;
   if(channel == 8)  return pms.n10p0;
+  return 0;
 }
 
 #endif
-
 
 #ifdef PCF8591
 #include <Adafruit_PCF8591.h>
@@ -570,11 +573,13 @@ float get_INA219(uint8_t channel = 0){
   if(channel == 2) return ina219.getCurrent_mA();
   if(channel == 3) return ina219.getPower_mW();
   if(channel == 4) return busvoltage + (shuntvoltage / 1000);
+  return 0;
 }
 #endif
 
 
 #ifdef MPU6050
+// 3.3V onboard ldo for 5v
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
@@ -649,6 +654,7 @@ float get_mpu6050(uint8_t channel = 0){
   if(channel == 3) return g.gyro.x;
   if(channel == 4) return g.gyro.y;
   if(channel == 5) return g.gyro.z;
+  return 0;
 }
 
 #endif
@@ -657,6 +663,7 @@ float get_mpu6050(uint8_t channel = 0){
 
 #ifdef USEBH1750
 #include <BH1750.h>
+// 2.4V to 3.6V
 BH1750 lightMeter(0x23);
 
 bool init_BH1750(){
@@ -740,7 +747,7 @@ float get_BH1750(uint8_t channel = 0){
 
 
 #ifdef APDS9960
-
+// 2.4V to 3.6V
 #include "Adafruit_APDS9960.h"
 Adafruit_APDS9960 apds;
 uint8_t apds_int_pin = -1;
@@ -786,6 +793,7 @@ String get_apds_proximity(){
     //clear the interrupt
     apds.clearInterrupt();
   }
+  return "";
 }
 
 String get_apds_gesture(){
@@ -892,19 +900,6 @@ LM75A lm75(true,  //A0 LM75A pin state
                    true); //A2 LM75A pin state
 #endif
 
-// SHT21 / HTU21D Temp/Humidity
-#ifdef USESHT21
-#include <HTU21D.h>
-/*
-resolution:
-HTU21D_RES_RH12_TEMP14 - RH: 12Bit, Temperature: 14Bit, by default
-HTU21D_RES_RH8_TEMP12  - RH: 8Bit,  Temperature: 12Bit
-HTU21D_RES_RH10_TEMP13 - RH: 10Bit, Temperature: 13Bit
-HTU21D_RES_RH11_TEMP11 - RH: 11Bit, Temperature: 11Bit
-*/
-HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14); // 0x40
-#endif
-
 // SHT31  Temp/Humidity
 #ifdef USESHT31
 #include <Adafruit_SHT31.h>
@@ -956,6 +951,7 @@ float get_bmp280(uint8_t channel = 0){
   if(channel == 0) return bmp.readTemperature();
   if(channel == 1) return bmp.readPressure();
   if(channel == 2) return bmp.readAltitude(1013.25);
+  return 0;
 }
 
 #endif  
@@ -1025,7 +1021,18 @@ void sht31_process(){
 }
 #endif
 
+// SHT21 / HTU21D Temp/Humidity
 #ifdef USESHT21
+#include <HTU21D.h> 
+/*
+resolution:
+HTU21D_RES_RH12_TEMP14 - RH: 12Bit, Temperature: 14Bit, by default
+HTU21D_RES_RH8_TEMP12  - RH: 8Bit,  Temperature: 12Bit
+HTU21D_RES_RH10_TEMP13 - RH: 10Bit, Temperature: 13Bit
+HTU21D_RES_RH11_TEMP11 - RH: 11Bit, Temperature: 11Bit
+*/
+HTU21D myHTU21D(HTU21D_RES_RH12_TEMP14); // 0x40
+
 void init_sht21(){
   bool init = myHTU21D.begin();
   if(init){
@@ -1103,18 +1110,20 @@ void print_LM75(){
 
 // *************************************************************
 // CCS811 Temp/CO2/VOC
+// 0x5A or 0x5B
 #ifdef USECS811
 #include "Adafruit_CCS811.h"
 Adafruit_CCS811 ccs;
 
 void init_cs811(){
+  int starttime = millis();
   if(!ccs.begin()){
     Logger.println("[ERROR] CS811 init FAILED");
   }
   else {
      Logger.println("[ENV] CS811 is ACTIVE");
     //calibrate temperature sensor
-      while(!ccs.available() && millis() < 30000);
+      while(!ccs.available() && millis() < starttime+5000);
       float temp = ccs.calculateTemperature();
       Logger.println("[ENV] CS811 set offset " + String(temp-25.0));
       ccs.setTempOffset(temp - 25.0);
@@ -1189,6 +1198,107 @@ float getVoltage(){
 }
 #endif
 
+
+
+#ifdef SDC4X
+#include <SensirionI2CScd4x.h>
+SensirionI2CScd4x scd4x;
+// CO2 0x62
+void init_scd4x(){
+  bool ret = false;
+  Wire.begin();  
+  scd4x.begin(Wire);
+
+  // stop potentially previously started measurement
+  ret != scd4x.stopPeriodicMeasurement();
+  // if (ret) {
+  //     Serial.print("Error trying to execute stopPeriodicMeasurement(): ");
+  //     errorToString(error, errorMessage, 256);
+  //     Serial.println(errorMessage);
+  // } else ret = true;
+
+  ret != scd4x.startPeriodicMeasurement();
+
+  if(!ret){
+    Logger.println("[ERROR] SCD4X init FAILED");
+  }
+  else Logger.println("[ENV] SCD4X is ACTIVE");
+  // return ret;  
+}
+
+void print_scd4x(){
+}
+
+float get_scd4x(uint8_t channel = 0){
+  uint16_t co2;
+  float temperature;
+  float humidity;
+  uint16_t error;
+  
+  error = scd4x.readMeasurement(co2, temperature, humidity);
+
+  // print_env();
+  if(channel == 0) return co2;
+  if(channel == 1) return temperature;
+  if(channel == 2) return humidity;
+  return 0;
+}
+#endif
+
+
+#ifdef USEBMP180
+#include <Adafruit_BMP085.h.h>
+Adafruit_BMP085 bmp180;
+void init_bmp180(){
+  bool ret = false;
+  ret = bmp180.begin();
+  if(!ret){
+    Logger.println("[ERROR] BMP180 init FAILED");
+  }
+  else Logger.println("[ENV] BMP180 is ACTIVE");
+  // return ret;  
+}
+
+void print_bmp180(){
+    Logger.print("Temperature = ");
+    Logger.print(bmp.readTemperature());
+    Logger.println(" *C");
+    
+    Logger.print("Pressure = ");
+    Logger.print(bmp.readPressure());
+    Logger.println(" Pa");
+    
+    // Calculate altitude assuming 'standard' barometric
+    // pressure of 1013.25 millibar = 101325 Pascal
+    Logger.print("Altitude = ");
+    Logger.print(bmp.readAltitude());
+    Logger.println(" meters");
+
+    Logger.print("Pressure at sealevel (calculated) = ");
+    Logger.print(bmp.readSealevelPressure());
+    Logger.println(" Pa");
+
+  // you can get a more precise measurement of altitude
+  // if you know the current sea level pressure which will
+  // vary with weather and such. If it is 1015 millibars
+  // that is equal to 101500 Pascals.
+    Logger.print("Real altitude = ");
+    Logger.print(bmp.readAltitude(101500));
+    Logger.println(" meters");
+    
+    Logger.println();  
+}
+
+float get_bmp180(uint8_t channel = 0){
+  // print_env();
+  if(channel == 0) return bmp180.readTemperature();
+  if(channel == 1) return bmp180.readPressure();
+  if(channel == 2) return bmp180.readAltitude();
+  if(channel == 3) return bmp180.readSealevelPressure();
+  if(channel == 4) return bmp180.readAltitude(101500);
+  return 0;
+}
+#endif
 
 
 #endif
