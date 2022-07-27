@@ -1060,44 +1060,71 @@ String getSHT21Humidity(){
 void print_sht21(){
     /* DEMO - 1 */
   Logger.println(F("DEMO 1: 12-Bit Resolution"));
-  Logger.print(F("Humidity............: ")); Logger.print(myHTU21D.readHumidity());            Logger.println(F(" +-2%"));
-  Logger.print(F("Compensated Humidity: ")); Logger.print(myHTU21D.readCompensatedHumidity()); Logger.println(F(" +-2%"));
+  Logger.print(F("Humidity............: ")); 
+  Logger.print(myHTU21D.readHumidity());            
+  Logger.println(F(" +-2%"));
+
+  Logger.print(F("Compensated Humidity: ")); 
+  Logger.print(myHTU21D.readCompensatedHumidity()); 
+  Logger.println(F(" +-2%"));
 
   Logger.println(F("DEMO 1: 14-Bit Resolution")); 
-  Logger.print(F("Temperature.........: ")); Logger.print(myHTU21D.readTemperature()); Logger.println(F(" +-0.3C"));
+  Logger.print(F("Temperature.........: ")); 
+  Logger.print(myHTU21D.readTemperature()); 
+  Logger.println(F(" +-0.3C"));
 
  
   /* DEMO - 2 */
   Logger.println(F("DEMO 2: 11-Bit Resolution"));
   myHTU21D.setResolution(HTU21D_RES_RH11_TEMP11);
-  Logger.print(F("Humidity............: ")); Logger.print(myHTU21D.readHumidity());            Logger.println(F(" +-2%"));
-  Logger.print(F("Compensated Humidity: ")); Logger.print(myHTU21D.readCompensatedHumidity()); Logger.println(F(" +-2%"));
+  Logger.print(F("Humidity............: "));
+  Logger.print(myHTU21D.readHumidity());
+  Logger.println(F(" +-2%"));
+
+  Logger.print(F("Compensated Humidity: "));
+  Logger.print(myHTU21D.readCompensatedHumidity());
+  Logger.println(F(" +-2%"));
 
   Logger.println(F("DEMO 2: 11-Bit Resolution"));
-  Logger.print(F("Temperature.........: ")); Logger.print(myHTU21D.readTemperature()); Logger.println(F(" +-0.3C"));
-
+  Logger.print(F("Temperature.........: "));
+  Logger.print(myHTU21D.readTemperature()); 
+  Logger.println(F(" +-0.3C"));
 
   /* DEMO - 3 */
   Logger.println(F("DEMO 3: Battery Status"));
-  if   (myHTU21D.batteryStatus() == true) Logger.println(F("Battery.............: OK.  Level > 2.25v"));
-  else                                    Logger.println(F("Battery.............: LOW. Level < 2.25v"));
-
+  if   (myHTU21D.batteryStatus() == true){
+    Logger.println(F("Battery.............: OK.  Level > 2.25v"));
+  else {       
+    Logger.println(F("Battery.............: LOW. Level < 2.25v"));
+  }
 
   /* DEMO - 4 */
   Logger.println(F("DEMO 4:"));
-  Logger.print(F("Firmware version....: ")); Logger.println(myHTU21D.readFirmwareVersion());
+  Logger.print(F("Firmware version....: ")); 
+  Logger.println(myHTU21D.readFirmwareVersion());
 
 
   /* DEMO - 5 */
   Logger.println(F("DEMO 5:"));
-  Logger.print(F("Sensor's ID.........: ")); Logger.println(myHTU21D.readDeviceID());
+  Logger.print(F("Sensor's ID.........: ")); 
+  Logger.println(myHTU21D.readDeviceID());
 
 
   /* back to lib. default resolution */
   myHTU21D.softReset();
   myHTU21D.setResolution(HTU21D_RES_RH12_TEMP14);
 }
+
+
+float get_sht21(uint8_t channel = 0){
+  if(channel == 1) return myHTU21D.readTemperature();
+  if(channel == 0) return myHTU21D.readHumidity();
+  return 0;
+}
+
 #endif
+
+
 
 #ifdef USELM75
 void init_LM75(){
