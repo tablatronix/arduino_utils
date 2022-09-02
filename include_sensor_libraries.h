@@ -32,3 +32,27 @@
 #include <SensirionI2CScd4x.h>	// https://github.com/
 
 // #include <hp_BH1750.h>  //inlude the library
+// 
+// 
+[env:esp32doit-devkit-v1]
+platform = espressif32
+board = esp32doit-devkit-v1
+framework = arduino
+lib_deps =
+	avaldebe/PMSerial@^1.2.0
+	https://github.com/adafruit/Adafruit_INA219
+	https://github.com/adafruit/Adafruit_MPU6050
+	https://github.com/avaldebe/PMserial
+	https://github.com/adafruit/Adafruit_VEML6070
+	https://github.com/adafruit/Adafruit_PCF8591
+	https://github.com/adafruit/Adafruit_INA219
+	https://github.com/adafruit/Adafruit_Sensor
+	https://github.com/adafruit/Adafruit_APDS9960
+	https://github.com/adafruit/Adafruit_SHT31
+	https://github.com/adafruit/Adafruit_BMP280
+	https://github.com/adafruit/Adafruit_CCS811
+	; https://github.com/adafruit/Adafruit_HTU21DF_Library
+	; https://github.com/RobTillaart/SHT2x
+	https://github.com/enjoyneering/HTU21D
+	https://github.com/claws/BH1750
+lib_extra_dirs = /Users/alverson/projects/microcontrollers/dev/libraries
