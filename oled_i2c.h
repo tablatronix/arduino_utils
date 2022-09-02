@@ -8,8 +8,8 @@
 #include <Adafruit_SSD1306.h>
 
 // #define SH1106_128_64
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define SCREEN_WIDTH 32 // OLED display width, in pixels
+#define SCREEN_HEIGHT 128 // OLED display height, in pixels
 
 #define OLED_RESET -1
 // Adafruit_SSD1306 lcd(OLED_RESET);
@@ -82,7 +82,7 @@ void init_oled(bool preamble = true){
   if(!lcd.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
     Serial.println(F("SSD1306 allocation failed"));
   }
-  lcd.setRotation(2);
+  // lcd.setRotation(2);
   // Wire.setClock(400000L);  // set i2c speed 400khz
   // Wire.setClock(100000L);  // set i2c speed 400khz
 
