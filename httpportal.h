@@ -6,8 +6,8 @@
 #include <log.h>
 #include <WiFiManager.h>
 
-// WiFiManager portal(Logger);
-WiFiManager portal;
+WiFiManager portal(Logger); // use netlog for logging wm
+// WiFiManager portal;
 
 void begin_httpportal(){
 	portal.startWebPortal();
