@@ -1237,44 +1237,65 @@ float getVoltage(){
 SensirionI2CScd4x scd4x;
 // CO2 0x62
 void init_scd4x(){
-  bool ret = false;
-  Wire.begin();  
+  uint16_t error;
+  char errorMessage[256];
+  Wire.begin();
   scd4x.begin(Wire);
 
   // stop potentially previously started measurement
-  ret != scd4x.stopPeriodicMeasurement();
-  // if (ret) {
-  //     Serial.print("Error trying to execute stopPeriodicMeasurement(): ");
-  //     errorToString(error, errorMessage, 256);
-  //     Serial.println(errorMessage);
-  // } else ret = true;
+  error = scd4x.stopPeriodicMeasurement();
+  if (error) {
+      Serial.print("Error trying to execute stopPeriodicMeasurement(): ");
+      errorToString(error, errorMessage, 256);
+      Serial.println(errorMessage);
+  } else error = true;
 
-  ret != scd4x.startPeriodicMeasurement();
+  error = scd4x.startPeriodicMeasurement();
 
-  if(!ret){
+  if(error){
+    Serial.print("Error trying to execute startPeriodicMeasurement(): ");
+    errorToString(error, errorMessage, 256);
+    Serial.println(errorMessage);
     Logger.println("[ERROR] SCD4X init FAILED");
   }
   else Logger.println("[ENV] SCD4X is ACTIVE");
   // return ret;  
 }
 
-void print_scd4x(){
-}
-
-float get_scd4x(uint8_t channel = 0){
-  uint16_t co2;
-  float temperature;
-  float humidity;
-  uint16_t error;
-  
-  error = scd4x.readMeasurement(co2, temperature, humidity);
-
-  // print_env();
-  if(channel == 0) return co2;
-  if(channel == 1) return temperature;
-  if(channel == 2) return humidity;
+float get_scd4x(uint8_t channel = 0,bool update=true){
+  static uint16_t scd4x_co2;
+  static float scd4x_temperature;
+  static float scd4x_humidity;
+  static uint16_t scd4x_error = 0;
+  if(update){
+    char errorMessage[256];
+    scd4x_error = scd4x.readMeasurement(scd4x_co2, scd4x_temperature, scd4x_humidity);
+    if(scd4x_error){
+        Serial.print("Error trying to execute readMeasurement(): ");
+        errorToString(scd4x_error, errorMessage, 256);
+        Serial.println(errorMessage);
+    }
+  }
+  if(channel == 0) return scd4x_co2;
+  if(channel == 1) return scd4x_temperature;
+  if(channel == 2) return scd4x_humidity;
+  if(channel == 3) return scd4x_error;
   return 0;
 }
+
+void print_scd4x(){
+
+  Serial.print(__FUNCTION__);
+  Serial.print(" co2: ");
+  Serial.print(get_scd4x(0));
+  Serial.print(" temp: ");
+  Serial.print(get_scd4x(1,false));
+  Serial.print(" humidity: ");
+  Serial.print(get_scd4x(2,false));
+  Serial.print(" error: ");
+  Serial.println();
+}
+
 #endif
 
 
