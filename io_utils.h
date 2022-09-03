@@ -40,7 +40,7 @@ void debugPin(uint8_t pin){
 
 // #include <i2c_identify.h>
 
-void scani2c(bool pinswap = false){
+uint16_t scani2c(bool pinswap = false){
   swap = pinswap;
   byte error, address;
   int nDevices;
@@ -89,9 +89,12 @@ void scani2c(bool pinswap = false){
   }
   if (nDevices == 0)
     Logger.println("[ERROR] No I2C devices found\n");
-  else
+  else{
     Logger.print("[I2C] scan done found ");
     Logger.println(nDevices);
+  }
+
+  return nDevices;
 }
 
 void scanPins(){
@@ -117,6 +120,14 @@ void pinregister(){
   // also can let you set the use as a flag so you know if you are using it as adc or input
   // and on esp32 etc set the pins desired specs and avoid conflicts with multiple adc reads
 }
+
+
+// The ADC firmware driver API supports ADC1 (8 channels, attached to GPIOs 32 – 39), 
+// and ADC2 (10 channels, attached to GPIOs 0, 2, 4, 12 – 15, and 25 – 27). 
+// However, the usage of ADC2 has some restrictions for the application:
+
+// ADC2 is used by the Wi-Fi driver. Therefore the application can only use ADC2 when the Wi-Fi driver has not been started.
+// Some of the ADC2 pins are used as strapping pins (GPIO 0, 2, 15) thus cannot be used freely.
 
 // #ifdef ESP32
 
