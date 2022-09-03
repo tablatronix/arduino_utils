@@ -233,12 +233,16 @@ int getRSSIasQuality() {
   return getRSSIasQuality(WiFi.RSSI());
 }
 
-
+/**
+ * [checkWifi description]
+ * @param restart [description]
+ */
 void checkWifi(bool restart = false){
   Serial.println("[TASK] checkWiFi");
   if(WiFi.status() != WL_CONNECTED  ){
     if(downtime == 0) downtime = millis();
     if(restart && millis() > downtime + downtimeRestart){
+      // reboot
       #ifdef USENEOIND
         indSetColor(np_red);
       #endif
@@ -247,11 +251,14 @@ void checkWifi(bool restart = false){
       delay(1000);
       ESP.restart();
     }
-    #ifdef USENEOIND
-      indSetColor(np_red);
-    #endif
-    Serial.println("[WIFI] WiFi is Disconnected");
-    WiFi.reconnect();
+    else{
+      // reconnect
+      #ifdef USENEOIND
+        indSetColor(np_red);
+      #endif
+      Serial.println("[WIFI] WiFi is Disconnected");
+      WiFi.reconnect();
+    }
   } else {
     if(debug_wifi){
       Serial.println("[WIFI] WiFi is CONNECTED");
