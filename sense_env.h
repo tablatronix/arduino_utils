@@ -54,7 +54,7 @@ Average<float> avg_a(20);
 #define SI7021
 #define AHT10
 
-// #define USESHT31 // SHT31  Temp/Humidity
+#define USESHT31 // SHT31  Temp/Humidity
 #define USESHT21 // SHT21 / HTU21D Temp/Humidity
 
 // #define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
@@ -1038,8 +1038,7 @@ void init_sht21(){
   if(init){
       Logger.println(F("[ENV] HTU21D, SHT21 is ACTIVE")); 
   }
-  else
-  {
+  else{
       Logger.println(F("[ERROR] HTU21D, SHT21 init FAILED")); //(F()) saves string to flash & keeps dynamic memory free
   }
 
@@ -1059,20 +1058,20 @@ String getSHT21Humidity(){
 
 void print_sht21(){
     /* DEMO - 1 */
-  Logger.println(F("DEMO 1: 12-Bit Resolution"));
+  // Logger.println(F("DEMO 1: 12-Bit Resolution"));
   Logger.print(F("Humidity............: ")); 
-  Logger.print(myHTU21D.readHumidity());            
-  Logger.println(F(" +-2%"));
+  Logger.println(myHTU21D.readHumidity());            
+  // Logger.println(F(" +-2%"));
 
   Logger.print(F("Compensated Humidity: ")); 
-  Logger.print(myHTU21D.readCompensatedHumidity()); 
-  Logger.println(F(" +-2%"));
+  Logger.println(myHTU21D.readCompensatedHumidity()); 
+  // Logger.println(F(" +-2%"));
 
-  Logger.println(F("DEMO 1: 14-Bit Resolution")); 
+  // Logger.println(F("DEMO 1: 14-Bit Resolution")); 
   Logger.print(F("Temperature.........: ")); 
-  Logger.print(myHTU21D.readTemperature()); 
-  Logger.println(F(" +-0.3C"));
-
+  Logger.println(myHTU21D.readTemperature()); 
+  // Logger.println(F(" +-0.3C"));
+  return;
  
   /* DEMO - 2 */
   Logger.println(F("DEMO 2: 11-Bit Resolution"));
@@ -1092,8 +1091,9 @@ void print_sht21(){
 
   /* DEMO - 3 */
   Logger.println(F("DEMO 3: Battery Status"));
-  if   (myHTU21D.batteryStatus() == true){
+  if(myHTU21D.batteryStatus() == true){
     Logger.println(F("Battery.............: OK.  Level > 2.25v"));
+  }      
   else {       
     Logger.println(F("Battery.............: LOW. Level < 2.25v"));
   }
@@ -1117,8 +1117,9 @@ void print_sht21(){
 
 
 float get_sht21(uint8_t channel = 0){
-  if(channel == 1) return myHTU21D.readTemperature();
-  if(channel == 0) return myHTU21D.readHumidity();
+  if(channel == 0) return myHTU21D.readTemperature();
+  if(channel == 1) return myHTU21D.readCompensatedHumidity();
+  if(channel == 2) return myHTU21D.readHumidity();
   return 0;
 }
 
@@ -1210,6 +1211,10 @@ String filterSensor( float n, float a,float b,String c = ""){
   return (String)n;
 }
 
+String truncateSensor(float n,uint8_t precision = 0){
+  if(precision = 0) return (String)(int)n;
+  return (String)n;
+}
 
 // #define USEINTVCC
 #ifdef USEINTVCC
