@@ -13,10 +13,11 @@
 
 #define OLED_RESET -1
 // Adafruit_SSD1306 lcd(OLED_RESET);
-Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT);
-// Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET,800000,800000);
+// Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT);
+Adafruit_SSD1306 lcd(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET,800000,800000);
 
 int oledfpsmicros = 0;
+int fontlineheight = 9;
 
 void invertText(){
   lcd.setTextColor(BLACK, WHITE); // 'inverted' text  
@@ -65,8 +66,8 @@ void print_oled(String str,uint8_t size,bool flush){
  */
 void print_oled_line(String str,uint16_t no = 1,uint16_t size = 1){
   uint16_t y = 0;
-  if(size == 1) y = 9*no;
-  if(size == 2) y = 18*no;
+  if(size == 1) y = fontlineheight*no;
+  if(size == 2) y = (fontlineheight*2)*no;
   lcd.setCursor(0,y);
   lcd.setTextSize(size);  
   lcd.println(str);
@@ -82,7 +83,7 @@ void init_oled(bool preamble = true){
   if(!lcd.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
     Serial.println(F("SSD1306 allocation failed"));
   }
-  lcd.setRotation(2);
+  // lcd.setRotation(2);
   // Wire.setClock(400000L);  // set i2c speed 400khz
   // Wire.setClock(100000L);  // set i2c speed 400khz
 
@@ -111,14 +112,15 @@ void oled_test(uint8_t num = 1){
     print_oled_line((String)millis(),1);
     lcd.display();
     delay(1000);
+    lcd.clearDisplay();
     print_oled_line("Line One",0);
     print_oled_line("Line Two",1);
     print_oled_line("Line Three",2);
     lcd.display();
     delay(1000);
     lcd.clearDisplay();
-    print_oled_line("Line One",0,2);  
-    print_oled_line("Line Two",2);  
+    // print_oled_line("Line One",0,2);  
+    // print_oled_line("Line Two",2);  
     lcd.display();
   }
 }
