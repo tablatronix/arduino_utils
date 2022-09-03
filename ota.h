@@ -52,6 +52,7 @@ void startOTA(){
           type = "filesystem";
         }    
        otastarted = true;
+      Logger.println("\n[OTA] onStart " + type);
       Serial.println("\n[OTA] onStart " + type);
   });
 
