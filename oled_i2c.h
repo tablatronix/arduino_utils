@@ -8,8 +8,8 @@
 #include <Adafruit_SSD1306.h>
 
 // #define SH1106_128_64
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define SCREEN_WIDTH 64 // OLED display width, in pixels
+#define SCREEN_HEIGHT 48 // OLED display height, in pixels
 
 #define OLED_RESET -1
 // Adafruit_SSD1306 lcd(OLED_RESET);
