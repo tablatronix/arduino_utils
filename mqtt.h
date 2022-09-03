@@ -7,15 +7,21 @@
 #ifdef USEJSON
 #include <ArduinoJson.h> // bblanchon/ArduinoJson
 
-StaticJsonDocument<4096> payload;
-StaticJsonDocument<4096> rootdoc;
+// #define _JSONSIZE 4096
+
+#ifndef _JSONSIZE
+#define _JSONSIZE 1024
+#endif
+
+StaticJsonDocument<_JSONSIZE> payload;
+StaticJsonDocument<_JSONSIZE> rootdoc;
 // payload["sensor"] = "gps";
 // payload["time"] = 1351824120;
 
   // const size_t CAPACITY = JSON_ARRAY_SIZE(1);
   // StaticJsonDocument<CAPACITY> docH;
   // JsonArray arrayH = docH.to<JsonArray>();
-  DynamicJsonDocument pubjson(4096);
+  DynamicJsonDocument pubjson(_JSONSIZE);
   JsonArray jsondata = pubjson.to<JsonArray>();
 #endif
 
@@ -26,9 +32,14 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt      = false;
-bool debug_mqtt_json = false;
+bool debug_mqtt      = true;
+bool debug_mqtt_json = true;
 const char* clientID = "";
+
+bool mqttconnected = false;
+
+long lastReconnectAttempt = 0;
+uint16_t mqttretry = 5000;
 
 void MQTTreconnect() {
 
@@ -43,15 +54,15 @@ void MQTTreconnect() {
       // Once connected, publish an announcement...
       client.publish("TESTOUT", "hello world");
       // ... and resubscribe
-      client.subscribe("TESTIN");
+      client.subscribe("CMD");
     } else {
       Logger.print("[ERROR] [MQTT] failed, rc="); // @todo we get here but no actual reconnnect loop, why?
       Logger.println(client.state());
       // Wait 5 seconds before retrying
-      // delay(5000);
+      delay(5000);
     }
     delay(100);
-  }
+}
 }
 
 void MQTTcallback(char* topic, byte* payload, unsigned int length) {
@@ -64,14 +75,16 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
   }
   Logger.println("");
   if ((char)payload[0] == '1') {
-    Logger.println("[MQTT] payload: TRIGGERED");
+    Logger.println("[MQTT] payload: 1 TRIGGERED");
+    ESP.restart();
   }
+  if ((char)payload[0] == '2') {
+    Logger.println("[MQTT] payload: 2 TRIGGERED");
+    WiFi.disconnect();
+  }  
 }
 
-long lastReconnectAttempt = 0;
-uint16_t mqttretry = 5000;
-
-boolean mqttReconnect() {
+boolean mqttWiFiReconnect() {
   WiFi.reconnect();
   return WiFi.status() == 'WL_CONNECTED';
 }
@@ -80,33 +93,42 @@ void mqtt_checkconn(){
   if (!client.connected()) {
     long now = millis();
     if (now - lastReconnectAttempt > mqttretry) {
+      Logger.println("[MQTT] try client re-connect");      
       lastReconnectAttempt = now;
       // Attempt to reconnect
-      if (mqttReconnect()) {
+      // if (mqttWiFiReconnect()) {
         lastReconnectAttempt = 0;
-        client.connect(clientID);
-      }
+        MQTTreconnect();
+        // client.connect(clientID);
+      // }
     }
   } else {
     // Client connected
     client.loop();
-  }  
+  }
 }
 
-void process_MQTT_nb(){
+bool process_MQTT_nb(){
   if (!client.connected()) {
     mqtt_checkconn();
   }
   client.loop(); // will wait loop reconnect to mqtt
+  return client.connected();
 }
 
-void process_MQTT(){
+bool process_MQTT(){
   if(!wifiIsConnected()){
-  Logger.println("[MQTT] wifi not connected");
-  return;
+    // Logger.println("[MQTT] wifi not connected");
+    return false;
   }
-  MQTTreconnect(); // @todo throttle
+  if(!client.connected()){
+    mqttconnected = false;
+    Logger.println("[MQTT] client not connected");
+    MQTTreconnect(); // @todo throttle
+    return false;
+  }
   client.loop(); // will wait loop reconnect to mqtt
+  return true;
 }
 
 void init_MQTT(){
@@ -114,8 +136,8 @@ void init_MQTT(){
   client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
   if (client.connect(clientID)) Logger.println("[MQTT] connected to " + (String)mqtt_server_ip);
-  client.setBufferSize(2048);
-  client.subscribe("downstream");
+  client.setBufferSize(_JSONSIZE);
+  client.subscribe("CMD");
   process_MQTT();
   // jsondata = pubjson.to<JsonArray>();
   // jsondata = pubjson.createNestedArray();
@@ -139,14 +161,14 @@ void MQTT_pub(String topic, String sensor, String value){
       // return;
     }
     if(debug_mqtt){
-    Logger.print("[MQTT] Publish: ");
-    Logger.print(sensor);
-    Logger.print(" ");
-    Logger.println(value);
+      Logger.print("[MQTT] Publish: ");
+      Logger.print(sensor);
+      Logger.print(" ");
+      Logger.println(value);
+    }
     if(value == "") {
-        Logger.println("[ERROR] MQTT value is empty");
+        // Logger.println("[ERROR] MQTT value is empty");
         return;
-      }
     }
     // JsonArray data = payload.createNestedArray(topic);
     payload["topic"] = topic;
@@ -173,10 +195,10 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
       Logger.print(sensor);
       Logger.print(" ");
       Logger.println(value);
-      if(value == "") {
-        Logger.println("[ERROR] MQTT value is empty");
-        return;
-      }
+    }
+    if(value == "") {
+      // Logger.println("[ERROR] MQTT value is empty");
+      return;
     }
     JsonArray data = payload.createNestedArray(topic);
     payload["topic"] = data; // tag key = tag value
@@ -227,7 +249,7 @@ void MQTT_pub_send(String topic){
   // Serial.println(output);
   // Serial.flush();
 
-  char message[4096];
+  char message[_JSONSIZE];
   serializeJson(pubjson, message);
   if(debug_mqtt_json){  
     Logger.println((String)message);
