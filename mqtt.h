@@ -39,30 +39,37 @@ const char* clientID = "";
 bool mqttconnected = false;
 
 long lastReconnectAttempt = 0;
-uint16_t mqttretry = 5000;
+uint32_t mqttretry = 10000;
+
+// Possible values for client.state()
+// #define MQTT_CONNECTION_TIMEOUT     -4
+// #define MQTT_CONNECTION_LOST        -3
+// #define MQTT_CONNECT_FAILED         -2
+// #define MQTT_DISCONNECTED           -1
+// #define MQTT_CONNECTED               0
+// #define MQTT_CONNECT_BAD_PROTOCOL    1
+// #define MQTT_CONNECT_BAD_CLIENT_ID   2
+// #define MQTT_CONNECT_UNAVAILABLE     3
+// #define MQTT_CONNECT_BAD_CREDENTIALS 4
+// #define MQTT_CONNECT_UNAUTHORIZED    5
 
 void MQTTreconnect() {
-
-  // Loop until we're reconnected
-  // this is blocking
   if (!client.connected()) {
   // while (!client.connected()) {
     if(debug_mqtt) Logger.println("[MQTT] Connecting...");
     // Attempt to connect
     if (client.connect(clientID)) {
+      mqttconnected = true;
       Logger.println("[MQTT] Connected");
       // Once connected, publish an announcement...
       client.publish("TESTOUT", "hello world");
       // ... and resubscribe
       client.subscribe("CMD");
     } else {
-      Logger.print("[ERROR] [MQTT] failed, rc="); // @todo we get here but no actual reconnnect loop, why?
+      Logger.print("[ERROR] [MQTT] failed, rc="); // @todo we get here but no actual reconnnect
       Logger.println(client.state());
-      // Wait 5 seconds before retrying
-      delay(5000);
     }
-    delay(100);
-}
+  }
 }
 
 void MQTTcallback(char* topic, byte* payload, unsigned int length) {
@@ -95,12 +102,7 @@ void mqtt_checkconn(){
     if (now - lastReconnectAttempt > mqttretry) {
       Logger.println("[MQTT] try client re-connect");      
       lastReconnectAttempt = now;
-      // Attempt to reconnect
-      // if (mqttWiFiReconnect()) {
-        lastReconnectAttempt = 0;
-        MQTTreconnect();
-        // client.connect(clientID);
-      // }
+      MQTTreconnect();
     }
   } else {
     // Client connected
@@ -294,13 +296,13 @@ void MQTT_pub(String topic, String sensor, String value){
 // add free heap
 void MQTT_pub_device(){
   if(debug_mqtt) Logger.println("[MQTT] Publish Device");
+  MQTT_pub("device","uptime_s",(String)(millis()/1000));
   MQTT_pub("device","rssi",(String)getRSSIasQuality());
+  MQTT_pub("device","heap",(String)ESP.getFreeHeap());
+  // MQTT_pub("device","hall",(String)hallRead());
   #ifdef ESP32
-  // MQTT_pub("device","hall",(String)hallRead()); // USES PINS 36,39
   MQTT_pub("device","temp",(String)temperatureRead());
-  // MQTT_pub("device","adc_1",(String)analogRead(39));
   #endif
-  MQTT_pub("device","uptime_s",(String)(millis()/1000));  
   MQTT_pub_send("device");
 }
 

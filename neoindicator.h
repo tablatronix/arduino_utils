@@ -131,6 +131,17 @@ void indSetColor(uint8_t r,uint8_t g,uint8_t b){
   indSetColor(ind.Color(r,g,b));
 }
 
+// void setPixelBrightness(uint32_t n, uint32_t a){
+// }
+
+// void indSetBrightness(uint8_t a){
+//   uint32_t c = strip.getPixelColor(0);
+//   // if(DEBUG_neoind)Serial.println("[IND] set ind color brightness:"+(String) ind.Color(r,g,b));    
+//   setPixelColorAlpha(n,c,a);
+//   ind.setPixelBrightness
+// }
+
+
 void setIndColor(uint8_t r,uint8_t g,uint8_t b){
   indSetColor(r,g,b);
 }

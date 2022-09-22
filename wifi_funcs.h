@@ -241,25 +241,30 @@ void checkWifi(bool restart = false){
   Serial.println("[TASK] checkWiFi");
   if(WiFi.status() != WL_CONNECTED  ){
     if(downtime == 0) downtime = millis();
-    if(restart && millis() > downtime + downtimeRestart){
-      // reboot
-      #ifdef USENEOIND
-        indSetColor(np_red);
-      #endif
-      Serial.println("[ERROR] wifi not found, rebooting after timeout");
-      Serial.flush();
-      delay(1000);
-      ESP.restart();
+    if(millis() > downtime + downtimeRestart){
+     if(restart){
+        // reboot
+        #ifdef USENEOIND
+          indSetColor(np_red);
+        #endif
+        Serial.println("[ERROR] wifi not found, rebooting after timeout");
+        Serial.flush();
+        delay(1000);
+        ESP.restart();
+        // WiFi.reconnect();
+      }
+      else{
+        // reconnect
+        #ifdef USENEOIND
+          indSetColor(np_red);
+        #endif
+        Serial.println("[WIFI] WiFi is Disconnected");
+        downtime = millis();
+        WiFi.reconnect();
+      }
     }
-    else{
-      // reconnect
-      #ifdef USENEOIND
-        indSetColor(np_red);
-      #endif
-      Serial.println("[WIFI] WiFi is Disconnected");
-      WiFi.reconnect();
-    }
-  } else {
+  }
+  else {
     if(debug_wifi){
       Serial.println("[WIFI] WiFi is CONNECTED");
       Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());

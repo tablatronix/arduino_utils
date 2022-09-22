@@ -1,3 +1,7 @@
+/**
+ * All helpers need to be refactored to use neopixel objected passed in
+ * kludge reassign strip to your obj etc and use as a shadow
+ */
 #ifndef NEOPIXEL_HELPER_H
 #define  NEOPIXEL_HELPER_H
 
@@ -159,6 +163,7 @@ uint16_t randomBrightness(uint16_t a,uint8_t range){
 	return b;
 }
 
+// does not allow offsets 0-255
 uint16_t getBrightnessStep(uint8_t step, uint16_t numsteps){
   uint16_t brightness;
 //  brightness = 255 - (step * (255/numsteps)); // linear
@@ -303,6 +308,7 @@ void fadeTo(uint32_t c,uint16_t duration){
   fade(getPixelColor(0),c,duration);
 }
 
+// stepping non blocking fader
 uint32_t getFadeStep(uint32_t startColor, uint32_t endColor, uint16_t steps, uint16_t step){
 	int16_t redDiff   = red(endColor)   - red(startColor);
 	int16_t greenDiff = green(endColor) - green(startColor);
@@ -315,7 +321,8 @@ uint32_t getFadeStep(uint32_t startColor, uint32_t endColor, uint16_t steps, uin
 	blueValue  = (int16_t)blue(startColor)  + (blueDiff  * step / steps);
 	whiteValue = (int16_t)white(startColor) + (whiteDiff * step / steps);
 
-	return color(redValue, greenValue, blueValue,whiteValue);
+	// return color(redValue, greenValue, blueValue,whiteValue);
+  return color(redValue, greenValue, blueValue);
 }
 
 void flasher(uint32_t colorA, uint32_t colorB,int waitA, int waitB){

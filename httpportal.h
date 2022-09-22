@@ -10,6 +10,8 @@ WiFiManager portal(Logger); // use netlog for logging wm
 // WiFiManager portal;
 
 void begin_httpportal(){
+  // portal.setDebugLevel();
+  // portal.setDebugOutput(true);
 	portal.startWebPortal();
 }
 
@@ -22,7 +24,7 @@ void process_httpportal(){
 }
 
 void init_httpportal(String title = "",bool begin = true){
-  portal.setDebugOutput(true,"[HTTPP] ");
+  portal.setDebugOutput(true,"[HTTPD] ");
   // invert theme, dark
   portal.setDarkMode(true);
   std::vector<const char *> menu = {"wifi","param","info","sep","update","restart","exit"};
