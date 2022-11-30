@@ -20,8 +20,8 @@
 bool debug_wifi = true;
 
 bool rebootAfterDowntime = true;
-long downtimeRestart = 1*3600; // n minutes
-long downtime        = 0;
+long downtimeRestart = 1*60000; // millis
+long downms        = 0;
 
 /** IP to String? */
 String toStringIp(IPAddress ip) {
@@ -237,11 +237,12 @@ int getRSSIasQuality() {
  * [checkWifi description]
  * @param restart [description]
  */
-void checkWifi(bool restart = false){
+
+void checkWifi(bool recon = true, bool restart = false){
   Serial.println("[TASK] checkWiFi");
   if(WiFi.status() != WL_CONNECTED  ){
-    if(downtime == 0) downtime = millis();
-    if(millis() > downtime + downtimeRestart){
+    if(downms == 0) downms = millis();
+    if(millis() > downms + downtimeRestart){
      if(restart){
         // reboot
         #ifdef USENEOIND
@@ -251,16 +252,15 @@ void checkWifi(bool restart = false){
         Serial.flush();
         delay(1000);
         ESP.restart();
-        // WiFi.reconnect();
       }
       else{
         // reconnect
         #ifdef USENEOIND
           indSetColor(np_red);
         #endif
-        Serial.println("[WIFI] WiFi is Disconnected");
-        downtime = millis();
-        WiFi.reconnect();
+        Serial.println("[WIFI] WiFi is Disconnected for " + (String)(millis()-downms));
+        downms = millis();
+        if(recon) WiFi.reconnect();
       }
     }
   }
@@ -273,6 +273,10 @@ void checkWifi(bool restart = false){
       indSetColor(np_green);
     #endif
   }
+}
+
+void checkWifi(){
+  checkWifi(true,false);
 }
 
 void enableWiFi(){
