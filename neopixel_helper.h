@@ -46,6 +46,9 @@ const uint32_t np_turquoise = strip.Color(  0,    80,  80);
 
 void init_strip(int pin, Adafruit_NeoPixel& ind){
   strip = ind; return;
+}
+
+void init_strip(int pin){
   strip.setPin(pin);
   strip.setBrightness(NEOBRIGHTNESS);
   strip.updateLength(NEONUMPIXELS);
