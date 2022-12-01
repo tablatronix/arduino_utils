@@ -31,7 +31,7 @@ void ssr_init(uint16_t pin){
 
   //ssr enable
 
-  Serial.println("[SSR] READY on pin " + (String)_ssrRelayPin);
+  Logger.println("[SSR] READY on pin " + (String)_ssrRelayPin);
   _ssrRelayPin = pin;
   // ssr_off();
   digitalWrite(_ssrRelayPin, invertLOW ? LOW : HIGH);
@@ -60,13 +60,12 @@ void SetSSRFrequency( int duty,int power =1)
     #ifdef ESP8266
     analogWrite( _ssrRelayPin, out);
     #elif defined(ESP32)
-    Serial.println("[DAC] - " + (String)out);
+    Logger.println("[SSR] - " + (String)out);
     analogWrite( _ssrRelayPin, out);
     // dacWrite(_ssrRelayPin,out);
     #endif
     // if(duty == 0)ssr_off();
     // if(duty == 255)ssr_on();
-  }
   // else ssr_off(); // ENFORCE SAFETY
 
     // if(DEBUG_ssr) Logger.println("[SSR] " + (String)duty);
@@ -75,6 +74,7 @@ void SetSSRFrequency( int duty,int power =1)
       if(DEBUG_ssr) Logger.print("[SSR] Duty ON");
       if(DEBUG_ssr) Logger.println( " - duty: " + (String)duty + " " + String( ( duty / 256.0 ) * 100) + "%" +" pow:" + String( round_f( power * 100 )) + "%" );
     }
+  }
   }
   currentDuty = duty;  
 }
@@ -89,7 +89,7 @@ void ssr_off(){
 }
 
 void ssr_on(){
-  if(_ssrRelayPin > 0) {
+  if(_ssrRelayPin >= 0) {
     Logger.println("[SSR] ON");
     SetSSRFrequency(255); // working
     analogWrite( _ssrRelayPin, invertDuty ? 0: 255);
@@ -116,26 +116,28 @@ float getSSRPower(){
 }
 
 void ssr_resume(){
-  Serial.println("[SSR] ssr_resume");
+  Logger.println("[SSR] ssr_resume");
   if(_ssrRelayPin >= 0) setSSR(currentDuty);
 }
 
 void disableSSR(bool disabled = true){
-  Serial.println("[SSR] disable ssr - " + (String)disabled);
+  Logger.println("[SSR] disable ssr");
   setSSR(0);
   ssr_off();
-  ssrDisabled = disabled;
+  ssrDisabled = true;
   // init safe state, lockdown
-  pinMode(_ssrRelayPin,INPUT_PULLUP);
+  // pinMode(_ssrRelayPin,INPUT_PULLUP);
 }
 
-void enableSSR(bool disabled = true){
-  Serial.println("[SSR] disable ssr - " + (String)disabled);
+void enableSSR(bool disabled = false){
+  Logger.println("[SSR] enable ssr");
   setSSR(0);
   ssr_off();
-  ssrDisabled = disabled;
+  ssrDisabled = false;
   // init safe state
-  pinMode(_ssrRelayPin,OUTPUT);
+  // pinMode(_ssrRelayPin,OUTPUT); // PINMODE BREAKS ANALOGWRITE LEDC CHANNEL
+  ssr_on();
+  delay(500); // test pulse
   ssr_off();
 }
 
@@ -147,6 +149,7 @@ void toggleSSR(){
 
 void ssrTest(int speed){
 
+  ssrDisabled = false;
   ssr_on();
   delay(1000);
   ssr_off();
@@ -176,6 +179,7 @@ void ssrTest(int speed){
   }
 
   ssr_off();
+  ssrDisabled = true;
 }
 
 void ssrPing(int speed){
