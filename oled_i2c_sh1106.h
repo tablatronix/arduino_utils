@@ -197,9 +197,9 @@ void print_oled_line(String str,uint16_t no = 1,uint16_t size = 1){
 
 void print_oled(String str,uint8_t size = 1,bool flush = true){
   lcd.clearBuffer();         // clear the internal memory
-  lcd.setFont(u8g2_font_ncenB08_tr);
+  // lcd.setFont(u8g2_font_ncenB08_tr);
   // lcd.drawStr(0,10,String(micros()).c_str());  // write something to the internal memory
-  lcd.setFont(u8g2_font_inb30_mn);
+  // lcd.setFont(u8g2_font_inb30_mn);
   lcd.drawStr(10,30,str.c_str()); 
   // lcd.drawStr(0,10,micros().c_str();  // write something to the internal memory
   if(flush)lcd.sendBuffer();          // transfer internal memory to the display

@@ -167,15 +167,20 @@ PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 void pid_reset_I(){
   myPID.SetTunings(Kp, 0, Kd);
+  // Logger.println("[PID] reset I");
+  // Logger.println("[PID] PID : " + (String)Kp + " 0 " + (String)Kd);
 }
 
 void pid_preset_I(){
   myPID.SetTunings(Kp, Ki, Kd);
+  // Logger.println("[PID] preset I");
+  // Logger.println("[PID] PID : " + (String)Kp + " " + (String)Ki + " " + (String)Kd);
 }
 
 void pid_peak(){
-  Logger.println("[PID] adjust tunings");
   myPID.SetTunings(KpAgr, KiAgr, KdAgr);
+  Logger.println("[PID] adjust tunings");
+  Logger.println("[PID] PID : " + (String)KpAgr + " " + (String)KiAgr + " " + (String)KdAgr);
   // @todo confirm tunings
 }
 
