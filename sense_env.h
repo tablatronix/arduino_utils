@@ -52,7 +52,7 @@ Average<float> avg_a(20);
 
 // TEMP/HUMIDITY/GAS
 #define SI7021
-#define AHT10
+#define AHTX0
 
 #define USESHT31 // SHT31  Temp/Humidity
 #define USESHT21 // SHT21 / HTU21D Temp/Humidity
@@ -1353,5 +1353,32 @@ float get_bmp180(uint8_t channel = 0){
 }
 #endif
 
+
+#ifdef AHTX0
+#include <Adafruit_AHTX0.h>
+Adafruit_AHTX0 aht;
+
+void init_aht(){
+  bool ret = false;
+  ret = aht.begin();
+  if(!ret){
+    Logger.println("[ERROR] aht init FAILED");
+  }
+  else Logger.println("[ENV] aht is ACTIVE");
+  // return ret;  
+}
+
+void print_aht(){
+}
+
+float get_aht(uint8_t channel = 0){
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);
+  // print_env();
+  if(channel == 0) return temp.temperature;
+  if(channel == 1) return temp.relative_humidity;
+  return 0;
+}
+#endif
 
 #endif
