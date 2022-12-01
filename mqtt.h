@@ -32,8 +32,8 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt      = true;
-bool debug_mqtt_json = true;
+bool debug_mqtt      = false;
+bool debug_mqtt_json = false;
 const char* clientID = "";
 
 bool mqttconnected = false;
@@ -41,6 +41,7 @@ bool mqttconnected = false;
 long lastReconnectAttempt = 0;
 uint32_t mqttretry = 10000;
 
+void MQTTGetErrorMessage(){
 // Possible values for client.state()
 // #define MQTT_CONNECTION_TIMEOUT     -4
 // #define MQTT_CONNECTION_LOST        -3
@@ -52,6 +53,7 @@ uint32_t mqttretry = 10000;
 // #define MQTT_CONNECT_UNAVAILABLE     3
 // #define MQTT_CONNECT_BAD_CREDENTIALS 4
 // #define MQTT_CONNECT_UNAUTHORIZED    5
+}
 
 void MQTTreconnect() {
   if (!client.connected()) {
@@ -64,7 +66,7 @@ void MQTTreconnect() {
       // Once connected, publish an announcement...
       client.publish("TESTOUT", "hello world");
       // ... and resubscribe
-      client.subscribe("CMD");
+      client.subscribe("ESP_env_c/CMD");
     } else {
       Logger.print("[ERROR] [MQTT] failed, rc="); // @todo we get here but no actual reconnnect
       Logger.println(client.state());
@@ -81,10 +83,12 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
     Logger.print((char)payload[i]);
   }
   Logger.println("");
+  // RESTART
   if ((char)payload[0] == '1') {
     Logger.println("[MQTT] payload: 1 TRIGGERED");
     ESP.restart();
   }
+  // WIFI off
   if ((char)payload[0] == '2') {
     Logger.println("[MQTT] payload: 2 TRIGGERED");
     WiFi.disconnect();
@@ -112,6 +116,7 @@ void mqtt_checkconn(){
 
 bool process_MQTT_nb(){
   if (!client.connected()) {
+    mqttconnected = false;
     mqtt_checkconn();
   }
   client.loop(); // will wait loop reconnect to mqtt
@@ -137,9 +142,14 @@ void init_MQTT(){
   if(!wifiIsConnected()) return;
   client.setServer(mqtt_server_ip, mqtt_server_port);
   client.setCallback(MQTTcallback);
-  if (client.connect(clientID)) Logger.println("[MQTT] connected to " + (String)mqtt_server_ip);
+  if (client.connect(clientID)){
+    mqttconnected = true;
+    Logger.println("[MQTT] connected to " + (String)mqtt_server_ip);
+  }
+  else Logger.println("[MQTT] init failed to connect to " + (String)mqtt_server_ip);
   client.setBufferSize(_JSONSIZE);
-  client.subscribe("CMD");
+  // client.subscribe("CMD");
+  client.subscribe("ESP_env_c/CMD");
   process_MQTT();
   // jsondata = pubjson.to<JsonArray>();
   // jsondata = pubjson.createNestedArray();
@@ -162,6 +172,7 @@ void MQTT_pub(String topic, String sensor, String value){
       // Logger.print("[MQTT] OFFLINE: ");
       // return;
     }
+    if(!mqttconnected)return;
     if(debug_mqtt){
       Logger.print("[MQTT] Publish: ");
       Logger.print(sensor);
@@ -192,6 +203,7 @@ void MQTT_pub(String topic, String sensor, String value){
 }
 
 void MQTT_pub(String topic, String sensor, String value, bool json){
+    if(!mqttconnected)return;
     if(debug_mqtt){
       Logger.print("[MQTT] Publish: ");
       Logger.print(sensor);
@@ -238,6 +250,7 @@ void MQTT_pub(String topic, String sensor, String value, bool json){
 }
 
 void MQTT_pub_send(String topic){
+  if(!mqttconnected)return;
   if(debug_mqtt){
     Logger.println("[MQTT] sending json for topic: " + topic);
   }
@@ -270,6 +283,7 @@ void MQTT_pub_send(String topic){
 
 #else
 void MQTT_pub(String topic, String msg){
+    if(!mqttconnected)return;
     Logger.print("[MQTT] Publish message: ");
     Logger.print("topic: ");
     Logger.print(topic);
@@ -279,6 +293,7 @@ void MQTT_pub(String topic, String msg){
 }
 
 void MQTT_pub(String topic, String sensor, String value){
+    if(!mqttconnected)return;
     Logger.print("[MQTT] Publish message: ");
     Logger.print("topic: ");
     Logger.print(topic+"/"+clientID+"/"+sensor);
@@ -295,6 +310,7 @@ void MQTT_pub(String topic, String sensor, String value){
 // todo 
 // add free heap
 void MQTT_pub_device(){
+  if(!mqttconnected)return;
   if(debug_mqtt) Logger.println("[MQTT] Publish Device");
   MQTT_pub("device","uptime_s",(String)(millis()/1000));
   MQTT_pub("device","rssi",(String)getRSSIasQuality());
