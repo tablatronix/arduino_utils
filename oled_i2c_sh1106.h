@@ -60,6 +60,8 @@
 #define GLYPH_SPACE     287 // bell
 #define GLYPH_NO         87 // busted
 #define GLYPH_COFFEE     2615 // busted
+#define GLYPH_TRENDUP    112 // up arrow
+#define GLYPH_TRENDDN    110 // down arrow
 
 // const char* testing = u8"\u0263\u0BA3\u0B82";
 
