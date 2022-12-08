@@ -25,6 +25,8 @@ int iteration = 1;
 const char* syslog_hostname;
 const char* syslog_appname;
 
+
+// Setup netlog logging
 void init_syslog(const char* hostname){
   Serial.println("[LOG] syslog init");
   Serial.println("[LOG] syslog devicename: " + (String)hostname);
@@ -42,11 +44,12 @@ void init_syslog(const char* hostname){
   syslog.appName(syslog_appname);
   // syslog.deviceHostname(DEVICE_HOSTNAME);
   // syslog.appName(APP_NAME);
-  syslog.defaultPriority(LOG_INFO);
+  syslog.defaultPriority(LOG_INFO); // default log level if none
 }
 
+// a tester
 void sendLogTest(){
-  String startmsg = "[BOOT] Device Started";
+  String startmsg = "[LOG] SYSLOG TEST";
   syslog.log(LOG_INFO, startmsg);
   return;
   // Log message can be formated like with printf function.
@@ -75,7 +78,7 @@ void sendLogTest(){
 }
 
 void sendSyslog(){
-   syslog.log(LOG_INFO, F("End loop")); 
+   syslog.log(LOG_INFO, F("Test")); 
 }
 
 // // Syslog protocol format

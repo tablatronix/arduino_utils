@@ -1,15 +1,30 @@
-
 #ifndef log_h
 #define log_h
 
+/**
+ * Local logging solutions, using steamutils and syslog
+ * StreamUtils
+ * https://github.com/Chris--A/PrintEx
+ * Allows for stream buffering, redirection, mirroring etc.
+ *
+ * syslog
+ * https://github.com/arcao/Syslog.git
+ * An Arduino library for logging to Syslog server via `UDP` protocol in 
+ * [IETF (RFC 5424)] and [BSD (RFC 3164)] message format
+ */
+
 #define USESYSLOG
+
 #ifdef USESYSLOG
 #include <Syslog.h>
 #include <log_syslog.h>
 #endif
 
-// https://github.com/Chris--A/PrintEx
-// StreamUtils
+/**
+ * syslog preparer
+ * @todo, streamutils should have buffering capabilities already, replace our buffer
+ * @param msg [description]
+ */
 
 char logbuffer[256];
 int  logbufferidx = 0; // end char
@@ -24,6 +39,8 @@ void sendToSyslog(String msg){
   // }
   // Serial.print("[RAW] ");
   // Serial.println(String(logbuffer).substring(0,logbufferidx));
+  
+  // Log to buffer, do string matching for LOG LEVEL
   msg = String(logbuffer).substring(0,logbufferidx-2);
   String msgb = msg;
   msgb.toLowerCase(); // lowercase for string match levels
@@ -35,14 +52,19 @@ void sendToSyslog(String msg){
   if(msgb.indexOf("warning") != -1)  level = LOG_WARNING;
   if(msgb.indexOf("fatal")   != -1)  level = LOG_CRIT;
   if(syslogactive) syslog.log(level,msg); // SEND IT
-  // if(syslogactive) syslog.log(level,(String)millis()+" "+msg); // SEND IT
-  // todo clean up string, remove whitespace such as CR LF \t
+  // if(syslogactive) syslog.log(level,(String)millis()+" "+msg);
+  // @todo clean up string, remove whitespace such as CR LF \t
+  
   // reset buffer
   logbuffer[0] = (char)0;
   logbufferidx = 0;
   #endif
 }
 
+
+/**
+ * setup logger stream wrapper, redirection
+ */
 class print2syslog : public Stream {
 public:
   bool begun = true; // allow muting via availability
@@ -75,6 +97,23 @@ public:
 print2syslog syslogger;
 // syslogger.begin();
 
+/**
+ * Setup streamutils stream redirection/mirroring
+ * @todo abstract into init class
+ *
+ * This library provides some helper classes and functions for dealing with streams. 
+ * For example, with this library, you can:
+ * speed of your program by buffering the data it reads from a file
+ * reduce the number of packets sent over WiFi by buffering the data you send
+ * improve the reliability of a serial connection by adding error correction codes
+ * debug your program more easily by logging what it sends to a Web service
+ * send large data with the [Wire library](https://www.arduino.cc/en/reference/wire)
+ * use a `String` or EEPROM with a stream interface
+ * 
+ * Logger +
+ *        |-> syslogger -> syslog UDP netlog
+ *        |-> Serial -> (uart/usbserial)
+ */
 #include <StreamUtils.h>
 
 Stream &_Logger = Serial;
@@ -92,6 +131,20 @@ LoggingStream Logger(syslogger, _Logger);
 // WriteLoggingStream loggingClient(client, Serial);
 // loggingClient.println("GET / HTTP/1.1");
 // loggingClient.println("User-Agent: Arduino");
+
+
+/**
+ * Basic Debug logging methods
+ * DEBUGGER(debuglevel_t LOG_LEVEL,F(msg));
+ * DEBUGGER(debuglevel_t LOG_LEVEL,F(msg),value); // for msg value pairs
+ *
+ * #DEBUG_LEVEL
+ * #DEBUG_PORT
+ *
+ * PREFIX:[LOGLEVEL] msg
+ * MAX will output timestamps and memory info
+ */
+
 
 #include <memory>
 
@@ -183,7 +236,7 @@ void DEBUGGER(debuglevel_t level,Generic text,Genericb textb) {
     _debugPort.printf("[MEM] free: %5d | max: %5d | frag: %3d%% \n", free, max, frag);    
     #endif
   }
-  _debugPort.print("*WM: ");
+  _debugPort.print("*DLOG: ");
   if(_debugLevel == DEBUG_DEV) _debugPort.print("["+(String)level+"] ");
   _debugPort.print(text);
   if(textb){
