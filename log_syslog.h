@@ -7,10 +7,6 @@
 #include <creds.h>
 #include <wifi_funcs.h>
 
-
-// @todo add print println stream capability
-// add manual flush, ammend to buffer send buffer at once instead of real time, or batch sending.
-
 WiFiUDP udpClient;
 
 Syslog syslog(udpClient, SYSLOG_PROTO_IETF); // SYSLOG_PROTO_BSD
@@ -25,28 +21,44 @@ int iteration = 1;
 const char* syslog_hostname;
 const char* syslog_appname;
 
-void init_syslog(const char* hostname){
-  Serial.println("[LOG] syslog init");
-  Serial.println("[LOG] syslog devicename: " + (String)hostname);
-  Serial.println("[LOG] syslog hostname: " + getHostname());
-  Serial.println("[LOG] syslog appname: " + logTopic);
+bool debug_syslog = true;
+bool syslog_begun = false;
 
-  // syslog_hostname = getHostname().c_str(); // gibberish not working
+// Setup netlog logging
+void init_syslog(const char* hostname){
+
+  if(debug_syslog){
+    Serial.println("[LOG] syslog init");
+    Serial.println("[LOG] syslog devicehostname: " + (String)syslog_hostname);
+    Serial.println("[LOG] syslog appname: " + logTopic);
+  }
+
   syslog_hostname = hostname;
-   // : getHostname().c_str();
   syslog_appname  = logTopic.c_str();
-  // prepare syslog configuration here (can be anywhere before first call of 
-	// log/logf method)
+  // prepare syslog configuration here 
+  // (can be anywhere before first call of log/logf method)
   syslog.server(syslog_server_ip, syslog_server_port);
   syslog.deviceHostname(syslog_hostname);
   syslog.appName(syslog_appname);
-  // syslog.deviceHostname(DEVICE_HOSTNAME);
-  // syslog.appName(APP_NAME);
-  syslog.defaultPriority(LOG_INFO);
+  syslog.defaultPriority(LOG_INFO); // default log level if none
 }
 
+// bool log(uint16_t pri, const String &message);
+// bool log(uint16_t pri, const char *message);
+bool sendSysLog(uint16_t level, const String &msg){
+  if(!syslog_begun) return false;
+  return syslog.log(level,msg);
+}
+
+bool sendSysLog(uint16_t level, const char *msg){
+  if(!syslog_begun) return false;
+  return syslog.log(level,msg);
+}
+
+// tester
 void sendLogTest(){
-  String startmsg = "[BOOT] Device Started";
+  if(!syslog_begun) return false;
+  String startmsg = "[LOG] SYSLOG TEST";
   syslog.log(LOG_INFO, startmsg);
   return;
   // Log message can be formated like with printf function.
@@ -72,10 +84,6 @@ void sendLogTest(){
   // F() macro is supported too
   syslog.log(LOG_INFO, F("End loop"));
   iteration++;
-}
-
-void sendSyslog(){
-   syslog.log(LOG_INFO, F("End loop")); 
 }
 
 // // Syslog protocol format
