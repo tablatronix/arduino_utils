@@ -57,7 +57,7 @@ bool sendSysLog(uint16_t level, const char *msg){
 
 // tester
 void sendLogTest(){
-  if(!syslog_begun) return false;
+  if(!syslog_begun) return;
   String startmsg = "[LOG] SYSLOG TEST";
   syslog.log(LOG_INFO, startmsg);
   return;
