@@ -13,7 +13,7 @@ bool DEBUG_neohelp = false;
 
 uint16_t NEOBRIGHTNESS = 100;
 int NEONUMPIXELS = 5;
-#define NEOPIXELSTYPE NEO_GRB + NEO_KHZ800
+#define NEOPIXELSTYPE NEO_RGB + NEO_KHZ800
 
 #include <Adafruit_NeoPixel.h>
 // Adafruit_NeoPixel strip = Adafruit_NeoPixel();
@@ -52,7 +52,7 @@ void init_strip(int pin){
   strip.setPin(pin);
   strip.setBrightness(NEOBRIGHTNESS);
   strip.updateLength(NEONUMPIXELS);
-  strip.updateType(NEO_GRB + NEO_KHZ800);
+  strip.updateType(NEOPIXELSTYPE);
   strip.begin();
   strip.show();
   strip.show(); // on purpose, ensure its blanked for glitched resets

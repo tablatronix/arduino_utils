@@ -23,6 +23,8 @@ bool rebootAfterDowntime = true;
 long downtimeRestart = 1*60000; // millis
 long downms        = 0;
 
+uint16_t _lastrssiperc =0;
+
 /** IP to String? */
 String toStringIp(IPAddress ip) {
   String res = "";
@@ -265,9 +267,10 @@ void checkWifi(bool recon = true, bool restart = false){
     }
   }
   else {
+    _lastrssiperc = getRSSIasQuality();
     if(debug_wifi){
       Serial.println("[WIFI] WiFi is CONNECTED");
-      Serial.println("[WIFI] RSSI: "+(String)getRSSIasQuality());
+      Serial.println("[WIFI] RSSI: "+(String)_lastrssiperc);
     }
     #ifdef USENEOIND
       indSetColor(np_green);
