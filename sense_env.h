@@ -1376,7 +1376,7 @@ float get_aht(uint8_t channel = 0){
   aht.getEvent(&humidity, &temp);
   // print_env();
   if(channel == 0) return temp.temperature;
-  if(channel == 1) return temp.relative_humidity;
+  if(channel == 1) return humidity.relative_humidity;
   return 0;
 }
 #endif
