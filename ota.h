@@ -29,20 +29,25 @@ void handleOTA(){
 void processOTA(){
   handleOTA();
 }
-  // Port defaults to 8266
-  // ArduinoOTA.setPort(8266);
 
-  // Hostname defaults to esp8266-[ChipID]
-  // ArduinoOTA.setHostname("myesp8266");
+/*
+Port defaults to 8266 or 3232
+ArduinoOTA.setPort(8266);
 
-  // No authentication by default
-  // ArduinoOTA.setPassword("admin");
+test port
+sudo nmap -sU -p 8266,3232 -O 192.168.20.124
 
-  // Password can be set with it's md5 value as `nm
-  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-  // ArduinoOTA.setRebootOnSuccess(bool reboot);
+Hostname defaults to esp8266-[ChipID]
+ArduinoOTA.setHostname("myesp8266");
 
+No authentication by default
+ArduinoOTA.setPassword("admin");
+
+Password can be set with it's md5 value as `nm
+MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+ArduinoOTA.setRebootOnSuccess(bool reboot);
+*/
 void startOTA(){
   ArduinoOTA.onStart([]() {
         String type;

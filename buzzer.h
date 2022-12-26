@@ -147,6 +147,7 @@ void soundalarm(){
 #define BUZ_CHAN 0
 
 void plugged() {
+   // usb melody
   tone(buzzer_pin, NOTE_C5, 150); // F6
   tone(buzzer_pin, NOTE_A5, 100); // F5
   tone(buzzer_pin, NOTE_F4, 100); // F5

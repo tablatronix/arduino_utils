@@ -268,7 +268,7 @@ void checkWifi(bool recon = true, bool restart = false){
     }
   }
   else {
-    getRSSIasQuality();
+    _lastrssiperc = getRSSIasQuality();
     if(debug_wifi){
       Serial.println("[WIFI] WiFi is CONNECTED");
       Serial.println("[WIFI] RSSI: "+(String)_lastrssiperc);
