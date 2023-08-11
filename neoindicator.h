@@ -43,7 +43,7 @@ Adafruit_NeoPixel ind = Adafruit_NeoPixel();
  // 	mediumvioletred	#C71585	rgb(199,21,133)
 
 uint16_t INDBRIGHTNESS = 60;
-int INDNUMPIXELS = 2;
+int INDNUMPIXELS = 4;
 #define INDPIXELSTYPE NEO_GRB + NEO_KHZ800
 
 bool INDPINRESET = false;
@@ -55,7 +55,7 @@ void init_indicator(uint16_t pin){
 // Adafruit_NeoPixel 
   // strip = ind;
   ind.setPin(pin);
-  ind.setBrightness(255);
+  ind.setBrightness(100);
   ind.updateLength(INDNUMPIXELS);
   ind.updateType(NEO_GRB + NEO_KHZ800);
   ind.begin();

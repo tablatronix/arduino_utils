@@ -1,13 +1,7 @@
 #ifndef max31855_h
 #define max31855_h
 
-// #include "MAX31855.h" // by Rob Tillaart Library Manager (NO HSPI!!)
-#include "Adafruit_MAX31855.h" // Seperate calls for spiread for each function, no raw bit cache!
-#include <ktypelinear.h>
-// #include <quickstats.h> // @todo test quickstats, add child class for container
-// #include <Statistics.h> // https://github.com/provideyourown/statistics
-#include <Average.h>
-#include <number_format.h>
+#define DEBUG
 
 // NODEMCU hspi
 // HW scl      D5 14
@@ -16,10 +10,27 @@
 // HW cs       D8 15
 
 // #define MAXDO   5 // HWMISO
-#define MAXCS   15 // 2
-#define MAXCLK  14 // HWSLK
-#define MAXMISO 13
-Adafruit_MAX31855 tc(MAXCLK,MAXCS,MAXMISO);
+// #define MAXCS   15 // 2
+// #define MAXCLK  14 // HWSLK
+// #define MAXMISO 13
+
+#define USE_max6675
+
+#ifdef USE_max6675
+#include "max6675.h"
+
+MAX6675 tc(MAX_SCK,MAX_CS,MAX_SDO);
+#else
+// #include "MAX31855.h" // by Rob Tillaart Library Manager (NO HSPI!!)
+#include "Adafruit_MAX31855.h" // Seperate calls for spiread for each function, no raw bit cache!
+Adafruit_MAX31855 tc(MAX_SCK,MAX_CS,MAX_SDO);
+#endif
+
+#include <ktypelinear.h>
+// #include <quickstats.h> // @todo test quickstats, add child class for container
+// #include <Statistics.h> // https://github.com/provideyourown/statistics
+#include <Average.h>
+#include <number_format.h>
 
 // Adafruit_MAX31855 tc(14,15,12);
 
@@ -109,11 +120,27 @@ float correctKType(){
   currentTempCorr = correctedCelsius(tcmv,internalTemp);
 }
 
+float readInternal(){
+  #ifdef USE_max6675
+  return 0;
+  #else
+  return tc.readInternal();
+  #endif
+}
+
+uint8_t readError(){
+  #ifdef USE_max6675
+  return 0;
+  #else
+  return tc.readError();
+  #endif
+}
+
 // @todo better average library, lerp etc
 void ReadCurrentTempAvg()
 {
-  int status = tc.readError();  
-  float internal = tc.readInternal();
+  int status = readError();  
+  float internal = readInternal();
   if(useInternal) currentTempAvg += internal + tempOffset;
   else currentTempAvg += tc.readCelsius() + tempOffset;
   avgReadCount++;
@@ -131,14 +158,14 @@ void ReadCurrentTempAvg()
 // Read the temp probe
 void ReadCurrentTemp()
 {
-  lastTCStatus = tc.readError();
+  lastTCStatus = readError();
   #ifdef DEBUG
   // Serial.print("tc status: ");
   // Serial.println( status );
   #endif
   if(useInternal){
     // use internal cj as real temp, useful for testing without tc or monitoring pcb etc
-  	internalTemp = tc.readInternal();
+  	internalTemp = readInternal();
   	currentTemp = internalTemp + tempOffset;
   }
   else {
@@ -207,8 +234,8 @@ void updateDevVars(){
 }
 
 void updateAltTemps(){
-  internalTemp = tc.readInternal();
-  lastTCStatus = tc.readError();  
+  internalTemp = readInternal();
+  lastTCStatus = readError();  
 }
 
 
@@ -222,7 +249,7 @@ void updateTemps(){
     // if(updateLock) return;
     // digitalWrite(0,LOW); // fixes DC left HIGH and data clocked to max ic causing screen artifacts. 
     delay(TCinterval); // stabilizes temperatures ????
-    internalTemp = tc.readInternal();
+    internalTemp = readInternal();
     ReadCurrentTemp();
     if(!useAveraging)updateDevVars();
     // Serial.println(currentTemp);
@@ -312,17 +339,22 @@ else tft.setTextColor( YELLOW, BLACK );
 
 void initTC(){
   // Start up the MAX31855
-  bool res = tc.begin();
+  bool res;
+  #ifdef USE_max6675
+  res =  true;
+  #else
+  res = tc.begin();
+  #endif
   // if(!res) add check now, see commits
   delay(200);
-  tc.readError();
+  readError();
   // check for sanity
   Serial.println("[TC] MAX31855 Thermocouple Begin...");
   if(!TCSanityCheck()) Serial.println("[ERROR] Status: "+ getTcStatus());
   
   #ifdef DEBUG
     printTC();
-    // Serial.println("[TC] "+(String)round(tc.readInternal()));
+    // Serial.println("[TC] "+(String)round(readInternal()));
     // Serial.println("[TC] "+(String)round(tc.readCelsius()));
     // Serial.println("[TC] "+(String)round(readFahrenheit()));
   #endif

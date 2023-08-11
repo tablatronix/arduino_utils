@@ -32,14 +32,14 @@ WiFiClient espClient;
 
 PubSubClient client(espClient);
 
-bool debug_mqtt      = false;
+bool debug_mqtt      = true;
 bool debug_mqtt_json = false;
 const char* clientID = "";
 
 bool mqttconnected = false;
 
 long lastReconnectAttempt = 0;
-uint32_t mqttretry = 10000;
+uint32_t mqttretry = 5000;
 
 void MQTTGetErrorMessage(){
 // Possible values for client.state()
@@ -130,7 +130,8 @@ bool process_MQTT(){
   }
   if(!client.connected()){
     mqttconnected = false;
-    Logger.println("[MQTT] client not connected");
+    Logger.print("[MQTT] client not connected => ");
+    Logger.println(client.state());
     MQTTreconnect(); // @todo throttle
     return false;
   }
@@ -140,16 +141,26 @@ bool process_MQTT(){
 
 void init_MQTT(){
   if(!wifiIsConnected()) return;
+  if(clientID == ""){
+    Logger.println("[MQTT] clientID not set");
+    // clientID = getHostname();
+  }
   client.setServer(mqtt_server_ip, mqtt_server_port);
+
+  // MQTT_SOCKET_TIMEOUT: socket timeout interval in Seconds. Override with setSocketTimeout()
+  client.setSocketTimeout(30); // #define MQTT_SOCKET_TIMEOUT 15
+  // MQTT_KEEPALIVE : keepAlive interval in Seconds. Override with setKeepAlive()
+  client.setKeepAlive(10);     // #define MQTT_KEEPALIVE 15
+
   client.setCallback(MQTTcallback);
   if (client.connect(clientID)){
     mqttconnected = true;
-    Logger.println("[MQTT] connected to " + (String)mqtt_server_ip);
+    Logger.println("[MQTT] connected to " + (String)mqtt_server_ip + " as " + clientID);
   }
   else Logger.println("[MQTT] init failed to connect to " + (String)mqtt_server_ip);
   client.setBufferSize(_JSONSIZE);
   // client.subscribe("CMD");
-  client.subscribe("ESP_env_c/CMD");
+  // client.subscribe("ESP_env_c/CMD");
   process_MQTT();
   // jsondata = pubjson.to<JsonArray>();
   // jsondata = pubjson.createNestedArray();
@@ -307,19 +318,37 @@ void MQTT_pub(String topic, String sensor, String value){
 }
 #endif
 
-// todo 
-// add free heap
-void MQTT_pub_device(){
+
+#ifdef ESP8266
+    #define ESP_getChipId() ESP.getChipId() 
+#elif defined(ESP32)    
+    #define ESP_getChipId() (uint32_t)ESP.getEfuseMac()
+#endif
+
+void MQTT_pub_device(bool verbose){
   if(!mqttconnected)return;
   if(debug_mqtt) Logger.println("[MQTT] Publish Device");
   MQTT_pub("device","uptime_s",(String)(millis()/1000));
   MQTT_pub("device","rssi",(String)getRSSIasQuality());
   MQTT_pub("device","heap",(String)ESP.getFreeHeap());
+  if(verbose){
+    // MQTT_pub("device","ip",(String)ESP.getFreeHeap());
+    // MQTT_pub("device","hostname",(String)ESP.getFreeHeap());
+    MQTT_pub("device","ChipType",(String)ESP.getChipModel());
+    MQTT_pub("device","chipID",(String)ESP_getChipId());
+    MQTT_pub("device","ESPver",(String)ESP.getSdkVersion());
+    MQTT_pub("device","chipCores",(String)ESP.getChipCores());
+    MQTT_pub("device","chipRev",(String)ESP.getChipRevision());
+  }
   // MQTT_pub("device","hall",(String)hallRead());
   #ifdef ESP32
-  MQTT_pub("device","temp",(String)temperatureRead());
+  // MQTT_pub("device","temp",(String)temperatureRead());
   #endif
   MQTT_pub_send("device");
+}
+
+void MQTT_pub_device(){
+  MQTT_pub_device(false);
 }
 
 #endif
