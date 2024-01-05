@@ -52,18 +52,20 @@ Average<float> avg_a(20);
 // I2C
 
 //MOTION
-#define MPU6050   // MPU 6050 GY521 3axis gyro/accel
-#define HMC5883L  // NI Honeywell HMC5883L
-#define MLX90393  // 3 axis magnetometer
+// #define MPU6050   // MPU 6050 GY521 3axis gyro/accel
+// #define HMC5883L  // NI Honeywell HMC5883L
+// #define MLX90393  // 3 axis magnetometer
 
 // TEMP/HUMIDITY/GAS
-#define SI7021
+// #define SI7021
 
-#define AHTX0
+// #define AHTX0
+
+#define SGP30
 
 // Sensiron
-#define USESHT31 // SHT31  Temp/Humidity
-#define USESHT21 // SHT21 / HTU21D Temp/Humidity
+// #define USESHT31 // SHT31  Temp/Humidity
+// #define USESHT21 // SHT21 / HTU21D Temp/Humidity
 
 
 // BOSCH
@@ -77,19 +79,19 @@ Up to 0.03hPa / 0.25m resolution
 -40 to +85°C operational range, +-2°C temperature accuracy
 This board/chip uses I2C 7-bit address 0x77.
 */
-#define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade for BMP085/BMP180/BMP183)
+// #define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade for BMP085/BMP180/BMP183)
 // #define USEBME280 // BME280 Humidity/Pressure/Altitude
 // Pressure: 300...1100 hPa
 
-#define SDC4X     // SDC40 Co2/Temp/Humidity
-#define USECS811  // CCS811 Temp/CO2/VOC
+// #define SDC4X     // SDC40 Co2/Temp/Humidity
+// #define USECS811  // CCS811 Temp/CO2/VOC
 // #define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
-#define PMSx
+// #define PMSx
 
 // LIGHT
-#define APDS9960  // Proximity, Light, RGB, and Gesture Sensor
+// #define APDS9960  // Proximity, Light, RGB, and Gesture Sensor
 
-#define USEBH1750    // Light Sensor
+// #define USEBH1750    // Light Sensor
 /*
   BH1750 has six different measurement modes. They are divided in two groups;
   continuous and one-time measurements. In continuous mode, sensor continuously
@@ -120,7 +122,7 @@ This board/chip uses I2C 7-bit address 0x77.
     BH1750_ONE_TIME_HIGH_RES_MODE_2
 */
 
-#define VEML6070  // UV Sensor
+// #define VEML6070  // UV Sensor
 
 
 // #define TSL2561   // Luminosity/Lux/Light Address = 0x39 //Slave addr also 0x29 or 0x49
@@ -144,15 +146,15 @@ Interface: I2C
 */
 
 // SOUND
-#define MAX9814 // MAX9814 Auto GC amplifier
-#define MAX4466 // MAX4466 Adj GC amplifier
+// #define MAX9814 // MAX9814 Auto GC amplifier
+// #define MAX4466 // MAX4466 Adj GC amplifier
 
 // Energy
-#define INA219  // INA219 current sense
+// #define INA219  // INA219 current sense
 
 // IO
-#define MCP4725 // 12bit DAC with EEPROM
-#define MCP3421 // 18bit delta-sigma ADC
+// #define MCP4725 // 12bit DAC with EEPROM
+// #define MCP3421 // 18bit delta-sigma ADC
 // #define PCF8591 // PCF8591 io expander
 
 
@@ -1400,5 +1402,85 @@ float get_aht(uint8_t channel = 0){
   return 0;
 }
 #endif
+
+
+
+#ifdef SGP30
+#include "Adafruit_SGP30.h"
+Adafruit_SGP30 sgp;
+
+void init_sgp30(){
+  bool ret = false;
+  ret = sgp.begin();
+  if(!ret){
+    Logger.println("[ERROR] _sgp30 init FAILED");
+  }
+  else Logger.println("[ENV] _sgp30 is ACTIVE");
+
+  // If you have a baseline measurement from before you can assign it to start, to 'self-calibrate'
+  // sgp.setIAQBaseline(0x8E68, 0x8F41);  // Will vary for each sensor!  
+  // return ret;  
+  
+  // If you have a temperature / humidity sensor, you can set the absolute humidity to enable the humditiy compensation for the air quality signals
+  //float temperature = 22.1; // [°C]
+  //float humidity = 45.2; // [%RH]
+  //sgp.setHumidity(getAbsoluteHumidity(temperature, humidity));
+
+}
+
+void print_sgp30(){
+  Logger.print("Found SGP30 serial #");
+  Logger.print(sgp.serialnumber[0], HEX);
+  Logger.print(sgp.serialnumber[1], HEX);
+  Logger.println(sgp.serialnumber[2], HEX);
+
+  if (! sgp.IAQmeasure()) {
+    Logger.println("Measurement failed");
+    return;
+  }
+  Logger.print("TVOC "); Logger.print(sgp.TVOC); Logger.println(" ppb\t");
+  Logger.print("eCO2 "); Logger.print(sgp.eCO2); Logger.println(" ppm");
+
+  if (! sgp.IAQmeasureRaw()) {
+    Logger.println("Raw Measurement failed");
+    return;
+  }
+  Logger.print("Raw H2 "); Logger.println(sgp.rawH2);
+  Logger.print("Raw Ethanol "); Logger.println(sgp.rawEthanol);
+
+  uint16_t TVOC_base, eCO2_base;
+  if (! sgp.getIAQBaseline(&eCO2_base, &TVOC_base)) {
+    Logger.println("Failed to get baseline readings");
+    return;
+  }
+  Logger.print("****Baseline values: \neCO2: 0x"); Logger.println(eCO2_base, HEX);
+  Logger.print("TVOC: 0x"); Logger.println(TVOC_base, HEX);  
+}
+
+float get_sgp30(uint8_t channel = 0){
+  print_sgp30();
+  if(sgp.IAQmeasure()){
+    if(channel == 0) return sgp.TVOC;
+    if(channel == 1) return sgp.eCO2;
+
+    if(sgp.IAQmeasureRaw()){
+      if(channel == 2) return sgp.rawH2;
+      if(channel == 3) return sgp.rawEthanol;
+    }
+  }
+  // else "error";
+}
+#endif
+
+/* return absolute humidity [mg/m^3] with approximation formula
+* @param temperature [°C]
+* @param humidity [%RH]
+*/
+uint32_t getAbsoluteHumidity(float temperature, float humidity) {
+    // approximation formula from Sensirion SGP30 Driver Integration chapter 3.15
+    const float absoluteHumidity = 216.7f * ((humidity / 100.0f) * 6.112f * exp((17.62f * temperature) / (243.12f + temperature)) / (273.15f + temperature)); // [g/m^3]
+    const uint32_t absoluteHumidityScaled = static_cast<uint32_t>(1000.0f * absoluteHumidity); // [mg/m^3]
+    return absoluteHumidityScaled;
+}
 
 #endif
