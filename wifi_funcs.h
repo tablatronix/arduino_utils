@@ -496,17 +496,42 @@ const char * const RESET_REASON_STR[] PROGMEM
 // } RESET_REASON_STR_v;
 
 
+void verbose_print_reset_reason(int reason)
+{
+  switch ( reason)
+  {
+    case 1  : Serial.println ("Vbat power on reset");break;
+    case 3  : Serial.println ("Software reset digital core");break;
+    case 4  : Serial.println ("Legacy watch dog reset digital core");break;
+    case 5  : Serial.println ("Deep Sleep reset digital core");break;
+    case 6  : Serial.println ("Reset by SLC module, reset digital core");break;
+    case 7  : Serial.println ("Timer Group0 Watch dog reset digital core");break;
+    case 8  : Serial.println ("Timer Group1 Watch dog reset digital core");break;
+    case 9  : Serial.println ("RTC Watch dog Reset digital core");break;
+    case 10 : Serial.println ("Instrusion tested to reset CPU");break;
+    case 11 : Serial.println ("Time Group reset CPU");break;
+    case 12 : Serial.println ("Software reset CPU");break;
+    case 13 : Serial.println ("RTC Watch dog Reset CPU");break;
+    case 14 : Serial.println ("for APP CPU, reseted by PRO CPU");break;
+    case 15 : Serial.println ("Reset when the vdd voltage is not stable");break;
+    case 16 : Serial.println ("RTC Watch dog reset digital core and rtc module");break;
+    default : Serial.println ("NO_MEAN");
+  }
+}
+
 // @todo
 String getResetReason(uint8_t cpu = 0){
     int reason;
     #ifdef ESP8266
       return ESP.getResetReason();
-    #elif defined(ESP32) && defined(_ROM_RTC_H_)
-      // requires #include <rom/rtc.h>
+    #elif defined(ESP32)
+     // && defined(_ROM_RTC_H_)
+      // requires #include <esp32/rom/rtc.h>
+      Serial.print("[RESET]");verbose_print_reset_reason(rtc_get_reset_reason(cpu));
       return RESET_REASON_STR[rtc_get_reset_reason(cpu)];
       // return "NA";
-      #else 
-      return "UNSET";
+    #else 
+      return (String)rtc_get_reset_reason(cpu) + " - UNKNOWN";
     #endif
 }
 
