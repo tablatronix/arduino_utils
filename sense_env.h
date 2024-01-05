@@ -14,9 +14,9 @@ Average<float> avg_a(20);
 // SHT21
 // HTU21D
 // 
-// BMP280
+// BMP280 - !reads 40k alt when offline, 0 psi, 0 temp
 // BME280
-// CS811
+// CS811 - CO2
 // TSL2561
 // BH1750  https://github.com/claws/BH1750
 // APDS9960
@@ -24,8 +24,10 @@ Average<float> avg_a(20);
 // PM Dust sensors https://github.com/avaldebe/PMserial
 // MPU6050
 // PCF8591
-// scd4x C02 sensor
+// SCD4x CO2 sensor
 // VEML6070 // UV
+// SI7021
+// AHTx0 - T/H
 
 // NOT IMPLEMENTED @TODO
 // HMC5883L
@@ -34,6 +36,10 @@ Average<float> avg_a(20);
 // INA219
 // MCP4725
 // MCP3421
+// SGP30 - tvoc
+// SGP40 - tvoc
+// SGP41 - tvoc
+// ENS160 - CO2
 
 // BUGS
 // sensors do not reinit is they drop out, add heathcheck()
@@ -48,14 +54,19 @@ Average<float> avg_a(20);
 //MOTION
 #define MPU6050   // MPU 6050 GY521 3axis gyro/accel
 #define HMC5883L  // NI Honeywell HMC5883L
-
+#define MLX90393  // 3 axis magnetometer
 
 // TEMP/HUMIDITY/GAS
 #define SI7021
+
 #define AHTX0
 
+// Sensiron
 #define USESHT31 // SHT31  Temp/Humidity
 #define USESHT21 // SHT21 / HTU21D Temp/Humidity
+
+
+// BOSCH
 
 // #define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
 /*
@@ -66,7 +77,6 @@ Up to 0.03hPa / 0.25m resolution
 -40 to +85°C operational range, +-2°C temperature accuracy
 This board/chip uses I2C 7-bit address 0x77.
 */
-
 #define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade for BMP085/BMP180/BMP183)
 // #define USEBME280 // BME280 Humidity/Pressure/Altitude
 // Pressure: 300...1100 hPa
@@ -137,7 +147,6 @@ Interface: I2C
 #define MAX9814 // MAX9814 Auto GC amplifier
 #define MAX4466 // MAX4466 Adj GC amplifier
 
-
 // Energy
 #define INA219  // INA219 current sense
 
@@ -147,9 +156,11 @@ Interface: I2C
 // #define PCF8591 // PCF8591 io expander
 
 
+// ADDRESSES
+
 // 0x23 0x46 BH1750
-// 0x38 0x70
-// 0x39 0x72 APDS9960 / TSL2561
+// 0x38 0x70 VEML6070 / AHTx0
+// 0x39 0x72 APDS9960 / TSL2561 / VEML6070 / AHTx0
 // 0x3C 0x78
 // 0x44 0x88
 // 0x48 0x90
@@ -157,6 +168,8 @@ Interface: I2C
 // 0x62 0xC4 SCD4X
 // 0x68 0xD0
 // 0x76 0xEC
+// 0x77 0xEE
+// 0x0D 0x1A MLX90393
 
 /*
 #ifdef ENV_TEMPLATE
@@ -766,7 +779,7 @@ bool init_apds(){
 }
 
 void init_apds_color(){
-  //enable color sensign mode
+  //enable color sensing mode
   apds.enableColor(true);  
 }
 
@@ -806,11 +819,11 @@ String get_apds_gesture(){
 }
 
 void print_apds_color(){
-  uint16_t r, g, b, c;
-  
+  uint16_t r, g, b, c, cnt;
   //wait for color data to be ready
-  while(!apds.colorDataReady()){
+  while(!apds.colorDataReady() && cnt <100){
     delay(5);
+    cnt++;
   }
 
   //get the data and print the different channels
@@ -826,12 +839,15 @@ void print_apds_color(){
   
   Logger.print(" clear: ");
   Logger.println(c);
-  Logger.println(); 
+  Logger.println();
 }
 
 float get_apds_color(uint8_t channel = 0){
   // print_apds_color();
   uint16_t r, g, b, c;
+  while(!apds.colorDataReady()){
+    delay(5);
+  }
   if(!apds.colorDataReady()) return 0;
   apds.getColorData(&r, &g, &b, &c);
   if(channel == 0) return r;
@@ -910,11 +926,13 @@ Adafruit_SHT31 sht31 = Adafruit_SHT31();
 #ifdef USEBMP280
 #include <Adafruit_BMP280.h>
 Adafruit_BMP280 bmp; // I2C
+// #define BMP280_ADDRESS (0x77) /**< The default I2C address for the sensor. */
+// #define BMP280_ADDRESS_ALT (0x76)
 #endif
 
 #ifdef USEBMP280
 void init_bmp280(){
-   if (!bmp.begin(BMP280_ADDRESS_ALT)) {
+   if (!bmp.begin(BMP280_ADDRESS)) {
     Logger.println(F("[ERROR] BMP280 init FAILED"));
   }
   else Logger.println(F("[ENV] BMP280 is ACTIVE")); 
@@ -1355,6 +1373,8 @@ float get_bmp180(uint8_t channel = 0){
 
 
 #ifdef AHTX0
+// #define AHTX0_I2CADDR_DEFAULT 0x38   ///< AHT default i2c address
+// #define AHTX0_I2CADDR_ALTERNATE 0x39 ///< AHT alternate i2c address
 #include <Adafruit_AHTX0.h>
 Adafruit_AHTX0 aht;
 
