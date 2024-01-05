@@ -60,31 +60,37 @@ uint16_t scani2c(bool pinswap = false){
     Wire.beginTransmission(address);
     int res = Wire.endTransmission();
  
- // * Output   0 .. success
- // *          1 .. length to long for buffer
- // *          2 .. address send, NACK received
- // *          3 .. data send, NACK received
- // *          4 .. other twi error (lost bus arbitration, bus error, ..)
- 
+  // https://www.arduino.cc/reference/en/language/functions/communication/wire/endtransmission/
+  // endTransmission() returns:
+  // 0: success.
+  // 1: data too long to fit in transmit buffer.
+  // 2: received NACK on transmit of address.
+  // 3: received NACK on transmit of data.
+  // 4: other error.
+  // 5: timeout
+  
     if (res == 0)
     {
       Logger.print("[I2C] Device found - ADDR: 0x");
-      if (address<16)
+      if (address<16){
         Logger.print("0x");
         Logger.print(address,HEX); // 7 bit
         Logger.print(" 0x");
         Logger.print(2*address,HEX); // 8bit
         Logger.println("");
+      } 
         nDevices++;
     }
-    else if(res!=2 && res !=255)
-    {
-      Logger.println("[ERROR]:" + (String)res);
-      Logger.print("Unknown error ADDR: 0x");
-      if (address<16)
-        Logger.print("0");
-        Logger.print(address,HEX);
+    else if(res!=2 && res !=255){
+      Logger.print("[ERROR]: code: " + (String)res);
+      Logger.print(" ADDR: 0x");
+      if (address<16){
+        Logger.print("0x");
+        Logger.print(address,HEX); // 7 bit
+        Logger.print(" 0x");
+        Logger.print(2*address,HEX); // 8bit
         Logger.println("");
+      }
     }
   }
   if (nDevices == 0)
