@@ -54,6 +54,7 @@ uint32_t indColor; // save color
 void init_indicator(uint16_t pin){
 // Adafruit_NeoPixel 
   // strip = ind;
+  Serial.println("[NEIND] init pin# " + (String)pin);
   ind.setPin(pin);
   ind.setBrightness(100);
   ind.updateLength(INDNUMPIXELS);
@@ -100,7 +101,8 @@ void indSetColor(uint32_t c){
   if(DEBUG_neoind)Serial.println("[IND] set ind color:" + (String)c);
   // debugColor(c);
   uint32_t color = ColorRGBA(red(c),green(c),blue(c),INDBRIGHTNESS);
-  ind.setPixelColor( 0, color );
+  // ind.setPixelColor( 0, color );
+  ind.fill(color);
   if(INDPINRESET) digitalWrite(ind.getPin(),HIGH); // reset
   #ifdef ESP32
   if(noInterrupts) portDISABLE_INTERRUPTS();
