@@ -72,25 +72,23 @@ uint16_t scani2c(bool pinswap = false){
     if (res == 0)
     {
       Logger.print("[I2C] Device found - ADDR: 0x");
-      if (address<16){
-        Logger.print("0x");
+      if (address<16)Logger.print("0x");
         Logger.print(address,HEX); // 7 bit
         Logger.print(" 0x");
         Logger.print(2*address,HEX); // 8bit
-        Logger.println("");
-      } 
+        Logger.println();
+      
         nDevices++;
     }
     else if(res!=2 && res !=255){
       Logger.print("[ERROR]: code: " + (String)res);
       Logger.print(" ADDR: 0x");
-      if (address<16){
-        Logger.print("0x");
+      if (address<16) Logger.print("0x");
         Logger.print(address,HEX); // 7 bit
         Logger.print(" 0x");
         Logger.print(2*address,HEX); // 8bit
-        Logger.println("");
-      }
+        Logger.println();
+    
     }
   }
   if (nDevices == 0)
