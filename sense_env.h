@@ -8,8 +8,10 @@ Average<float> avg_a(20);
 // @todo
 // add global env_debug
 // add local status for each sensor, avoid sending bad values if init failed
+// add improved scanner, default addresses have higher weight, if sensor already detected with high probability, reduce weight
 
 // SUPPORTED SENSORS
+
 // SHT31
 // SHT21
 // HTU21D
@@ -18,31 +20,32 @@ Average<float> avg_a(20);
 // BME280
 // CS811 - CO2
 // TSL2561
-// BH1750  https://github.com/claws/BH1750
+// BH1750  - https://github.com/claws/BH1750
 // APDS9960
 // GP2Y
-// PM Dust sensors https://github.com/avaldebe/PMserial
+// PMs - PM2.5 Dust sensors https://github.com/avaldebe/PMserial
 // MPU6050
 // PCF8591
-// SCD4x CO2 sensor
-// VEML6070 // UV
+// SCD4x - CO2 sensor
+// VEML6070 - UV (highly conflicting address space)
 // SI7021
-// AHTx0 - T/H
+// AHTx0 - T/H (highly conflicting address space)
+// SGP30 - tvoc
+// INA219 - current
 
 // NOT IMPLEMENTED @TODO
+
 // HMC5883L
 // MAX9814
 // MCP3421
-// INA219
 // MCP4725
 // MCP3421
-// SGP30 - tvoc
-// SGP40 - tvoc
+// SGP40 - tvoc AQI
 // SGP41 - tvoc
-// ENS160 - CO2
+// ENS160 - tvoc
 
 // BUGS
-// sensors do not reinit is they drop out, add heathcheck()
+// sensors do not reinit if they drop out, add heathcheck()
 // co2 voc, resubmits the same value over and over if device is lost
 // use real temp and humidity to compensate other sensors
 
@@ -51,26 +54,31 @@ Average<float> avg_a(20);
 
 // I2C
 
-//MOTION
+// MOTION
+// ===============
 // #define MPU6050   // MPU 6050 GY521 3axis gyro/accel
 // #define HMC5883L  // NI Honeywell HMC5883L
 // #define MLX90393  // 3 axis magnetometer
 
 // TEMP/HUMIDITY/GAS
+// =================
 // #define SI7021
-
 // #define AHTX0
+#define SGP30 // mox gas/tvoc and raw
 
-#define SGP30
 
 // Sensiron
+// ================
+#define USESHT40 // SHT40  Temp/Humidity
 // #define USESHT31 // SHT31  Temp/Humidity
 // #define USESHT21 // SHT21 / HTU21D Temp/Humidity
 
 
 // BOSCH
-
+// =================
 // #define USEBMP180 // BMP180 Temp/Pressure/Altitude (replaces BMP085) https://www.adafruit.com/product/1603
+
+
 /*
 Vin: 3 to 5VDC
 Logic: 3 to 5V compliant
@@ -79,19 +87,22 @@ Up to 0.03hPa / 0.25m resolution
 -40 to +85°C operational range, +-2°C temperature accuracy
 This board/chip uses I2C 7-bit address 0x77.
 */
+
 // #define USEBMP280 // BMP280 Temp/Pressure/Altitude (upgrade for BMP085/BMP180/BMP183)
 // #define USEBME280 // BME280 Humidity/Pressure/Altitude
 // Pressure: 300...1100 hPa
 
-// #define SDC4X     // SDC40 Co2/Temp/Humidity
+#define SCD40     // SDC40 Co2/Temp/Humidity
 // #define USECS811  // CCS811 Temp/CO2/VOC
 // #define USEGP2Y   // Sharp Particle/Dust sensor GP2Y1010AU0F, GP2Y1014AU0F
-// #define PMSx
+#define PMSx // pms7003
+
 
 // LIGHT
+// ================
 // #define APDS9960  // Proximity, Light, RGB, and Gesture Sensor
-
 // #define USEBH1750    // Light Sensor
+
 /*
   BH1750 has six different measurement modes. They are divided in two groups;
   continuous and one-time measurements. In continuous mode, sensor continuously
@@ -122,6 +133,7 @@ This board/chip uses I2C 7-bit address 0x77.
     BH1750_ONE_TIME_HIGH_RES_MODE_2
 */
 
+
 // #define VEML6070  // UV Sensor
 
 
@@ -146,28 +158,32 @@ Interface: I2C
 */
 
 // SOUND
+// ==============
 // #define MAX9814 // MAX9814 Auto GC amplifier
 // #define MAX4466 // MAX4466 Adj GC amplifier
 
 // Energy
+// ===============
 // #define INA219  // INA219 current sense
 
 // IO
+// ===============
 // #define MCP4725 // 12bit DAC with EEPROM
 // #define MCP3421 // 18bit delta-sigma ADC
 // #define PCF8591 // PCF8591 io expander
 
 
-// ADDRESSES
-
-// 0x23 0x46 BH1750
-// 0x38 0x70 VEML6070 / AHTx0
-// 0x39 0x72 APDS9960 / TSL2561 / VEML6070 / AHTx0
+// ADDRESSES 
+// ================
+// (7bit) (8bit) (*)typical default
+// 0x23 0x46 BH1750*
+// 0x38 0x70 VEML6070* / AHTx0*
+// 0x39 0x72 APDS9960* / TSL2561 / VEML6070 / AHTx0
 // 0x3C 0x78
 // 0x44 0x88
 // 0x48 0x90
-// 0x5A 0xB4 CS811
-// 0x62 0xC4 SCD4X
+// 0x5A 0xB4 CS811*
+// 0x62 0xC4 SCD4X*
 // 0x68 0xD0
 // 0x76 0xEC
 // 0x77 0xEE
@@ -348,9 +364,10 @@ float get_veml6070(uint8_t channel = 0){
 #include <PMserial.h> // Arduino library for PM sensors with serial interface
 
 bool pms_debug = false;
+// pass in pins, define does not work
 #if !defined(PMS_RX) && !defined(PMS_TX)
-constexpr auto PMS_RX = 14;
-constexpr auto PMS_TX = 17;
+constexpr auto PMS_RX = 3;
+constexpr auto PMS_TX = 4;
 #endif
 
 #ifndef ESP32
@@ -1041,6 +1058,111 @@ void sht31_process(){
 }
 #endif
 
+#ifdef USESHT40
+// SHT4x  Temp/Humidity
+#include "Adafruit_SHT4x.h"
+Adafruit_SHT4x sht4 = Adafruit_SHT4x();
+
+bool enableHeater = false;
+
+bool init_sht4(){
+
+  bool init = sht4.begin();
+  if(init){
+      Logger.println(F("[ENV] SHT4x is ACTIVE")); 
+  }
+  else
+  {
+      Logger.println(F("[ERROR] SHT4x init FAILED")); 
+  }
+
+  // Logger.print("[ENV] SHT4x Serial number 0x");
+  // Logger.println(sht4.readSerial()); // HEX crashes logger
+
+  // You can have 3 different precisions, higher precision takes longer
+  sht4.setPrecision(SHT4X_MED_PRECISION);
+  // switch (sht4.getPrecision()) {
+  //    case SHT4X_HIGH_PRECISION: 
+  //      Logger.println("High precision");
+  //      break;
+  //    case SHT4X_MED_PRECISION: 
+  //      Logger.println("Med precision");
+  //      break;
+  //    case SHT4X_LOW_PRECISION: 
+  //      Logger.println("Low precision");
+  //      break;
+  // }
+
+  // You can have 6 different heater settings
+  // higher heat and longer times uses more power
+  // and reads will take longer too!
+  sht4.setHeater(SHT4X_NO_HEATER);
+  // switch (sht4.getHeater()) {
+  //    case SHT4X_NO_HEATER: 
+  //      Logger.println("No heater");
+  //      break;
+  //    case SHT4X_HIGH_HEATER_1S: 
+  //      Logger.println("High heat for 1 second");
+  //      break;
+  //    case SHT4X_HIGH_HEATER_100MS: 
+  //      Logger.println("High heat for 0.1 second");
+  //      break;
+  //    case SHT4X_MED_HEATER_1S: 
+  //      Logger.println("Medium heat for 1 second");
+  //      break;
+  //    case SHT4X_MED_HEATER_100MS: 
+  //      Logger.println("Medium heat for 0.1 second");
+  //      break;
+  //    case SHT4X_LOW_HEATER_1S: 
+  //      Logger.println("Low heat for 1 second");
+  //      break;
+  //    case SHT4X_LOW_HEATER_100MS: 
+  //      Logger.println("Low heat for 0.1 second");
+  //      break;
+  // }
+ return init; 
+}
+
+// BUGGY returns bad values not null, or noint
+float get_sht4(uint8_t channel = 0){
+  // async ?
+  sensors_event_t humidity, temp;
+  sht4.getEvent(&humidity, &temp);// populate temp and humidity objects with fresh data  
+  if(channel == 0) return temp.temperature;
+  if(channel == 1) return humidity.relative_humidity;
+  return 0;
+}
+
+void sht4_process(){
+  sensors_event_t humidity, temp;
+  uint32_t timestamp = millis();
+  sht4.getEvent(&humidity, &temp);// populate temp and humidity objects with fresh data
+  timestamp = millis() - timestamp;
+
+  Serial.print("Temperature: "); Serial.print(temp.temperature); Serial.println(" degrees C");
+  Serial.print("Humidity: "); Serial.print(humidity.relative_humidity); Serial.println("% rH");
+
+  Serial.print("Read duration (ms): ");
+  Serial.println(timestamp);
+
+  // // Toggle heater enabled state every 30 seconds
+  // // An ~3.0 degC temperature increase can be noted when heater is enabled
+  // if (++loopCnt == 30) {
+  //   enableHeater = !enableHeater;
+  //   sht31.heater(enableHeater);
+  //   Logger.print("[ENV] SHT40 Heater State: ");
+  //   if (sht4.isHeaterEnabled())
+  //     Logger.println("ENABLED");
+  //   else
+  //     Logger.println("DISABLED");
+
+  //   loopCnt = 0;
+  // }
+}
+
+#endif
+
+
 // SHT21 / HTU21D Temp/Humidity
 #ifdef USESHT21
 #include <HTU21D.h> 
@@ -1252,14 +1374,13 @@ float getVoltage(){
 
 
 
-#ifdef SDC4X
+#ifdef SCD40
 #include <SensirionI2CScd4x.h>
 SensirionI2CScd4x scd4x;
 // CO2 0x62
 void init_scd4x(){
   uint16_t error;
   char errorMessage[256];
-  Wire.begin();
   scd4x.begin(Wire);
 
   // stop potentially previously started measurement
@@ -1403,13 +1524,12 @@ float get_aht(uint8_t channel = 0){
 }
 #endif
 
-
-
 #ifdef SGP30
 #include "Adafruit_SGP30.h"
 Adafruit_SGP30 sgp;
 
 void init_sgp30(){
+  Logger.println("[ENV] init_sgp30");
   bool ret = false;
   ret = sgp.begin();
   if(!ret){
@@ -1429,10 +1549,10 @@ void init_sgp30(){
 }
 
 void print_sgp30(){
-  Logger.print("Found SGP30 serial #");
-  Logger.print(sgp.serialnumber[0], HEX);
-  Logger.print(sgp.serialnumber[1], HEX);
-  Logger.println(sgp.serialnumber[2], HEX);
+  // Logger.print("Found SGP30 serial #");
+  // Logger.print(sgp.serialnumber[0], HEX);
+  // Logger.print(sgp.serialnumber[1], HEX);
+  // Logger.println(sgp.serialnumber[2], HEX);
 
   if (! sgp.IAQmeasure()) {
     Logger.println("Measurement failed");
@@ -1458,7 +1578,7 @@ void print_sgp30(){
 }
 
 float get_sgp30(uint8_t channel = 0){
-  print_sgp30();
+  // print_sgp30();
   if(sgp.IAQmeasure()){
     if(channel == 0) return sgp.TVOC;
     if(channel == 1) return sgp.eCO2;
@@ -1468,7 +1588,8 @@ float get_sgp30(uint8_t channel = 0){
       if(channel == 3) return sgp.rawEthanol;
     }
   }
-  // else "error";
+
+  return 0;
 }
 #endif
 
