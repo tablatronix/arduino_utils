@@ -7,6 +7,8 @@
 // ring buffer
 // ring index
 // sensor id
+// sensor index
+// sensor mqtt topic (temp/temp2/humidity)
 // sensor i2c addr
 // sensor unit
 // sensor values or sensor group by type
@@ -24,7 +26,8 @@
 // sensor alarms/threshholds
 
 // offline mode/collection/logging to sd, maybe add a second buffer with long term ogging interval
- 
+
+// interrupt for sense_env sensor
 
 // depencandies
 // average
@@ -32,7 +35,10 @@
 // filter
 
 // ability to grab a sample window for deferred submission to mqtt for a series ( useful for battery operated devices or offline )
-// ability to grab lastvalue as running average over last n samples/n times
+// ability to grab lastvalue as running average over subset of last n samples/n times
+// ability to reject oulier values for known bad sensor values lacking error conditions
+
+// get sensors by group/id for looping to displays etc
 
 #ifndef sensorsdlog_h
 #define sensorsdlog_h
