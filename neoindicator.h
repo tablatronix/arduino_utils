@@ -54,7 +54,7 @@ uint32_t indColor; // save color
 void init_indicator(uint16_t pin){
 // Adafruit_NeoPixel 
   // strip = ind;
-  Serial.println("[NEIND] init pin# " + (String)pin);
+  Serial.println("[NEOIND] init pin# " + (String)pin);
   ind.setPin(pin);
   ind.setBrightness(100);
   ind.updateLength(INDNUMPIXELS);
