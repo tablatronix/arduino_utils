@@ -5,6 +5,14 @@
 // HSPI    GPIO 13 GPIO 12 GPIO 14 GPIO 15
 // setSpiPin(14, 12, 13, 15);
 
+
+// BASICS2
+// #define SPIBUS 2
+// #define SPIIOCLK 12
+// #define SPIIOMISO 13
+// #define SPIIOMOSI 11
+// #define SPIIOCS0  10
+
 #define ESP32BASICUSB
 
 #ifdef ESP32BASICUSB
