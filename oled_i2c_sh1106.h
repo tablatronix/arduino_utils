@@ -207,7 +207,7 @@ void print_oled(String str,uint8_t size = 1,bool flush = true){
   if(flush)lcd.sendBuffer();          // transfer internal memory to the display
 }
 
-void init_oled(bool preamble = true,bool pinswap = false){
+void init_oled(bool preamble = true,uint8_t addr = 0x7A,bool pinswap = false){
   Logger.println("[OLED] Initializing SSD1106 OLED");
   Logger.println("[OLED] SDA: "+(String)SDA);
   Logger.println("[OLED] SCL: "+(String)SCL);
@@ -223,7 +223,7 @@ void init_oled(bool preamble = true,bool pinswap = false){
   #endif
   // lcd.setBusClock(100000L);
   lcd.begin();
-  // lcd.setI2CAddress(0x78);
+  lcd.setI2CAddress(addr);
   // if(!lcd.begin()) { // Address 0x3C for 128x32
     // Serial.println(F("SSD1106 begin failed"));
   // }
